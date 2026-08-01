@@ -466,8 +466,17 @@ body {
       </div>
 
       <div class="riquadro" id="riquadro-storia" style="display:none">
-        <b id="titolo-strategia">Prova una strategia diversa.</b>
-        <p id="testo-storia" style="margin-top:8px"></p>
+        <b id="titolo-strategia">Se sei bloccato, puoi chiedere un solo esempio.</b>
+        <p class="avviso" id="spiega-suggerimento">
+          L'esempio collegherà tre parole. Le altre storielle le creerai tu: è quella la parte che allena la memoria.
+        </p>
+        <button class="bottone secondario" id="bottone-suggerimento" style="margin-top:10px">
+          Mostra un esempio
+        </button>
+        <button class="bottone secondario" id="bottone-iniziali" style="margin-top:8px; display:none">
+          Oppure mostrami le iniziali
+        </button>
+        <p id="testo-storia" style="margin-top:10px; display:none"></p>
       </div>
 
       <button class="bottone" id="bottone-avanti">Rifai da capo</button>
@@ -481,8 +490,8 @@ body {
 const SECONDI_BLOCCO = 5;
 const SECONDI_DISTURBO = 20;
 const GIORNI_NEL_GRAFICO = 7;
-const TENTATIVI_PRIMA_DELLA_STORIA = 2;
-const TENTATIVI_PRIMA_DELL_AIUTO = 4;
+const TENTATIVI_PRIMA_DELLA_STORIA = 3;
+const TENTATIVI_PRIMA_DELL_AIUTO = 6;
 
 const PAROLE_MEDIE = [
   "pergolato","incrocio","pedaggio","bozzolo","sciame","orizzonte","zoccolo","spartito","vialetto","spugna",
@@ -778,7 +787,8 @@ const stato = {
   ascoltoAcceso: false,
   vitaTipo: null,
   vitaTitolo: "",
-  vitaStorico: []
+  vitaStorico: [],
+  suggerimentoUsato: false
 };
 
 /* ---------- deposito dati ----------
@@ -977,6 +987,7 @@ function iniziaSessione() {
   stato.parole = pescaParole();
   stato.tentativo = 0;
   stato.secondiTentativo = stato.secondiScelti;
+  stato.suggerimentoUsato = false;
   salvaSerie();
   nuovoTentativo();
 }
@@ -1448,16 +1459,14 @@ function mostraEsito(punti, esiti) {
     bottoneAvanti.textContent = "Rifai da capo (tentativo " + (stato.tentativo + 1) + ")";
     bottoneBasta.style.display = "block";
 
-    if (stato.tentativo >= TENTATIVI_PRIMA_DELLA_STORIA) {
+    if (stato.tentativo >= TENTATIVI_PRIMA_DELLA_STORIA &&
+        stato.suggerimentoUsato === false) {
       riquadroStoria.style.display = "block";
-      const suggerimento = costruisciSuggerimento();
-      document.getElementById("titolo-strategia").textContent = suggerimento.titolo;
-      document.getElementById("testo-storia").textContent = suggerimento.testo;
-    }
-
-    if (stato.tentativo >= TENTATIVI_PRIMA_DELL_AIUTO) {
-      riquadroAiuto.style.display = "block";
-      document.getElementById("iniziali-mancanti").textContent = iniziali();
+      document.getElementById("bottone-suggerimento").style.display = "block";
+      document.getElementById("bottone-iniziali").style.display =
+        stato.tentativo >= TENTATIVI_PRIMA_DELL_AIUTO ? "block" : "none";
+      document.getElementById("spiega-suggerimento").style.display = "block";
+      document.getElementById("testo-storia").style.display = "none";
     }
   }
 
@@ -1521,41 +1530,12 @@ function costruisciSuggerimento() {
   const a = parole[0].toUpperCase();
   const b = parole[1].toUpperCase();
   const c = parole[2].toUpperCase();
-  const strategia = (stato.tentativo - TENTATIVI_PRIMA_DELLA_STORIA) % 4;
-
-  if (strategia === 0) {
-    return {
-      titolo: "Crea una mini-scena con tre parole.",
-      testo: "Usa " + a + ", " + b + " e " + c + ". Immagina " + a +
-        " enorme che rimbalza sopra " + b + ", mentre " + c +
-        " gira tutt'intorno alla scena. Deve essere una scena vivace, strana e in movimento. " +
-        "Poi crea un'altra mini-scena con le tre parole successive."
-    };
-  }
-
-  if (strategia === 1) {
-    return {
-      titolo: "Metti le parole in posti che conosci.",
-      testo: "Immagina di entrare in casa: " + a + " è sulla porta, " + b +
-        " sul tavolo e " + c + " sul divano. Continua con le altre parole in cucina, " +
-        "alla finestra e vicino al letto. Poi ripercorri lentamente la casa con la mente."
-    };
-  }
-
-  if (strategia === 2) {
-    return {
-      titolo: "Dividi la lista in piccoli gruppi.",
-      testo: "Non affrontare tutte le 15 parole insieme. Forma tre gruppi da cinque: " +
-        "puoi unirle per significato, suono, colore oppure inventare tu un legame. " +
-        "Dai a ogni gruppo un titolo breve e ricorda prima i tre titoli."
-    };
-  }
-
   return {
-    titolo: "Prova il richiamo attivo, cinque alla volta.",
-    testo: "Guarda cinque parole, poi distogli lo sguardo e prova subito a dirle senza leggere. " +
-      "Controlla, correggi con calma e passa alle cinque successive. Alla fine prova a " +
-      "richiamare i tre gruppi nell'ordine che preferisci."
+    titolo: "Ecco un esempio con tre parole.",
+    testo: "Immagina questa storiella: " + a + " spunta fuori da " + b +
+      "; all'improvviso " + c + " comincia a girare tutt'intorno. Visualizza colori, " +
+      "suoni e movimento. Ora scegli altre tre parole e inventa tu il collegamento: " +
+      "dove sono, cosa succede e come finisce? Bastano due frasi."
   };
 }
 
@@ -2326,6 +2306,32 @@ document.getElementById("gettoni").addEventListener("click", function (evento) {
 });
 
 document.getElementById("bottone-controlla").addEventListener("click", controlla);
+
+document.getElementById("bottone-suggerimento").addEventListener("click", function () {
+  if (stato.suggerimentoUsato === true) {
+    return;
+  }
+
+  stato.suggerimentoUsato = true;
+  const suggerimento = costruisciSuggerimento();
+  document.getElementById("titolo-strategia").textContent = suggerimento.titolo;
+  document.getElementById("testo-storia").textContent = suggerimento.testo;
+  document.getElementById("testo-storia").style.display = "block";
+  document.getElementById("spiega-suggerimento").style.display = "none";
+  document.getElementById("bottone-suggerimento").style.display = "none";
+  document.getElementById("bottone-iniziali").style.display = "none";
+});
+
+document.getElementById("bottone-iniziali").addEventListener("click", function () {
+  if (stato.suggerimentoUsato === true) {
+    return;
+  }
+
+  stato.suggerimentoUsato = true;
+  document.getElementById("iniziali-mancanti").textContent = iniziali();
+  document.getElementById("riquadro-storia").style.display = "none";
+  document.getElementById("riquadro-aiuto").style.display = "block";
+});
 
 document.getElementById("bottone-avanti").addEventListener("click", function () {
   if (stato.modalita === "richiamo") {
