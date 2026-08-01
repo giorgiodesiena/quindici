@@ -356,9 +356,10 @@ body {
         <button class="scelta" data-secondi="60">1 min</button>
         <button class="scelta" data-secondi="120">2 min</button>
         <button class="scelta scelta-attiva" data-secondi="180">3 min</button>
+        <button class="scelta" data-secondi="300">5 min</button>
       </div>
       <p class="avviso" id="consiglio-tempo">
-        Le prime volte tieni 3 minuti. Si scende quando comincia a chiuderla al primo colpo.
+        Il primo tentativo usa il tempo scelto. Poi il gioco lo adatta a come sta andando.
       </p>
 
       <button class="bottone" id="bottone-inizia">Inizia l'esercizio di oggi</button>
@@ -455,6 +456,7 @@ body {
     <div class="pannello">
       <div class="punteggio" id="punteggio">0<small>/15</small></div>
       <div class="commento" id="commento"></div>
+      <div class="riquadro" id="tempo-intelligente" style="display:none"></div>
       <div class="griglia" id="griglia-esito"></div>
 
       <div class="riquadro aiuto" id="riquadro-aiuto" style="display:none">
@@ -525,7 +527,17 @@ const PAROLE_MEDIE = [
   "pallone","racchetta","boccia","birillo","altalena","aquilone","pedina","dado","tessera","puzzle",
   "orologio","calendario","telefono","radio","televisore","fotografia","cornice","candela","fiammifero","torcia",
   "farmacia","ospedale","ambulatorio","scuola","biblioteca","municipio","mercato","panetteria","edicola","officina",
-  "medico","infermiere","maestro","postino","muratore","falegname","sarto","cuoco","pescatore","contadino"
+  "medico","infermiere","maestro","postino","muratore","falegname","sarto","cuoco","pescatore","contadino",
+  "armonica","violino","chitarra","pianoforte","flauto","tromba","clarinetto","mandolino","campana","sonaglio",
+  "pattino","slitta","canoa","monopattino","carrozza","camion","furgone","elicottero","dirigibile","motoscafo",
+  "cacciucco","risotto","lasagna","frittata","minestra","arrosto","spezzatino","polpetta","focaccia","budino",
+  "grembo","gomito","polso","caviglia","tallone","spalla","ginocchio","fronte","guancia","mento",
+  "lavagna","cartuccia","temperino","compasso","astuccio","pagina","copertina","segnalibro","dizionario","atlante",
+  "mosaico","affresco","statua","ritratto","acquerello","ceramica","argilla","tavolozza","cavalletto","pinacoteca",
+  "delfino","balena","squalo","polpo","medusa","granchio","aragosta","cozza","conchiglia","corallo",
+  "aratro","zappa","falce","forcone","semenzaio","fienile","pollaio","stalla","mulino","granaio",
+  "ciminiera","antenna","ascensore","citofono","parcheggio","sottopasso","capolinea","pensilina","biglietteria","dogana",
+  "camino","braciere","termosifone","ventaglio","ventilatore","bollitore","frullatore","tostapane","aspirapolvere","lavatrice"
 ];
 
 const PAROLE_DIFFICILI = [
@@ -566,7 +578,17 @@ const PAROLE_DIFFICILI = [
   "apparenza","contrasto","dettaglio","immagine","luminosita","ombra","profilo","somiglianza","trasparenza","visione",
   "complessita","difficolta","facilita","incapacita","ostacolo","potenzialita","qualita","quantita","semplicita","utilita",
   "autenticita","coincidenza","concretezza","esattezza","imprecisione","relativita","validita","verosimiglianza","uniformita","diversita",
-  "innovazione","ispirazione","progetto","ricerca","scoperta","sperimentazione","tecnologia","immaginazione","invenzione","interesse"
+  "innovazione","ispirazione","progetto","ricerca","scoperta","sperimentazione","tecnologia","immaginazione","invenzione","interesse",
+  "adattabilita","audacia","costanza","fermezza","moderazione","risolutezza","temperanza","versatilita","vitalita","zelo",
+  "affinita","avversione","deferenza","diffidenza","indulgenza","intimita","rivalita","sudditanza","simpatia","sintonia",
+  "causalita","contemporaneita","gradualita","immediatezza","inevitabilita","periodicita","provvisorieta","regolarita","temporaneita","transizione",
+  "astrattezza","consistenza","densita","intensita","leggerezza","morbidezza","rigidita","solidita","spessore","volume",
+  "deduzione","generalizzazione","inferenza","paragone","premessa","previsione","sintesi","approssimazione","classificazione","dimostrazione",
+  "accordo","controversia","dissenso","mediazione","negoziazione","obiezione","persuasione","replica","rivendicazione","trattativa",
+  "appagamento","commozione","desiderio","esaltazione","meraviglia","rimorso","serenita","sgomento","soddisfazione","turbamento",
+  "amministrazione","burocrazia","collettivita","giurisdizione","governo","rappresentanza","sovranita","ordinamento","partecipazione","regolamento",
+  "conservazione","degrado","bilanciamento","rinnovamento","sostenibilita","tutela","urbanizzazione","biodiversita","coltivazione","riforestazione",
+  "accessibilita","automazione","connessione","dispositivo","funzionalita","interfaccia","meccanismo","procedura","strumentazione","trasmissione"
 ];
 
 const VITA_QUOTIDIANA = {
@@ -605,6 +627,7 @@ const stato = {
   mancanti: [],
   difficolta: "media",
   secondiScelti: 180,
+  secondiTentativo: 180,
   secondiRimasti: 0,
   secondiTotaliFase: 0,
   fase: "blocco",
@@ -718,16 +741,21 @@ function mescola(lista) {
 
 function pescaParole() {
   const elenco = elencoAttivo();
-  const copia = [];
-  for (let i = 0; i < elenco.length; i++) {
-    copia.push(elenco[i]);
+  const categorie = [];
+
+  // Le raccolte sono curate in blocchi tematici di 10 parole.
+  // Pescarne una per blocco evita liste dominate da una sola categoria.
+  for (let i = 0; i < elenco.length; i += 10) {
+    categorie.push(elenco.slice(i, i + 10));
   }
-  mescola(copia);
+  mescola(categorie);
 
   const scelte = [];
   for (let i = 0; i < 15; i++) {
-    scelte.push(copia[i]);
+    const categoria = categorie[i];
+    scelte.push(categoria[Math.floor(Math.random() * categoria.length)]);
   }
+  mescola(scelte);
   return scelte;
 }
 
@@ -801,6 +829,7 @@ function iniziaSessione() {
   stato.modalita = "sessione";
   stato.parole = pescaParole();
   stato.tentativo = 0;
+  stato.secondiTentativo = stato.secondiScelti;
   salvaSerie();
   nuovoTentativo();
 }
@@ -816,6 +845,7 @@ function iniziaVita(tipo) {
   stato.vitaTitolo = esercizio.titolo;
   stato.parole = pescaVita(tipo);
   stato.tentativo = 0;
+  stato.secondiTentativo = stato.secondiScelti;
   nuovoTentativo();
 }
 
@@ -871,11 +901,12 @@ function scopriEMemorizza() {
   bottone.disabled = false;
   bottone.textContent = "Le so, copri le carte";
 
-  document.getElementById("fase-studio").textContent = "Memorizza";
+  document.getElementById("fase-studio").textContent =
+    "Memorizza — " + formattaTempo(stato.secondiTentativo);
 
   stato.fase = "studio";
-  stato.secondiTotaliFase = stato.secondiScelti;
-  stato.secondiRimasti = stato.secondiScelti;
+  stato.secondiTotaliFase = stato.secondiTentativo;
+  stato.secondiRimasti = stato.secondiTentativo;
   aggiornaOrologio();
 
   stato.idTimer = setInterval(function () {
@@ -1182,6 +1213,37 @@ function controlla() {
   mostraEsito(punti, esiti);
 }
 
+function calcolaTempoSuccessivo(punti, totale) {
+  const quota = punti / totale;
+  let fattore = 1;
+  let motivo = "Mantengo quasi lo stesso tempo per consolidare con calma.";
+
+  if (quota >= 0.8) {
+    fattore = 0.75;
+    motivo = "Hai ricordato quasi tutto: il prossimo giro sarà un po' più rapido.";
+  } else if (quota >= 0.6) {
+    fattore = 0.85;
+    motivo = "Il richiamo è buono: riduco il tempo con gradualità.";
+  } else if (quota >= 0.4) {
+    fattore = 0.95;
+  } else if (quota >= 0.25) {
+    fattore = 1.1;
+    motivo = "Questa volta era impegnativo: aggiungo un po' di tempo.";
+  } else {
+    fattore = 1.25;
+    motivo = "Serve più calma: il prossimo giro avrà più tempo.";
+  }
+
+  let prossimo = Math.round((stato.secondiTentativo * fattore) / 15) * 15;
+  prossimo = Math.max(30, Math.min(300, prossimo));
+
+  if (prossimo === stato.secondiTentativo) {
+    motivo = "Mantengo questo tempo: è già adatto al risultato di oggi.";
+  }
+
+  return { secondi: prossimo, motivo: motivo };
+}
+
 function mostraEsito(punti, esiti) {
   const totale = stato.parole.length;
   document.getElementById("punteggio").innerHTML = punti + "<small>/" + totale + "</small>";
@@ -1191,9 +1253,19 @@ function mostraEsito(punti, esiti) {
   const commento = document.getElementById("commento");
   const riquadroAiuto = document.getElementById("riquadro-aiuto");
   const riquadroStoria = document.getElementById("riquadro-storia");
+  const tempoIntelligente = document.getElementById("tempo-intelligente");
 
   riquadroAiuto.style.display = "none";
   riquadroStoria.style.display = "none";
+  tempoIntelligente.style.display = "none";
+
+  if (stato.modalita !== "richiamo" && punti < totale) {
+    const adattamento = calcolaTempoSuccessivo(punti, totale);
+    stato.secondiTentativo = adattamento.secondi;
+    tempoIntelligente.style.display = "block";
+    tempoIntelligente.innerHTML = "<b>Tempo del prossimo tentativo: " +
+      formattaTempo(adattamento.secondi) + "</b><br>" + adattamento.motivo;
+  }
 
   if (stato.modalita === "richiamo") {
     commento.textContent = commentoRichiamo(punti);
@@ -1334,7 +1406,7 @@ function registraTentativo(punti, indiciMancanti) {
 
   giorno.tentativi.push({
     punti: punti,
-    secondi: stato.secondiScelti,
+    secondi: stato.secondiTentativo,
     livello: stato.difficolta,
     mancate: indiciMancanti
   });
@@ -1884,31 +1956,9 @@ function disegnaElencoGiorni() {
 }
 
 function aggiornaConsiglioTempo() {
-  let ultimoChiuso = null;
-  for (let i = 0; i < stato.giorni.length; i++) {
-    if (stato.giorni[i].completatoAl !== null) {
-      ultimoChiuso = stato.giorni[i];
-    }
-  }
-
-  let testo = "Le prime volte tieni 3 minuti. Si scende quando comincia a chiuderla al primo colpo.";
-
-  if (ultimoChiuso !== null) {
-    const prove = ultimoChiuso.completatoAl;
-    const ultimaProva = ultimoChiuso.tentativi[ultimoChiuso.tentativi.length - 1];
-
-    if (prove === 1) {
-      testo = "L'ultima volta le ha prese al primo colpo con " + formattaTempo(ultimaProva.secondi) +
-              ". Prova a togliere un minuto.";
-    } else if (prove >= 4) {
-      testo = "L'ultima volta ci sono volute " + prove + " prove. Dagli più tempo, non meno.";
-    } else {
-      testo = "L'ultima volta: " + prove + " prove con " + formattaTempo(ultimaProva.secondi) +
-              ". Tieni questo tempo finché non scende a una prova sola.";
-    }
-  }
-
-  document.getElementById("consiglio-tempo").textContent = testo;
+  document.getElementById("consiglio-tempo").textContent =
+    "Il primo tentativo usa il tempo scelto. Nei successivi il gioco riduce il tempo " +
+    "se ricordi bene oppure lo aumenta se serve più calma (da 30 secondi a 5 minuti).";
 }
 
 function testoRiepilogo() {
