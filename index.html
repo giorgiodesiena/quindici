@@ -469,11 +469,6 @@ body {
       <div class="etichetta" style="margin-top:24px">Quali posizioni allenare</div>
       <div id="posizioni"></div>
 
-      <p class="avviso" style="margin-top:18px">
-        Questi risultati mostrano soltanto l'allenamento fatto in questo gioco.
-        Non sono un test medico e non indicano né escludono una demenza.
-      </p>
-
       <div id="elenco-giorni" style="margin-top:18px"></div>
       <button class="bottone" id="bottone-condividi">Manda il riepilogo a tuo figlio</button>
     </div>
@@ -870,7 +865,8 @@ const stato = {
   vitaTitolo: "",
   vitaStorico: [],
   suggerimentoUsato: false,
-  inizioTentativiSessione: 0
+  inizioTentativiSessione: 0,
+  sessioniLivello: { media: 0, difficile: 0 }
 };
 
 /* ---------- deposito dati ----------
@@ -969,16 +965,26 @@ function pescaParole() {
   const elenco = elencoAttivo();
   const conteggi = stato.difficolta === "difficile" ?
     BLOCCHI_DIFFICILI_PER_CATEGORIA : BLOCCHI_MEDI_PER_CATEGORIA;
+  const sessioniFatte = stato.sessioniLivello[stato.difficolta] || 0;
+  const progresso = Math.min(sessioniFatte, 40) / 40;
   const categorie = [];
   let posizione = 0;
 
   // Ogni blocco contiene dieci parole della stessa area semantica.
-  // I blocchi sono distribuiti per area, così ogni serie mescola davvero le categorie.
+  // All'inizio si pesca più spesso nella parte familiare della raccolta;
+  // in 40 sessioni la finestra scorre con gradualità verso parole meno frequenti.
   for (let i = 0; i < conteggi.length; i++) {
     const area = [];
+    const ampiezza = Math.min(conteggi[i], Math.max(2, Math.ceil(conteggi[i] * 0.65)));
+    const spazioScorrimento = conteggi[i] - ampiezza;
+    const inizio = Math.round(spazioScorrimento * progresso);
+
     for (let j = 0; j < conteggi[i]; j++) {
-      area.push(elenco.slice(posizione, posizione + 10));
+      const blocco = elenco.slice(posizione, posizione + 10);
       posizione = posizione + 10;
+      if (j >= inizio && j < inizio + ampiezza) {
+        area.push(blocco);
+      }
     }
     mescola(area);
     categorie.push(area);
@@ -1071,6 +1077,9 @@ function iniziaSessione() {
   stato.inizioTentativiSessione = giornoEsistente === null ?
     0 : giornoEsistente.tentativi.length;
   stato.parole = pescaParole();
+  stato.sessioniLivello[stato.difficolta] =
+    (stato.sessioniLivello[stato.difficolta] || 0) + 1;
+  salvaSessioniLivello();
   stato.tentativo = 0;
   stato.secondiTentativo = stato.secondiScelti;
   stato.suggerimentoUsato = false;
@@ -1822,6 +1831,10 @@ async function salvaVita() {
   await scriviDeposito("quindici:vita", JSON.stringify(stato.vitaStorico));
 }
 
+async function salvaSessioniLivello() {
+  await scriviDeposito("quindici:sessioni-livello", JSON.stringify(stato.sessioniLivello));
+}
+
 async function caricaTutto() {
   const testoGiorni = await leggiDeposito("quindici:giorni");
   if (testoGiorni !== null) {
@@ -1856,6 +1869,17 @@ async function caricaTutto() {
       stato.vitaStorico = JSON.parse(testoVita);
     } catch (errore) {
       stato.vitaStorico = [];
+    }
+  }
+
+  const testoSessioni = await leggiDeposito("quindici:sessioni-livello");
+  if (testoSessioni !== null) {
+    try {
+      const sessioniSalvate = JSON.parse(testoSessioni);
+      stato.sessioniLivello.media = Math.max(0, parseInt(sessioniSalvate.media, 10) || 0);
+      stato.sessioniLivello.difficile = Math.max(0, parseInt(sessioniSalvate.difficile, 10) || 0);
+    } catch (errore) {
+      stato.sessioniLivello = { media: 0, difficile: 0 };
     }
   }
 
