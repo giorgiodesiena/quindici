@@ -426,9 +426,12 @@ body {
         Tocca i numeri <b>in ordine</b>, dall'1 al 12.
       </p>
       <div class="griglia-numeri" id="griglia-numeri"></div>
-      <p class="avviso" style="text-align:center">
-        Serve a impedirti di ripetere le parole a mente. È il punto, non un fastidio.
+      <p class="avviso" id="stato-numeri" style="text-align:center">
+        Completa almeno una sequenza. Serve a spostare davvero l'attenzione dalle parole.
       </p>
+      <button class="bottone secondario" id="bottone-salta-numeri" style="display:none">
+        Non riesco, continua comunque
+      </button>
     </div>
   </section>
 
@@ -777,8 +780,11 @@ const stato = {
   tentativo: 0,
   idTimer: null,
   idTimerDisturbo: null,
+  idTimeoutSaltaDisturbo: null,
   numeriDisturbo: [],
   prossimoNumero: 1,
+  sequenzaDisturboCompletata: false,
+  tempoDisturboScaduto: false,
   giorni: [],
   serie: null,
   pendente: null,
@@ -1118,14 +1124,23 @@ function fermaStudio() {
 
 function partiDisturbo() {
   mostraSchermata("disturbo");
+  stato.sequenzaDisturboCompletata = false;
+  stato.tempoDisturboScaduto = false;
   preparaNumeri();
 
   let rimasti = SECONDI_DISTURBO;
   document.getElementById("orologio-disturbo").textContent = formattaTempo(rimasti);
   document.getElementById("barra-disturbo").style.width = "100%";
+  document.getElementById("stato-numeri").textContent =
+    "Completa almeno una sequenza. Serve a spostare davvero l'attenzione dalle parole.";
+  document.getElementById("bottone-salta-numeri").style.display = "none";
 
   if (stato.idTimerDisturbo !== null) {
     clearInterval(stato.idTimerDisturbo);
+  }
+  if (stato.idTimeoutSaltaDisturbo !== null) {
+    clearTimeout(stato.idTimeoutSaltaDisturbo);
+    stato.idTimeoutSaltaDisturbo = null;
   }
 
   stato.idTimerDisturbo = setInterval(function () {
@@ -1137,9 +1152,33 @@ function partiDisturbo() {
     if (rimasti <= 0) {
       clearInterval(stato.idTimerDisturbo);
       stato.idTimerDisturbo = null;
-      preparaRipeti();
+      stato.tempoDisturboScaduto = true;
+
+      if (stato.sequenzaDisturboCompletata === true) {
+        concludiDisturbo();
+      } else {
+        document.getElementById("stato-numeri").textContent =
+          "Il tempo è finito. Completa la sequenza da 1 a 12 per continuare.";
+        stato.idTimeoutSaltaDisturbo = setTimeout(function () {
+          document.getElementById("bottone-salta-numeri").style.display = "block";
+          stato.idTimeoutSaltaDisturbo = null;
+        }, 10000);
+      }
     }
   }, 1000);
+}
+
+function concludiDisturbo() {
+  if (stato.idTimerDisturbo !== null) {
+    clearInterval(stato.idTimerDisturbo);
+    stato.idTimerDisturbo = null;
+  }
+  if (stato.idTimeoutSaltaDisturbo !== null) {
+    clearTimeout(stato.idTimeoutSaltaDisturbo);
+    stato.idTimeoutSaltaDisturbo = null;
+  }
+  document.getElementById("bottone-salta-numeri").style.display = "none";
+  preparaRipeti();
 }
 
 function preparaNumeri() {
@@ -1165,6 +1204,10 @@ function preparaNumeri() {
 }
 
 function toccaNumero(bottone) {
+  if (stato.sequenzaDisturboCompletata === true) {
+    return;
+  }
+
   const valore = parseInt(bottone.dataset.valore, 10);
 
   if (valore === stato.prossimoNumero) {
@@ -1173,8 +1216,14 @@ function toccaNumero(bottone) {
     stato.prossimoNumero = stato.prossimoNumero + 1;
 
     if (stato.prossimoNumero > 12) {
-      // finito il giro: se resta tempo, se ne fa un altro
-      preparaNumeri();
+      stato.sequenzaDisturboCompletata = true;
+      document.getElementById("stato-numeri").textContent =
+        stato.tempoDisturboScaduto === true ?
+          "Sequenza completata." : "Sequenza completata. Aspetta che finiscano i 20 secondi.";
+
+      if (stato.tempoDisturboScaduto === true) {
+        concludiDisturbo();
+      }
     }
   } else {
     bottone.classList.add("sbagliato");
@@ -2279,6 +2328,8 @@ document.getElementById("griglia-numeri").addEventListener("click", function (ev
   }
   toccaNumero(bottone);
 });
+
+document.getElementById("bottone-salta-numeri").addEventListener("click", concludiDisturbo);
 
 document.getElementById("casella").addEventListener("keydown", function (evento) {
   if (evento.key === "Enter") {
