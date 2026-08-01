@@ -116,6 +116,7 @@ body {
 /* ---------- scelte ---------- */
 
 .scelte { display: flex; gap: 10px; }
+#scelte-vita { flex-direction: column; }
 
 .scelta {
   flex: 1; min-height: 54px; border-radius: 12px;
@@ -235,6 +236,8 @@ body {
 }
 
 .gettone::after { content: ' ×'; color: var(--oro); }
+.gettone.strategia { cursor: default; }
+.gettone.strategia::after { content: ''; }
 
 /* ---------- esito ---------- */
 
@@ -315,7 +318,7 @@ body {
   <div class="testata">
     <div class="occhiello">Allenamento memoria</div>
     <h1 class="titolo">Quindici<br>parole</h1>
-    <p class="sottotitolo">Si finisce solo quando le dici tutte e 15.</p>
+    <p class="sottotitolo">Ogni tentativo allena la memoria, una parola alla volta.</p>
   </div>
 
   <!-- ============ INIZIO ============ -->
@@ -335,8 +338,8 @@ body {
       <div class="etichetta">Come funziona</div>
       <p class="spiega">
         Escono <b>15 parole a caso</b>. Le guardi, si coprono, fai una pausa forzata
-        con dei numeri, poi le riscrivi a memoria. Se ne prendi 14 non basta:
-        si <b>ricomincia da capo</b> con le stesse 15, finché non le dici tutte.
+        con dei numeri, poi le riscrivi a memoria. Puoi riprovare con le stesse parole:
+        ogni giro aiuta a trovare la strategia che funziona meglio per te.
       </p>
 
       <div class="etichetta" style="margin-top:22px">Livello</div>
@@ -361,19 +364,39 @@ body {
       <button class="bottone" id="bottone-inizia">Inizia l'esercizio di oggi</button>
     </div>
 
+    <div class="pannello acceso">
+      <div class="etichetta">Vita quotidiana</div>
+      <p class="spiega">
+        Allenati con piccole cose utili nella giornata. Scegli una situazione:
+        sono esercizi brevi da 3 a 5 elementi e non cambiano il punteggio delle 15 parole.
+      </p>
+      <div class="scelte" id="scelte-vita">
+        <button class="scelta" data-vita="spesa">Lista della spesa</button>
+        <button class="scelta" data-vita="appuntamento">Appuntamento</button>
+        <button class="scelta" data-vita="cose">Tre cose da fare</button>
+      </div>
+    </div>
+
     <div class="pannello">
       <div class="etichetta">I progressi</div>
+      <div class="riquadro" id="incoraggiamento-progressi"></div>
+      <div id="strategie-progressi" style="margin:12px 0 18px"></div>
       <div class="numeroni" id="numeroni"></div>
       <div id="grafico"></div>
       <div class="legenda">
         <span><i class="pallino" style="background:#2E7D4F"></i>tutte e 15</span>
-        <span><i class="pallino" style="background:#E3A72F"></i>fermato prima</span>
+        <span><i class="pallino" style="background:#E3A72F"></i>allenamento svolto</span>
         <span><i class="pallino" style="background:#E3D8BE"></i>non fatto</span>
         <span><i class="pallino tondo" style="background:#14402F"></i>richiamo dopo un giorno</span>
       </div>
 
-      <div class="etichetta" style="margin-top:24px">Dove perde le parole</div>
+      <div class="etichetta" style="margin-top:24px">Quali posizioni allenare</div>
       <div id="posizioni"></div>
+
+      <p class="avviso" style="margin-top:18px">
+        Questi risultati mostrano soltanto l'allenamento fatto in questo gioco.
+        Non sono un test medico e non indicano né escludono una demenza.
+      </p>
 
       <div id="elenco-giorni" style="margin-top:18px"></div>
       <button class="bottone" id="bottone-condividi">Manda il riepilogo a tuo figlio</button>
@@ -546,6 +569,35 @@ const PAROLE_DIFFICILI = [
   "innovazione","ispirazione","progetto","ricerca","scoperta","sperimentazione","tecnologia","immaginazione","invenzione","interesse"
 ];
 
+const VITA_QUOTIDIANA = {
+  spesa: {
+    titolo: "Piccola lista della spesa",
+    quanti: 5,
+    gruppi: [[
+      "pane","latte","pasta","riso","olio","burro","formaggio","uova","miele","caffè",
+      "mele","pere","arance","limoni","banane","pomodori","patate","carote","zucchine","insalata",
+      "biscotti","farina","zucchero","sale","sapone","dentifricio","tovaglioli","acqua","yogurt","prosciutto"
+    ]]
+  },
+  appuntamento: {
+    titolo: "Dettagli dell'appuntamento",
+    quanti: 3,
+    gruppi: [
+      ["lunedì","martedì","mercoledì","giovedì","venerdì","sabato"],
+      ["medico","dentista","farmacia","fisioterapia","barbiere","posta","banca","officina"],
+      ["nove","dieci","undici","quindici","sedici","diciassette"]
+    ]
+  },
+  cose: {
+    titolo: "Tre cose da fare",
+    quanti: 3,
+    gruppi: [[
+      "telefonare","camminare","annaffiare","riordinare","cucinare","comprare","ritirare","spedire",
+      "prenotare","controllare","pagare","leggere","scrivere","riposare","stendere","apparecchiare"
+    ]]
+  }
+};
+
 const stato = {
   modalita: "sessione",
   parole: [],
@@ -566,7 +618,10 @@ const stato = {
   pendente: null,
   origineRichiamo: null,
   ascolto: null,
-  ascoltoAcceso: false
+  ascoltoAcceso: false,
+  vitaTipo: null,
+  vitaTitolo: "",
+  vitaStorico: []
 };
 
 /* ---------- deposito dati ----------
@@ -676,6 +731,23 @@ function pescaParole() {
   return scelte;
 }
 
+function pescaVita(tipo) {
+  const esercizio = VITA_QUOTIDIANA[tipo];
+  const scelte = [];
+
+  if (esercizio.gruppi.length === 1) {
+    const copia = esercizio.gruppi[0].slice();
+    mescola(copia);
+    return copia.slice(0, esercizio.quanti);
+  }
+
+  for (let i = 0; i < esercizio.gruppi.length; i++) {
+    const gruppo = esercizio.gruppi[i];
+    scelte.push(gruppo[Math.floor(Math.random() * gruppo.length)]);
+  }
+  return scelte;
+}
+
 function mostraSchermata(nome) {
   const tutte = document.querySelectorAll(".schermata");
   for (let i = 0; i < tutte.length; i++) {
@@ -733,6 +805,20 @@ function iniziaSessione() {
   nuovoTentativo();
 }
 
+function iniziaVita(tipo) {
+  const esercizio = VITA_QUOTIDIANA[tipo];
+  if (!esercizio) {
+    return;
+  }
+
+  stato.modalita = "vita";
+  stato.vitaTipo = tipo;
+  stato.vitaTitolo = esercizio.titolo;
+  stato.parole = pescaVita(tipo);
+  stato.tentativo = 0;
+  nuovoTentativo();
+}
+
 function nuovoTentativo() {
   stato.tentativo = stato.tentativo + 1;
   stato.scritte = [];
@@ -747,8 +833,12 @@ function partiTimer() {
   bottone.disabled = true;
   bottone.textContent = "Carte ancora coperte";
 
-  document.getElementById("fase-studio").textContent =
-    "Tentativo " + stato.tentativo + " — preparati";
+  if (stato.modalita === "vita") {
+    document.getElementById("fase-studio").textContent = stato.vitaTitolo + " — preparati";
+  } else {
+    document.getElementById("fase-studio").textContent =
+      "Tentativo " + stato.tentativo + " — preparati";
+  }
 
   stato.fase = "blocco";
   stato.secondiTotaliFase = SECONDI_BLOCCO;
@@ -911,6 +1001,9 @@ function preparaRipeti() {
   if (stato.modalita === "richiamo") {
     etichetta.textContent = "Richiamo di ieri";
     istruzione.textContent = "Le 15 parole di ieri, quelle che ricordi. Nessuno le rivede.";
+  } else if (stato.modalita === "vita") {
+    etichetta.textContent = stato.vitaTitolo;
+    istruzione.textContent = "Scrivi gli elementi che ricordi. Va bene anche procedere con calma.";
   } else {
     etichetta.textContent = "Tentativo " + stato.tentativo;
     istruzione.textContent = "Scrivi tutto quello che ricordi.";
@@ -1080,6 +1173,8 @@ function controlla() {
 
   if (stato.modalita === "richiamo") {
     registraRichiamo(punti);
+  } else if (stato.modalita === "vita") {
+    registraVita(punti);
   } else {
     registraTentativo(punti, indiciMancanti);
   }
@@ -1088,7 +1183,8 @@ function controlla() {
 }
 
 function mostraEsito(punti, esiti) {
-  document.getElementById("punteggio").innerHTML = punti + "<small>/15</small>";
+  const totale = stato.parole.length;
+  document.getElementById("punteggio").innerHTML = punti + "<small>/" + totale + "</small>";
 
   const bottoneAvanti = document.getElementById("bottone-avanti");
   const bottoneBasta = document.getElementById("bottone-basta");
@@ -1103,8 +1199,17 @@ function mostraEsito(punti, esiti) {
     commento.textContent = commentoRichiamo(punti);
     bottoneAvanti.textContent = "Ora l'esercizio di oggi";
     bottoneBasta.style.display = "none";
+  } else if (stato.modalita === "vita" && punti === totale) {
+    commento.textContent = "Hai ricordato tutto. Ottimo lavoro: questa strategia può aiutarti anche nella giornata.";
+    bottoneAvanti.textContent = "Torna alla pagina iniziale";
+    bottoneBasta.style.display = "none";
+  } else if (stato.modalita === "vita") {
+    commento.textContent = "Hai ricordato " + punti + " elementi su " + totale +
+      ". Ogni tentativo è utile: puoi riprovare con la stessa piccola lista.";
+    bottoneAvanti.textContent = "Riprova con calma";
+    bottoneBasta.style.display = "block";
   } else if (punti === 15) {
-    commento.textContent = "Tutte e 15, in " + stato.tentativo + " tentativi. Per oggi hai finito.";
+    commento.textContent = "Tutte e 15, in " + stato.tentativo + " tentativi. Ottimo allenamento per oggi.";
     bottoneAvanti.textContent = "Torna ai progressi";
     bottoneBasta.style.display = "none";
   } else {
@@ -1113,8 +1218,8 @@ function mostraEsito(punti, esiti) {
     if (mancano === 1) {
       parolaMancano = " parola";
     }
-    commento.textContent = "Ne manca ancora " + mancano + parolaMancano +
-                           ". Si rifà da capo con le stesse 15.";
+    commento.textContent = "Hai ricordato " + punti + " parole. Ne manca ancora " + mancano + parolaMancano +
+                           ": ogni nuovo giro rafforza la strategia.";
     bottoneAvanti.textContent = "Rifai da capo (tentativo " + (stato.tentativo + 1) + ")";
     bottoneBasta.style.display = "block";
 
@@ -1152,13 +1257,13 @@ function mostraEsito(punti, esiti) {
 
 function commentoRichiamo(punti) {
   if (punti === 0) {
-    return "Zero dopo un giorno. È normale all'inizio: senza tecnica non restano.";
+    return "Oggi il richiamo è stato difficile. Va bene così: anche provare è allenamento.";
   } else if (punti <= 4) {
-    return punti + " parole rimaste dopo un giorno. Questa è la base da cui salire.";
+    return punti + " parole ricordate dopo un giorno. Sono una buona base da cui continuare.";
   } else if (punti <= 9) {
-    return punti + " su 15 dopo 24 ore. Ottimo, vuol dire che qualcosa si è incollato.";
+    return punti + " su 15 dopo 24 ore. Bene: la strategia sta lasciando una traccia.";
   } else {
-    return punti + " su 15 dopo un giorno intero. Roba da fenomeni.";
+    return punti + " su 15 dopo un giorno intero. Davvero un ottimo richiamo.";
   }
 }
 
@@ -1257,6 +1362,23 @@ function registraRichiamo(punti) {
   aggiornaPannelloRichiamo();
 }
 
+function registraVita(punti) {
+  stato.vitaStorico.push({
+    data: chiaveData(new Date()),
+    tipo: stato.vitaTipo,
+    punti: punti,
+    totale: stato.parole.length,
+    tentativo: stato.tentativo
+  });
+
+  if (stato.vitaStorico.length > 120) {
+    stato.vitaStorico = stato.vitaStorico.slice(stato.vitaStorico.length - 120);
+  }
+
+  salvaVita();
+  disegnaProgressi();
+}
+
 async function salvaGiorni() {
   await scriviDeposito("quindici:giorni", JSON.stringify(stato.giorni));
 }
@@ -1268,6 +1390,10 @@ async function salvaSerie() {
 
 async function salvaPendente() {
   await scriviDeposito("quindici:pendente", JSON.stringify(stato.pendente));
+}
+
+async function salvaVita() {
+  await scriviDeposito("quindici:vita", JSON.stringify(stato.vitaStorico));
 }
 
 async function caricaTutto() {
@@ -1295,6 +1421,15 @@ async function caricaTutto() {
       stato.pendente = JSON.parse(testoPendente);
     } catch (errore) {
       stato.pendente = null;
+    }
+  }
+
+  const testoVita = await leggiDeposito("quindici:vita");
+  if (testoVita !== null) {
+    try {
+      stato.vitaStorico = JSON.parse(testoVita);
+    } catch (errore) {
+      stato.vitaStorico = [];
     }
   }
 
@@ -1409,11 +1544,72 @@ function ultimiGiorni(quanti) {
 }
 
 function disegnaProgressi() {
+  disegnaIncoraggiamento();
   disegnaNumeroni();
   disegnaGrafico();
   disegnaPosizioni();
   disegnaElencoGiorni();
   aggiornaConsiglioTempo();
+}
+
+function disegnaIncoraggiamento() {
+  const dateAllenate = {};
+  const strategie = [];
+  let massimoTentativi = 0;
+  let haRichiamo = false;
+
+  for (let i = 0; i < stato.giorni.length; i++) {
+    const giorno = stato.giorni[i];
+    if (giorno.tentativi.length > 0 || giorno.richiamo) {
+      dateAllenate[giorno.data] = true;
+    }
+    if (giorno.tentativi.length > massimoTentativi) {
+      massimoTentativi = giorno.tentativi.length;
+    }
+    if (giorno.richiamo) {
+      haRichiamo = true;
+    }
+  }
+
+  for (let i = 0; i < stato.vitaStorico.length; i++) {
+    dateAllenate[stato.vitaStorico[i].data] = true;
+  }
+
+  if (massimoTentativi > 1) {
+    strategie.push("ripetizione");
+  }
+  if (massimoTentativi >= TENTATIVI_PRIMA_DELLA_STORIA) {
+    strategie.push("storia tra parole");
+  }
+  if (massimoTentativi >= TENTATIVI_PRIMA_DELL_AIUTO) {
+    strategie.push("aiuto delle iniziali");
+  }
+  if (haRichiamo) {
+    strategie.push("richiamo del giorno dopo");
+  }
+  if (stato.vitaStorico.length > 0) {
+    strategie.push("memoria nella vita quotidiana");
+  }
+
+  const quantiGiorni = Object.keys(dateAllenate).length;
+  let messaggio = "Comincia con calma: non serve essere perfetti, conta dedicare un momento alla memoria.";
+  if (quantiGiorni === 1) {
+    messaggio = "Hai iniziato ad allenarti. È un passo concreto e ogni tentativo conta.";
+  } else if (quantiGiorni > 1) {
+    messaggio = "Hai allenato la memoria in " + quantiGiorni +
+      " giorni. La costanza che stai costruendo conta più di un singolo punteggio.";
+  }
+  document.getElementById("incoraggiamento-progressi").textContent = messaggio;
+
+  const contenitore = document.getElementById("strategie-progressi");
+  if (strategie.length === 0) {
+    contenitore.innerHTML = '<p class="avviso" style="margin:0">Durante gli esercizi scoprirai diverse strategie per aiutare il ricordo.</p>';
+  } else {
+    contenitore.innerHTML = '<p class="avviso" style="margin:0 0 8px">Strategie già incontrate:</p>' +
+      '<div class="gettoni">' + strategie.map(function (strategia) {
+        return '<span class="gettone strategia">' + strategia + '</span>';
+      }).join("") + '</div>';
+  }
 }
 
 function disegnaNumeroni() {
@@ -1592,7 +1788,7 @@ function disegnaPosizioni() {
 
   if (totaleTentativi < 3) {
     contenitore.innerHTML =
-      '<p class="avviso" style="margin:0">Servono almeno tre tentativi per vedere dove perdi le parole.</p>';
+      '<p class="avviso" style="margin:0">Dopo almeno tre tentativi vedrai quali posizioni meritano più allenamento.</p>';
     return;
   }
 
@@ -1643,10 +1839,9 @@ function disegnaPosizioni() {
   svg += '</svg>';
 
   const percentualePeggiore = Math.round(peggiore * 100);
-  svg += '<p class="avviso" style="margin-top:6px">La carta numero ' + (indicePeggiore + 1) +
-         ' è quella che perdi più spesso (' + percentualePeggiore +
-         '% delle volte). Di solito le prime e le ultime restano, quelle in mezzo cadono: ' +
-         'parti da lì la prossima volta.</p>';
+  svg += '<p class="avviso" style="margin-top:6px">La posizione numero ' + (indicePeggiore + 1) +
+         ' offre più spazio di allenamento (' + percentualePeggiore +
+         '% dei tentativi). La prossima volta puoi dedicarle un collegamento o un’immagine speciale.</p>';
 
   contenitore.innerHTML = svg;
 }
@@ -1816,6 +2011,14 @@ document.getElementById("bottone-inizia").addEventListener("click", iniziaSessio
 document.getElementById("bottone-coprire").addEventListener("click", fermaStudio);
 document.getElementById("bottone-richiamo").addEventListener("click", iniziaRichiamo);
 
+document.getElementById("scelte-vita").addEventListener("click", function (evento) {
+  const bottone = evento.target.closest("[data-vita]");
+  if (bottone === null) {
+    return;
+  }
+  iniziaVita(bottone.dataset.vita);
+});
+
 document.getElementById("bottone-salta-richiamo").addEventListener("click", function () {
   document.getElementById("pannello-richiamo").style.display = "none";
 });
@@ -1859,6 +2062,15 @@ document.getElementById("bottone-avanti").addEventListener("click", function () 
   if (stato.modalita === "richiamo") {
     stato.modalita = "sessione";
     mostraSchermata("inizio");
+    return;
+  }
+
+  if (stato.modalita === "vita") {
+    if (stato.mancanti.length === 0) {
+      mostraSchermata("inizio");
+    } else {
+      nuovoTentativo();
+    }
     return;
   }
 
