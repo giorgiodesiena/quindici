@@ -1,0 +1,1857 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14402F">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Quindici">
+<link rel="icon" type="image/png" href="data:image/png;base64,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">
+<link rel="apple-touch-icon" href="data:image/png;base64,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">
+<title>Quindici — allenamento memoria</title>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=Archivo+Black&family=DM+Mono:wght@500&display=swap');
+
+:root {
+  --tavolo: #14402F;
+  --tavolo-scuro: #0C2A1E;
+  --carta: #F6EFDD;
+  --carta-ombra: #E3D8BE;
+  --oro: #E3A72F;
+  --rosso: #B32B22;
+  --verde-ok: #2E7D4F;
+  --inchiostro: #241C12;
+  --inchiostro-tenue: #6B5E4A;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  min-height: 100vh;
+  background: radial-gradient(circle at 50% 0%, #1B5040 0%, var(--tavolo) 45%, var(--tavolo-scuro) 100%);
+  font-family: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
+  color: var(--carta);
+  display: flex;
+  justify-content: center;
+  padding: 20px 14px 40px;
+}
+
+.foglio { width: 100%; max-width: 620px; }
+
+/* ---------- testata ---------- */
+
+.testata { text-align: center; margin-bottom: 22px; }
+
+.occhiello {
+  font-size: 0.72rem; letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--oro); font-weight: 600;
+}
+
+.titolo {
+  font-family: 'Archivo Black', 'Arial Black', Impact, sans-serif;
+  font-size: clamp(2.6rem, 13vw, 4.2rem);
+  line-height: 0.9; letter-spacing: -0.03em; text-transform: uppercase; margin-top: 6px;
+}
+
+.sottotitolo { margin-top: 10px; font-size: 1rem; color: #C8DACF; }
+
+/* ---------- pannelli ---------- */
+
+.schermata { display: none; }
+.schermata.attiva { display: block; }
+
+.pannello {
+  background: var(--carta); color: var(--inchiostro);
+  border-radius: 18px; border: 2px solid var(--oro);
+  box-shadow: 0 14px 0 -6px rgba(0,0,0,0.30);
+  padding: 22px 18px;
+}
+
+.pannello + .pannello { margin-top: 16px; }
+.pannello.acceso { border-color: var(--verde-ok); background: #EDF5EF; }
+
+.etichetta {
+  font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--inchiostro-tenue); font-weight: 600; margin-bottom: 12px;
+}
+
+.spiega { font-size: 1.02rem; line-height: 1.5; }
+.spiega b { font-weight: 600; }
+
+/* ---------- bottoni ---------- */
+
+.bottone {
+  display: block; width: 100%; min-height: 58px;
+  border: none; border-radius: 14px;
+  background: var(--oro); color: var(--inchiostro);
+  font-family: 'Archivo', sans-serif; font-size: 1.15rem; font-weight: 600;
+  cursor: pointer; margin-top: 16px;
+  box-shadow: 0 5px 0 #B07C15;
+  transition: transform 0.08s ease;
+}
+
+.bottone:active { transform: translateY(4px); box-shadow: 0 1px 0 #B07C15; }
+
+.bottone.secondario {
+  background: transparent; color: var(--inchiostro-tenue);
+  border: none; box-shadow: none;
+  font-size: 0.95rem; font-weight: 400; min-height: 44px;
+  text-decoration: underline;
+}
+
+.bottone.secondario:active { transform: none; }
+
+.bottone:disabled {
+  background: var(--carta-ombra); color: var(--inchiostro-tenue);
+  box-shadow: none; cursor: default;
+}
+
+.bottone:disabled:active { transform: none; }
+
+.bottone:focus-visible, .scelta:focus-visible,
+#casella:focus-visible, .numero-disturbo:focus-visible {
+  outline: 3px solid var(--rosso); outline-offset: 3px;
+}
+
+/* ---------- scelte ---------- */
+
+.scelte { display: flex; gap: 10px; }
+
+.scelta {
+  flex: 1; min-height: 54px; border-radius: 12px;
+  border: 2px solid var(--carta-ombra); background: #FFFDF6;
+  color: var(--inchiostro-tenue);
+  font-family: 'DM Mono', 'Courier New', monospace; font-size: 1.02rem; cursor: pointer;
+}
+
+.scelta.scelta-attiva {
+  border-color: var(--verde-ok); background: #E6F2EA;
+  color: var(--verde-ok); font-weight: 500;
+}
+
+/* ---------- timer ---------- */
+
+.barra-tempo {
+  height: 10px; background: var(--carta-ombra);
+  border-radius: 99px; overflow: hidden; margin-top: 14px;
+}
+
+.barra-tempo span {
+  display: block; height: 100%; width: 100%;
+  background: var(--oro); transition: width 1s linear;
+}
+
+.orologio {
+  font-family: 'DM Mono', 'Courier New', monospace;
+  font-size: 2.4rem; text-align: center; letter-spacing: 0.04em;
+}
+
+.orologio.poco { color: var(--rosso); }
+
+/* ---------- carte ---------- */
+
+.griglia { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 16px; }
+
+@media (min-width: 520px) { .griglia { grid-template-columns: repeat(5, 1fr); } }
+
+.carta { perspective: 700px; aspect-ratio: 1 / 1; }
+
+.carta-interna {
+  position: relative; width: 100%; height: 100%;
+  transform-style: preserve-3d; transition: transform 0.55s ease;
+}
+
+.carta.coperta .carta-interna { transform: rotateY(180deg); }
+
+.faccia {
+  position: absolute; inset: 0; backface-visibility: hidden;
+  border-radius: 12px; display: flex; align-items: center; justify-content: center;
+  padding: 4px; text-align: center;
+}
+
+.faccia-parola {
+  background: #FFFDF6; border: 2px solid var(--carta-ombra); color: var(--inchiostro);
+  font-weight: 600; font-size: clamp(0.62rem, 2.8vw, 0.92rem);
+  line-height: 1.1; word-break: break-word; hyphens: auto;
+}
+
+.faccia-retro {
+  transform: rotateY(180deg);
+  background: repeating-linear-gradient(45deg, #1B5040 0 6px, #14402F 6px 12px);
+  border: 2px solid var(--oro); color: var(--oro);
+  font-family: 'DM Mono', 'Courier New', monospace; font-size: 1.1rem;
+}
+
+.carta.giusta .faccia-parola { background: #E6F2EA; border-color: var(--verde-ok); color: var(--verde-ok); }
+.carta.persa .faccia-parola { background: #FBE9E7; border-color: var(--rosso); color: var(--rosso); }
+
+/* ---------- disturbo ---------- */
+
+.griglia-numeri {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 8px; margin-top: 16px;
+}
+
+.numero-disturbo {
+  aspect-ratio: 1 / 1;
+  border: 2px solid var(--carta-ombra); border-radius: 12px;
+  background: #FFFDF6; color: var(--inchiostro);
+  font-family: 'DM Mono', 'Courier New', monospace; font-size: 1.4rem;
+  cursor: pointer;
+}
+
+.numero-disturbo.spento { background: var(--carta-ombra); color: var(--carta-ombra); border-color: var(--carta-ombra); }
+.numero-disturbo.sbagliato { border-color: var(--rosso); color: var(--rosso); }
+
+/* ---------- casella, voce, gettoni ---------- */
+
+.riga-scrittura { display: flex; gap: 8px; }
+
+#casella {
+  flex: 1; min-height: 58px; border-radius: 14px;
+  border: 2px solid var(--carta-ombra); background: #FFFDF6;
+  padding: 0 16px; font-family: 'Archivo', sans-serif; font-size: 1.2rem;
+  color: var(--inchiostro); min-width: 0;
+}
+
+#bottone-voce {
+  width: 62px; min-height: 58px; flex: none;
+  border-radius: 14px; border: 2px solid var(--carta-ombra);
+  background: #FFFDF6; font-size: 1.5rem; cursor: pointer;
+}
+
+#bottone-voce.acceso { background: var(--rosso); border-color: var(--rosso); }
+
+.contatore {
+  font-family: 'DM Mono', 'Courier New', monospace;
+  font-size: 0.9rem; color: var(--inchiostro-tenue); margin-top: 12px;
+}
+
+.gettoni { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; min-height: 10px; }
+
+.gettone {
+  background: var(--tavolo); color: var(--carta); border: none; border-radius: 99px;
+  padding: 9px 14px; font-size: 0.95rem; cursor: pointer;
+}
+
+.gettone::after { content: ' ×'; color: var(--oro); }
+
+/* ---------- esito ---------- */
+
+.punteggio {
+  font-family: 'Archivo Black', 'Arial Black', Impact, sans-serif;
+  font-size: clamp(3.4rem, 18vw, 5.5rem); line-height: 1; text-align: center;
+}
+
+.punteggio small { font-size: 0.35em; color: var(--inchiostro-tenue); }
+.commento { text-align: center; font-size: 1.05rem; color: var(--inchiostro-tenue); margin-top: 6px; }
+.avviso { font-size: 0.85rem; color: var(--inchiostro-tenue); margin-top: 12px; }
+
+.riquadro {
+  margin-top: 16px; padding: 14px;
+  border-radius: 12px; background: #FFFDF6; border: 2px dashed var(--carta-ombra);
+  font-size: 0.95rem; line-height: 1.5;
+}
+
+.riquadro b { font-weight: 600; }
+.riquadro.aiuto { border-style: solid; border-color: var(--oro); }
+
+.iniziali {
+  font-family: 'DM Mono', 'Courier New', monospace;
+  font-size: 1.2rem; letter-spacing: 0.1em; color: var(--rosso); margin-top: 8px;
+}
+
+/* ---------- progressi ---------- */
+
+.numeroni { display: flex; gap: 8px; margin-bottom: 16px; }
+
+.numerone {
+  flex: 1; background: #FFFDF6; border: 2px solid var(--carta-ombra);
+  border-radius: 12px; padding: 10px 4px; text-align: center;
+}
+
+.numerone b {
+  display: block; font-family: 'Archivo Black', 'Arial Black', sans-serif;
+  font-size: 1.5rem; line-height: 1.1;
+}
+
+.numerone span {
+  font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--inchiostro-tenue);
+}
+
+#grafico svg, #posizioni svg { width: 100%; height: auto; display: block; }
+
+.legenda {
+  display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
+  font-size: 0.76rem; color: var(--inchiostro-tenue); margin-top: 10px;
+}
+
+.pallino {
+  display: inline-block; width: 10px; height: 10px;
+  border-radius: 3px; margin-right: 5px; vertical-align: -1px;
+}
+
+.pallino.tondo { border-radius: 99px; }
+
+.giorno-riga {
+  display: flex; justify-content: space-between; gap: 10px;
+  font-family: 'DM Mono', 'Courier New', monospace; font-size: 0.82rem;
+  color: var(--inchiostro-tenue); padding: 9px 0;
+  border-bottom: 1px dashed var(--carta-ombra);
+}
+
+.giorno-riga:last-child { border-bottom: none; }
+.giorno-riga.pieno { color: var(--verde-ok); }
+.giorno-riga.vuoto { opacity: 0.55; }
+
+@media (prefers-reduced-motion: reduce) {
+  .carta-interna, .barra-tempo span, .bottone { transition: none; }
+}
+</style>
+
+<div class="foglio">
+
+  <div class="testata">
+    <div class="occhiello">Allenamento memoria</div>
+    <h1 class="titolo">Quindici<br>parole</h1>
+    <p class="sottotitolo">Si finisce solo quando le dici tutte e 15.</p>
+  </div>
+
+  <!-- ============ INIZIO ============ -->
+  <section class="schermata attiva" id="schermata-inizio">
+
+    <div class="pannello acceso" id="pannello-richiamo" style="display:none">
+      <div class="etichetta">Prima di tutto</div>
+      <p class="spiega">
+        Ti ricordi le 15 parole di <b id="data-richiamo">ieri</b>?
+        Scrivile senza rivederle. Questa è la memoria che conta davvero.
+      </p>
+      <button class="bottone" id="bottone-richiamo">Provo a ricordare quelle di ieri</button>
+      <button class="bottone secondario" id="bottone-salta-richiamo">Salta, vado all'esercizio di oggi</button>
+    </div>
+
+    <div class="pannello">
+      <div class="etichetta">Come funziona</div>
+      <p class="spiega">
+        Escono <b>15 parole a caso</b>. Le guardi, si coprono, fai una pausa forzata
+        con dei numeri, poi le riscrivi a memoria. Se ne prendi 14 non basta:
+        si <b>ricomincia da capo</b> con le stesse 15, finché non le dici tutte.
+      </p>
+
+      <div class="etichetta" style="margin-top:22px">Livello</div>
+      <div class="scelte" id="scelte-livello">
+        <button class="scelta scelta-attiva" data-livello="media">Media</button>
+        <button class="scelta" data-livello="difficile">Difficile</button>
+      </div>
+      <p class="avviso" id="spiega-livello">
+        Parole concrete ma poco usate: grondaia, mattarello, alveare.
+      </p>
+
+      <div class="etichetta" style="margin-top:22px">Tempo per guardarle</div>
+      <div class="scelte" id="scelte-tempo">
+        <button class="scelta" data-secondi="60">1 min</button>
+        <button class="scelta" data-secondi="120">2 min</button>
+        <button class="scelta scelta-attiva" data-secondi="180">3 min</button>
+      </div>
+      <p class="avviso" id="consiglio-tempo">
+        Le prime volte tieni 3 minuti. Si scende quando comincia a chiuderla al primo colpo.
+      </p>
+
+      <button class="bottone" id="bottone-inizia">Inizia l'esercizio di oggi</button>
+    </div>
+
+    <div class="pannello">
+      <div class="etichetta">I progressi</div>
+      <div class="numeroni" id="numeroni"></div>
+      <div id="grafico"></div>
+      <div class="legenda">
+        <span><i class="pallino" style="background:#2E7D4F"></i>tutte e 15</span>
+        <span><i class="pallino" style="background:#E3A72F"></i>fermato prima</span>
+        <span><i class="pallino" style="background:#E3D8BE"></i>non fatto</span>
+        <span><i class="pallino tondo" style="background:#14402F"></i>richiamo dopo un giorno</span>
+      </div>
+
+      <div class="etichetta" style="margin-top:24px">Dove perde le parole</div>
+      <div id="posizioni"></div>
+
+      <div id="elenco-giorni" style="margin-top:18px"></div>
+      <button class="bottone" id="bottone-condividi">Manda il riepilogo a tuo figlio</button>
+    </div>
+  </section>
+
+  <!-- ============ STUDIO ============ -->
+  <section class="schermata" id="schermata-studio">
+    <div class="pannello">
+      <div class="etichetta" id="fase-studio" style="text-align:center">Preparati</div>
+      <div class="orologio" id="orologio">0:05</div>
+      <div class="barra-tempo"><span id="barra"></span></div>
+      <div class="griglia" id="griglia-studio"></div>
+      <button class="bottone" id="bottone-coprire">Carte ancora coperte</button>
+    </div>
+  </section>
+
+  <!-- ============ DISTURBO ============ -->
+  <section class="schermata" id="schermata-disturbo">
+    <div class="pannello">
+      <div class="etichetta" style="text-align:center">Pausa obbligata</div>
+      <div class="orologio" id="orologio-disturbo">0:20</div>
+      <div class="barra-tempo"><span id="barra-disturbo"></span></div>
+      <p class="spiega" style="text-align:center; margin-top:14px">
+        Tocca i numeri <b>in ordine</b>, dall'1 al 12.
+      </p>
+      <div class="griglia-numeri" id="griglia-numeri"></div>
+      <p class="avviso" style="text-align:center">
+        Serve a impedirti di ripetere le parole a mente. È il punto, non un fastidio.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ RIPETI ============ -->
+  <section class="schermata" id="schermata-ripeti">
+    <div class="pannello">
+      <div class="etichetta" id="etichetta-tentativo">Tentativo 1</div>
+      <p class="spiega" style="margin-bottom:14px" id="istruzione-ripeti">
+        Scrivi tutto quello che ricordi.
+      </p>
+      <div class="riga-scrittura">
+        <input id="casella" type="text" placeholder="Una parola, poi Invio"
+               autocomplete="off" autocorrect="off" autocapitalize="off"
+               spellcheck="false" enterkeyhint="done">
+        <button id="bottone-voce" title="Detta a voce" style="display:none">🎤</button>
+      </div>
+      <div class="contatore" id="contatore">0 parole scritte</div>
+      <div class="gettoni" id="gettoni"></div>
+      <p class="avviso">Tocca una parola per cancellarla.</p>
+      <button class="bottone" id="bottone-controlla">Vediamo quante ne ho prese</button>
+    </div>
+  </section>
+
+  <!-- ============ ESITO ============ -->
+  <section class="schermata" id="schermata-esito">
+    <div class="pannello">
+      <div class="punteggio" id="punteggio">0<small>/15</small></div>
+      <div class="commento" id="commento"></div>
+      <div class="griglia" id="griglia-esito"></div>
+
+      <div class="riquadro aiuto" id="riquadro-aiuto" style="display:none">
+        <b>Ti do una mano.</b> Le parole che ti mancano cominciano per:
+        <div class="iniziali" id="iniziali-mancanti"></div>
+      </div>
+
+      <div class="riquadro" id="riquadro-storia" style="display:none">
+        <b>Prova così, invece di ripeterle.</b>
+        <p id="testo-storia" style="margin-top:8px"></p>
+      </div>
+
+      <button class="bottone" id="bottone-avanti">Rifai da capo</button>
+      <button class="bottone secondario" id="bottone-basta">Lascia stare per oggi</button>
+    </div>
+  </section>
+
+</div>
+
+<script>
+const SECONDI_BLOCCO = 5;
+const SECONDI_DISTURBO = 20;
+const GIORNI_NEL_GRAFICO = 7;
+const TENTATIVI_PRIMA_DELLA_STORIA = 2;
+const TENTATIVI_PRIMA_DELL_AIUTO = 4;
+
+const PAROLE_MEDIE = [
+  "grondaia","ringhiera","cardine","stipite","architrave","mansarda","veranda","pergolato","staccionata","cortile",
+  "vicolo","incrocio","rotonda","casello","pedaggio","ingorgo","deviazione","cantiere","ponteggio","carriola",
+  "badile","rastrello","innaffiatoio","concime","vivaio","serra","arnia","alveare","bozzolo","tana",
+  "nido","stormo","branco","gregge","mandria","sciame","corteo","appello","verbale","protocollo",
+  "timbro","modulo","sportello","magazzino","inventario","bilancia","quintale","ettaro","imbuto","mestolo",
+  "colino","tagliere","mattarello","setaccio","teglia","stampo","lievito","impasto","crosta","mollica",
+  "briciola","crostata","sfoglia","ripieno","brodo","spezia","aroma","fragranza","tessuto","ordito",
+  "telaio","ricamo","risvolto","fodera","bottega","vetrina","insegna","scaffale","bancarella","baracca",
+  "capanna","rifugio","baita","malga","sentiero","tornante","valico","crinale","versante","ghiacciaio",
+  "torrente","cascata","palude","canneto","brughiera","radura","sottobosco","muschio","lichene","corteccia",
+  "resina","ghianda","pigna","castagna","tramonto","orizzonte","dispensa","cassaforte","tabellone","capitolo",
+  "cartella","zoccolo","tenaglia","guarnizione","ingranaggio","lucchetto","ricevuta","scontrino","bolletta","targhetta",
+  "distintivo","medaglia","trofeo","stendardo","tamburo","fisarmonica","spartito","sipario","palcoscenico","platea"
+];
+
+const PAROLE_DIFFICILI = [
+  "astrazione","ambiguita","autonomia","benevolenza","cautela","coerenza","compromesso","concetto","conflitto","consenso",
+  "contesto","convinzione","credenza","curiosita","decadenza","dedizione","destino","dignita","dilemma","disciplina",
+  "discrezione","distacco","dubbio","empatia","entusiasmo","equilibrio","esitazione","essenza","eternita","evidenza",
+  "fiducia","franchezza","gerarchia","giustizia","gratitudine","identita","illusione","impegno","impulso","inerzia",
+  "influenza","ingegno","iniziativa","inquietudine","intenzione","intuizione","invidia","ipotesi","ironia","istinto",
+  "lealta","liberta","limite","logica","malinconia","memoria","mentalita","merito","metodo","mistero",
+  "modestia","morale","nostalgia","novita","ordine","orgoglio","ostinazione","paradosso","pazienza","pensiero",
+  "percezione","perdono","pericolo","prospettiva","prudenza","rammarico","rassegnazione","realta","riflesso","rigore",
+  "rimpianto","riscatto","risentimento","rispetto","saggezza","scelta","sfumatura","silenzio","simmetria","sincerita",
+  "solitudine","sospetto","speranza","stupore","tensione","teoria","timore","tolleranza","tradizione","tranquillita",
+  "uguaglianza","urgenza","utopia","vanita","verita","vergogna","virtu","volonta","coscienza","astuzia",
+  "arroganza","ambizione","apatia","armonia","buonsenso","cambiamento","capriccio","carisma","certezza","chiarezza"
+];
+
+const stato = {
+  modalita: "sessione",
+  parole: [],
+  scritte: [],
+  mancanti: [],
+  difficolta: "media",
+  secondiScelti: 180,
+  secondiRimasti: 0,
+  secondiTotaliFase: 0,
+  fase: "blocco",
+  tentativo: 0,
+  idTimer: null,
+  idTimerDisturbo: null,
+  numeriDisturbo: [],
+  prossimoNumero: 1,
+  giorni: [],
+  serie: null,
+  pendente: null,
+  origineRichiamo: null,
+  ascolto: null,
+  ascoltoAcceso: false
+};
+
+/* ---------- deposito dati ----------
+   Dentro l'anteprima di Claude esiste window.storage.
+   Su un sito normale (GitHub Pages, Netlify) non esiste,
+   e allora si salva nella memoria del telefono col localStorage. */
+
+async function leggiDeposito(chiave) {
+  if (window.storage) {
+    try {
+      const risultato = await window.storage.get(chiave);
+      if (risultato !== null && risultato.value) {
+        return risultato.value;
+      }
+      return null;
+    } catch (errore) {
+      return null;
+    }
+  }
+
+  try {
+    return localStorage.getItem(chiave);
+  } catch (errore) {
+    return null;
+  }
+}
+
+async function scriviDeposito(chiave, valore) {
+  if (window.storage) {
+    try {
+      await window.storage.set(chiave, valore);
+      return;
+    } catch (errore) {
+      // provo comunque col telefono
+    }
+  }
+
+  try {
+    localStorage.setItem(chiave, valore);
+  } catch (errore) {
+    // memoria piena o navigazione privata: pazienza
+  }
+}
+
+/* ---------- utilità ---------- */
+
+function elencoAttivo() {
+  if (stato.difficolta === "difficile") {
+    return PAROLE_DIFFICILI;
+  } else {
+    return PAROLE_MEDIE;
+  }
+}
+
+function normalizza(testo) {
+  let pulito = testo.trim().toLowerCase();
+  pulito = pulito.normalize("NFD");
+  pulito = pulito.replace(/[\u0300-\u036f]/g, "");
+  pulito = pulito.replace(/[^a-z]/g, "");
+  return pulito;
+}
+
+function duecifre(numero) {
+  if (numero < 10) {
+    return "0" + numero;
+  } else {
+    return String(numero);
+  }
+}
+
+function chiaveData(data) {
+  return data.getFullYear() + "-" + duecifre(data.getMonth() + 1) + "-" + duecifre(data.getDate());
+}
+
+function etichettaData(chiave) {
+  const pezzi = chiave.split("-");
+  return pezzi[2] + "/" + pezzi[1];
+}
+
+function formattaTempo(secondi) {
+  const minuti = Math.floor(secondi / 60);
+  return minuti + ":" + duecifre(secondi % 60);
+}
+
+function mescola(lista) {
+  for (let i = lista.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const temp = lista[i];
+    lista[i] = lista[j];
+    lista[j] = temp;
+  }
+  return lista;
+}
+
+function pescaParole() {
+  const elenco = elencoAttivo();
+  const copia = [];
+  for (let i = 0; i < elenco.length; i++) {
+    copia.push(elenco[i]);
+  }
+  mescola(copia);
+
+  const scelte = [];
+  for (let i = 0; i < 15; i++) {
+    scelte.push(copia[i]);
+  }
+  return scelte;
+}
+
+function mostraSchermata(nome) {
+  const tutte = document.querySelectorAll(".schermata");
+  for (let i = 0; i < tutte.length; i++) {
+    tutte[i].classList.remove("attiva");
+  }
+  document.getElementById("schermata-" + nome).classList.add("attiva");
+  window.scrollTo(0, 0);
+}
+
+/* ---------- carte ---------- */
+
+function disegnaGriglia(contenitore, parole, coperte) {
+  contenitore.innerHTML = "";
+
+  for (let i = 0; i < parole.length; i++) {
+    const carta = document.createElement("div");
+    carta.className = "carta";
+    if (coperte === true) {
+      carta.classList.add("coperta");
+    }
+
+    const interna = document.createElement("div");
+    interna.className = "carta-interna";
+    interna.style.transitionDelay = (i * 55) + "ms";
+
+    const davanti = document.createElement("div");
+    davanti.className = "faccia faccia-parola";
+    davanti.textContent = parole[i];
+
+    const dietro = document.createElement("div");
+    dietro.className = "faccia faccia-retro";
+    dietro.textContent = String(i + 1);
+
+    interna.appendChild(davanti);
+    interna.appendChild(dietro);
+    carta.appendChild(interna);
+    contenitore.appendChild(carta);
+  }
+}
+
+/* ---------- sessione ---------- */
+
+function iniziaSessione() {
+  // se c'è ancora una serie da richiamare, la metto da parte prima di sovrascriverla
+  const daRichiamare = serieDaRichiamare();
+  if (daRichiamare !== null) {
+    stato.pendente = daRichiamare;
+    salvaPendente();
+  }
+
+  stato.modalita = "sessione";
+  stato.parole = pescaParole();
+  stato.tentativo = 0;
+  salvaSerie();
+  nuovoTentativo();
+}
+
+function nuovoTentativo() {
+  stato.tentativo = stato.tentativo + 1;
+  stato.scritte = [];
+  partiTimer();
+}
+
+function partiTimer() {
+  disegnaGriglia(document.getElementById("griglia-studio"), stato.parole, true);
+  mostraSchermata("studio");
+
+  const bottone = document.getElementById("bottone-coprire");
+  bottone.disabled = true;
+  bottone.textContent = "Carte ancora coperte";
+
+  document.getElementById("fase-studio").textContent =
+    "Tentativo " + stato.tentativo + " — preparati";
+
+  stato.fase = "blocco";
+  stato.secondiTotaliFase = SECONDI_BLOCCO;
+  stato.secondiRimasti = SECONDI_BLOCCO;
+  aggiornaOrologio();
+
+  if (stato.idTimer !== null) {
+    clearInterval(stato.idTimer);
+  }
+
+  stato.idTimer = setInterval(function () {
+    stato.secondiRimasti = stato.secondiRimasti - 1;
+    aggiornaOrologio();
+
+    if (stato.secondiRimasti <= 0) {
+      clearInterval(stato.idTimer);
+      stato.idTimer = null;
+      scopriEMemorizza();
+    }
+  }, 1000);
+}
+
+function scopriEMemorizza() {
+  const carte = document.querySelectorAll("#griglia-studio .carta");
+  for (let i = 0; i < carte.length; i++) {
+    carte[i].classList.remove("coperta");
+  }
+
+  const bottone = document.getElementById("bottone-coprire");
+  bottone.disabled = false;
+  bottone.textContent = "Le so, copri le carte";
+
+  document.getElementById("fase-studio").textContent = "Memorizza";
+
+  stato.fase = "studio";
+  stato.secondiTotaliFase = stato.secondiScelti;
+  stato.secondiRimasti = stato.secondiScelti;
+  aggiornaOrologio();
+
+  stato.idTimer = setInterval(function () {
+    stato.secondiRimasti = stato.secondiRimasti - 1;
+    aggiornaOrologio();
+    if (stato.secondiRimasti <= 0) {
+      fermaStudio();
+    }
+  }, 1000);
+}
+
+function aggiornaOrologio() {
+  const orologio = document.getElementById("orologio");
+  orologio.textContent = formattaTempo(stato.secondiRimasti);
+
+  if (stato.secondiRimasti <= 10 && stato.fase === "studio") {
+    orologio.classList.add("poco");
+  } else {
+    orologio.classList.remove("poco");
+  }
+
+  const percentuale = (stato.secondiRimasti / stato.secondiTotaliFase) * 100;
+  document.getElementById("barra").style.width = percentuale + "%";
+}
+
+function fermaStudio() {
+  if (stato.fase !== "studio") {
+    return;
+  }
+  stato.fase = "fine";
+
+  if (stato.idTimer !== null) {
+    clearInterval(stato.idTimer);
+    stato.idTimer = null;
+  }
+
+  const carte = document.querySelectorAll("#griglia-studio .carta");
+  for (let i = 0; i < carte.length; i++) {
+    carte[i].classList.add("coperta");
+  }
+
+  setTimeout(function () {
+    partiDisturbo();
+  }, 650);
+}
+
+/* ---------- compito di disturbo ---------- */
+
+function partiDisturbo() {
+  mostraSchermata("disturbo");
+  preparaNumeri();
+
+  let rimasti = SECONDI_DISTURBO;
+  document.getElementById("orologio-disturbo").textContent = formattaTempo(rimasti);
+  document.getElementById("barra-disturbo").style.width = "100%";
+
+  if (stato.idTimerDisturbo !== null) {
+    clearInterval(stato.idTimerDisturbo);
+  }
+
+  stato.idTimerDisturbo = setInterval(function () {
+    rimasti = rimasti - 1;
+    document.getElementById("orologio-disturbo").textContent = formattaTempo(rimasti);
+    const percentuale = (rimasti / SECONDI_DISTURBO) * 100;
+    document.getElementById("barra-disturbo").style.width = percentuale + "%";
+
+    if (rimasti <= 0) {
+      clearInterval(stato.idTimerDisturbo);
+      stato.idTimerDisturbo = null;
+      preparaRipeti();
+    }
+  }, 1000);
+}
+
+function preparaNumeri() {
+  const numeri = [];
+  for (let i = 1; i <= 12; i++) {
+    numeri.push(i);
+  }
+  mescola(numeri);
+
+  stato.numeriDisturbo = numeri;
+  stato.prossimoNumero = 1;
+
+  const contenitore = document.getElementById("griglia-numeri");
+  contenitore.innerHTML = "";
+
+  for (let i = 0; i < numeri.length; i++) {
+    const bottone = document.createElement("button");
+    bottone.className = "numero-disturbo";
+    bottone.textContent = String(numeri[i]);
+    bottone.dataset.valore = String(numeri[i]);
+    contenitore.appendChild(bottone);
+  }
+}
+
+function toccaNumero(bottone) {
+  const valore = parseInt(bottone.dataset.valore, 10);
+
+  if (valore === stato.prossimoNumero) {
+    bottone.classList.add("spento");
+    bottone.classList.remove("sbagliato");
+    stato.prossimoNumero = stato.prossimoNumero + 1;
+
+    if (stato.prossimoNumero > 12) {
+      // finito il giro: se resta tempo, se ne fa un altro
+      preparaNumeri();
+    }
+  } else {
+    bottone.classList.add("sbagliato");
+    setTimeout(function () {
+      bottone.classList.remove("sbagliato");
+    }, 300);
+  }
+}
+
+/* ---------- scrittura ---------- */
+
+function preparaRipeti() {
+  const etichetta = document.getElementById("etichetta-tentativo");
+  const istruzione = document.getElementById("istruzione-ripeti");
+
+  if (stato.modalita === "richiamo") {
+    etichetta.textContent = "Richiamo di ieri";
+    istruzione.textContent = "Le 15 parole di ieri, quelle che ricordi. Nessuno le rivede.";
+  } else {
+    etichetta.textContent = "Tentativo " + stato.tentativo;
+    istruzione.textContent = "Scrivi tutto quello che ricordi.";
+  }
+
+  document.getElementById("casella").value = "";
+  aggiornaGettoni();
+  mostraSchermata("ripeti");
+  document.getElementById("casella").focus();
+}
+
+function aggiungiTesto(testo) {
+  const pulita = normalizza(testo);
+
+  if (pulita.length < 2) {
+    return;
+  }
+
+  let giaPresente = false;
+  for (let i = 0; i < stato.scritte.length; i++) {
+    if (normalizza(stato.scritte[i]) === pulita) {
+      giaPresente = true;
+    }
+  }
+
+  if (giaPresente === false) {
+    stato.scritte.push(testo.trim().toLowerCase());
+  }
+}
+
+function aggiungiScritta() {
+  const casella = document.getElementById("casella");
+  aggiungiTesto(casella.value);
+  casella.value = "";
+  aggiornaGettoni();
+}
+
+function aggiornaGettoni() {
+  const contenitore = document.getElementById("gettoni");
+  contenitore.innerHTML = "";
+
+  for (let i = 0; i < stato.scritte.length; i++) {
+    const gettone = document.createElement("button");
+    gettone.className = "gettone";
+    gettone.textContent = stato.scritte[i];
+    gettone.dataset.posizione = String(i);
+    contenitore.appendChild(gettone);
+  }
+
+  let testo = stato.scritte.length + " parole scritte";
+  if (stato.scritte.length === 1) {
+    testo = "1 parola scritta";
+  }
+  document.getElementById("contatore").textContent = testo;
+}
+
+/* ---------- dettatura ---------- */
+
+function preparaVoce() {
+  let Riconoscitore = null;
+
+  if (window.SpeechRecognition) {
+    Riconoscitore = window.SpeechRecognition;
+  } else if (window.webkitSpeechRecognition) {
+    Riconoscitore = window.webkitSpeechRecognition;
+  }
+
+  if (Riconoscitore === null) {
+    return;
+  }
+
+  const ascolto = new Riconoscitore();
+  ascolto.lang = "it-IT";
+  ascolto.continuous = true;
+  ascolto.interimResults = false;
+
+  ascolto.onresult = function (evento) {
+    for (let i = evento.resultIndex; i < evento.results.length; i++) {
+      const frase = evento.results[i][0].transcript;
+      const pezzi = frase.split(" ");
+
+      for (let j = 0; j < pezzi.length; j++) {
+        aggiungiTesto(pezzi[j]);
+      }
+    }
+    aggiornaGettoni();
+  };
+
+  ascolto.onend = function () {
+    if (stato.ascoltoAcceso === true) {
+      ascolto.start();
+    }
+  };
+
+  ascolto.onerror = function () {
+    spegniVoce();
+  };
+
+  stato.ascolto = ascolto;
+  document.getElementById("bottone-voce").style.display = "block";
+}
+
+function accendiVoce() {
+  if (stato.ascolto === null) {
+    return;
+  }
+  stato.ascoltoAcceso = true;
+  document.getElementById("bottone-voce").classList.add("acceso");
+
+  try {
+    stato.ascolto.start();
+  } catch (errore) {
+    // già in ascolto, va bene così
+  }
+}
+
+function spegniVoce() {
+  if (stato.ascolto === null) {
+    return;
+  }
+  stato.ascoltoAcceso = false;
+  document.getElementById("bottone-voce").classList.remove("acceso");
+
+  try {
+    stato.ascolto.stop();
+  } catch (errore) {
+    // già spento
+  }
+}
+
+/* ---------- controllo ---------- */
+
+function controlla() {
+  aggiungiScritta();
+  spegniVoce();
+
+  const scritteNormali = [];
+  for (let i = 0; i < stato.scritte.length; i++) {
+    scritteNormali.push(normalizza(stato.scritte[i]));
+  }
+
+  let punti = 0;
+  const esiti = [];
+  const mancanti = [];
+  const indiciMancanti = [];
+
+  for (let i = 0; i < stato.parole.length; i++) {
+    const parolaNormale = normalizza(stato.parole[i]);
+    let trovata = false;
+
+    for (let j = 0; j < scritteNormali.length; j++) {
+      if (scritteNormali[j] === parolaNormale) {
+        trovata = true;
+      }
+    }
+
+    if (trovata === true) {
+      punti = punti + 1;
+    } else {
+      mancanti.push(stato.parole[i]);
+      indiciMancanti.push(i);
+    }
+    esiti.push(trovata);
+  }
+
+  stato.mancanti = mancanti;
+
+  if (stato.modalita === "richiamo") {
+    registraRichiamo(punti);
+  } else {
+    registraTentativo(punti, indiciMancanti);
+  }
+
+  mostraEsito(punti, esiti);
+}
+
+function mostraEsito(punti, esiti) {
+  document.getElementById("punteggio").innerHTML = punti + "<small>/15</small>";
+
+  const bottoneAvanti = document.getElementById("bottone-avanti");
+  const bottoneBasta = document.getElementById("bottone-basta");
+  const commento = document.getElementById("commento");
+  const riquadroAiuto = document.getElementById("riquadro-aiuto");
+  const riquadroStoria = document.getElementById("riquadro-storia");
+
+  riquadroAiuto.style.display = "none";
+  riquadroStoria.style.display = "none";
+
+  if (stato.modalita === "richiamo") {
+    commento.textContent = commentoRichiamo(punti);
+    bottoneAvanti.textContent = "Ora l'esercizio di oggi";
+    bottoneBasta.style.display = "none";
+  } else if (punti === 15) {
+    commento.textContent = "Tutte e 15, in " + stato.tentativo + " tentativi. Per oggi hai finito.";
+    bottoneAvanti.textContent = "Torna ai progressi";
+    bottoneBasta.style.display = "none";
+  } else {
+    const mancano = 15 - punti;
+    let parolaMancano = " parole";
+    if (mancano === 1) {
+      parolaMancano = " parola";
+    }
+    commento.textContent = "Ne manca ancora " + mancano + parolaMancano +
+                           ". Si rifà da capo con le stesse 15.";
+    bottoneAvanti.textContent = "Rifai da capo (tentativo " + (stato.tentativo + 1) + ")";
+    bottoneBasta.style.display = "block";
+
+    if (stato.tentativo >= TENTATIVI_PRIMA_DELLA_STORIA) {
+      riquadroStoria.style.display = "block";
+      document.getElementById("testo-storia").textContent = costruisciStoria();
+    }
+
+    if (stato.tentativo >= TENTATIVI_PRIMA_DELL_AIUTO) {
+      riquadroAiuto.style.display = "block";
+      document.getElementById("iniziali-mancanti").textContent = iniziali();
+    }
+  }
+
+  const griglia = document.getElementById("griglia-esito");
+  disegnaGriglia(griglia, stato.parole, true);
+
+  const carte = griglia.querySelectorAll(".carta");
+  for (let i = 0; i < carte.length; i++) {
+    if (esiti[i] === true) {
+      carte[i].classList.add("giusta");
+    } else {
+      carte[i].classList.add("persa");
+    }
+  }
+
+  mostraSchermata("esito");
+
+  setTimeout(function () {
+    for (let i = 0; i < carte.length; i++) {
+      carte[i].classList.remove("coperta");
+    }
+  }, 150);
+}
+
+function commentoRichiamo(punti) {
+  if (punti === 0) {
+    return "Zero dopo un giorno. È normale all'inizio: senza tecnica non restano.";
+  } else if (punti <= 4) {
+    return punti + " parole rimaste dopo un giorno. Questa è la base da cui salire.";
+  } else if (punti <= 9) {
+    return punti + " su 15 dopo 24 ore. Ottimo, vuol dire che qualcosa si è incollato.";
+  } else {
+    return punti + " su 15 dopo un giorno intero. Roba da fenomeni.";
+  }
+}
+
+function iniziali() {
+  const lettere = [];
+  for (let i = 0; i < stato.mancanti.length; i++) {
+    lettere.push(stato.mancanti[i].charAt(0).toUpperCase());
+  }
+  return lettere.join(" · ");
+}
+
+function costruisciStoria() {
+  const base = [];
+
+  for (let i = 0; i < stato.mancanti.length; i++) {
+    base.push(stato.mancanti[i]);
+  }
+  for (let i = 0; i < stato.parole.length; i++) {
+    if (base.length < 3) {
+      base.push(stato.parole[i]);
+    }
+  }
+
+  const tre = [];
+  for (let i = 0; i < 3 && i < base.length; i++) {
+    tre.push(base[i].toUpperCase());
+  }
+
+  return "Non ripeterle a pappagallo: legale. Prendi " + tre.join(" → ") +
+         " e mettile in una scena sola, la più assurda che ti viene, con dentro dei movimenti. " +
+         "Poi aggancia la quarta alla terza, la quinta alla quarta e vai avanti così. " +
+         "Una catena si ricorda, una lista no.";
+}
+
+/* ---------- registro ---------- */
+
+function trovaGiorno(chiave) {
+  for (let i = 0; i < stato.giorni.length; i++) {
+    if (stato.giorni[i].data === chiave) {
+      return stato.giorni[i];
+    }
+  }
+  return null;
+}
+
+function giornoDiOggi() {
+  const chiave = chiaveData(new Date());
+  let giorno = trovaGiorno(chiave);
+
+  if (giorno === null) {
+    giorno = { data: chiave, tentativi: [], completatoAl: null, richiamo: null };
+    stato.giorni.push(giorno);
+
+    stato.giorni.sort(function (a, b) {
+      if (a.data < b.data) {
+        return -1;
+      } else {
+        return 1;
+      }
+    });
+  }
+
+  return giorno;
+}
+
+function registraTentativo(punti, indiciMancanti) {
+  const giorno = giornoDiOggi();
+
+  giorno.tentativi.push({
+    punti: punti,
+    secondi: stato.secondiScelti,
+    livello: stato.difficolta,
+    mancate: indiciMancanti
+  });
+
+  if (punti === 15 && giorno.completatoAl === null) {
+    giorno.completatoAl = giorno.tentativi.length;
+  }
+
+  if (stato.giorni.length > 90) {
+    stato.giorni = stato.giorni.slice(stato.giorni.length - 90);
+  }
+
+  salvaGiorni();
+  disegnaProgressi();
+}
+
+function registraRichiamo(punti) {
+  const giorno = giornoDiOggi();
+  giorno.richiamo = { punti: punti, da: stato.origineRichiamo };
+
+  stato.pendente = null;
+  salvaPendente();
+  salvaGiorni();
+  disegnaProgressi();
+  aggiornaPannelloRichiamo();
+}
+
+async function salvaGiorni() {
+  await scriviDeposito("quindici:giorni", JSON.stringify(stato.giorni));
+}
+
+async function salvaSerie() {
+  stato.serie = { data: chiaveData(new Date()), parole: stato.parole };
+  await scriviDeposito("quindici:serie", JSON.stringify(stato.serie));
+}
+
+async function salvaPendente() {
+  await scriviDeposito("quindici:pendente", JSON.stringify(stato.pendente));
+}
+
+async function caricaTutto() {
+  const testoGiorni = await leggiDeposito("quindici:giorni");
+  if (testoGiorni !== null) {
+    try {
+      stato.giorni = JSON.parse(testoGiorni);
+    } catch (errore) {
+      stato.giorni = [];
+    }
+  }
+
+  const testoSerie = await leggiDeposito("quindici:serie");
+  if (testoSerie !== null) {
+    try {
+      stato.serie = JSON.parse(testoSerie);
+    } catch (errore) {
+      stato.serie = null;
+    }
+  }
+
+  const testoPendente = await leggiDeposito("quindici:pendente");
+  if (testoPendente !== null) {
+    try {
+      stato.pendente = JSON.parse(testoPendente);
+    } catch (errore) {
+      stato.pendente = null;
+    }
+  }
+
+  disegnaProgressi();
+  aggiornaPannelloRichiamo();
+}
+
+/* ---------- richiamo del giorno dopo ---------- */
+
+function serieDaRichiamare() {
+  const oggi = chiaveData(new Date());
+  const giorno = trovaGiorno(oggi);
+
+  if (giorno !== null && giorno.richiamo !== null) {
+    return null;
+  }
+
+  if (stato.pendente !== null && stato.pendente.data !== oggi) {
+    return stato.pendente;
+  }
+
+  if (stato.serie !== null && stato.serie.data !== oggi) {
+    return stato.serie;
+  }
+
+  return null;
+}
+
+function aggiornaPannelloRichiamo() {
+  const pannello = document.getElementById("pannello-richiamo");
+  const serie = serieDaRichiamare();
+
+  if (serie !== null) {
+    pannello.style.display = "block";
+    document.getElementById("data-richiamo").textContent = etichettaData(serie.data);
+  } else {
+    pannello.style.display = "none";
+  }
+}
+
+function iniziaRichiamo() {
+  const serie = serieDaRichiamare();
+  if (serie === null) {
+    return;
+  }
+
+  stato.modalita = "richiamo";
+  stato.parole = serie.parole;
+  stato.origineRichiamo = serie.data;
+  stato.scritte = [];
+  stato.tentativo = 0;
+  preparaRipeti();
+}
+
+/* ---------- progressi ---------- */
+
+function riassuntoGiorno(giorno) {
+  const riassunto = {
+    fatto: false, migliore: 0, tentativi: 0,
+    completatoAl: null, richiamo: null, secondi: []
+  };
+
+  if (giorno === null) {
+    return riassunto;
+  }
+
+  riassunto.tentativi = giorno.tentativi.length;
+  riassunto.completatoAl = giorno.completatoAl;
+
+  if (giorno.richiamo) {
+    riassunto.richiamo = giorno.richiamo.punti;
+  }
+
+  if (giorno.tentativi.length > 0) {
+    riassunto.fatto = true;
+  }
+
+  for (let i = 0; i < giorno.tentativi.length; i++) {
+    const prova = giorno.tentativi[i];
+
+    if (prova.punti > riassunto.migliore) {
+      riassunto.migliore = prova.punti;
+    }
+
+    let giaVisto = false;
+    for (let j = 0; j < riassunto.secondi.length; j++) {
+      if (riassunto.secondi[j] === prova.secondi) {
+        giaVisto = true;
+      }
+    }
+    if (giaVisto === false) {
+      riassunto.secondi.push(prova.secondi);
+    }
+  }
+
+  return riassunto;
+}
+
+function ultimiGiorni(quanti) {
+  const lista = [];
+  const oggi = new Date();
+
+  for (let i = quanti - 1; i >= 0; i--) {
+    const data = new Date(oggi.getFullYear(), oggi.getMonth(), oggi.getDate() - i);
+    const chiave = chiaveData(data);
+    const riassunto = riassuntoGiorno(trovaGiorno(chiave));
+    riassunto.chiave = chiave;
+    lista.push(riassunto);
+  }
+
+  return lista;
+}
+
+function disegnaProgressi() {
+  disegnaNumeroni();
+  disegnaGrafico();
+  disegnaPosizioni();
+  disegnaElencoGiorni();
+  aggiornaConsiglioTempo();
+}
+
+function disegnaNumeroni() {
+  let giorniFatti = 0;
+  let giorniCompletati = 0;
+  let sommaTentativi = 0;
+  let sommaRichiamo = 0;
+  let quantiRichiami = 0;
+
+  for (let i = 0; i < stato.giorni.length; i++) {
+    const giorno = stato.giorni[i];
+
+    if (giorno.tentativi.length > 0) {
+      giorniFatti = giorniFatti + 1;
+    }
+
+    if (giorno.completatoAl !== null) {
+      giorniCompletati = giorniCompletati + 1;
+      sommaTentativi = sommaTentativi + giorno.completatoAl;
+    }
+
+    if (giorno.richiamo) {
+      sommaRichiamo = sommaRichiamo + giorno.richiamo.punti;
+      quantiRichiami = quantiRichiami + 1;
+    }
+  }
+
+  let mediaTentativi = "—";
+  if (giorniCompletati > 0) {
+    mediaTentativi = (sommaTentativi / giorniCompletati).toFixed(1);
+  }
+
+  let mediaRichiamo = "—";
+  if (quantiRichiami > 0) {
+    mediaRichiamo = (sommaRichiamo / quantiRichiami).toFixed(1);
+  }
+
+  let striscia = 0;
+  const oggi = new Date();
+  let passo = 0;
+  let scorri = true;
+
+  while (scorri === true) {
+    const data = new Date(oggi.getFullYear(), oggi.getMonth(), oggi.getDate() - passo);
+    const giorno = trovaGiorno(chiaveData(data));
+    let haFatto = false;
+
+    if (giorno !== null && giorno.tentativi.length > 0) {
+      haFatto = true;
+    }
+
+    if (haFatto === true) {
+      striscia = striscia + 1;
+      passo = passo + 1;
+    } else if (passo === 0) {
+      passo = passo + 1;
+    } else {
+      scorri = false;
+    }
+
+    if (passo > 400) {
+      scorri = false;
+    }
+  }
+
+  document.getElementById("numeroni").innerHTML =
+    '<div class="numerone"><b>' + striscia + '</b><span>giorni di fila</span></div>' +
+    '<div class="numerone"><b>' + mediaTentativi + '</b><span>prove per il pieno</span></div>' +
+    '<div class="numerone"><b>' + mediaRichiamo + '</b><span>ricordate il giorno dopo</span></div>';
+}
+
+function disegnaGrafico() {
+  const giorni = ultimiGiorni(GIORNI_NEL_GRAFICO);
+
+  const larghezza = 340;
+  const altezza = 200;
+  const sopra = 16;
+  const sotto = 52;
+  const sinistra = 24;
+  const destra = 8;
+  const zona = altezza - sopra - sotto;
+  const passo = (larghezza - sinistra - destra) / giorni.length;
+  const larghezzaBarra = passo * 0.56;
+
+  let svg = '<svg viewBox="0 0 ' + larghezza + ' ' + altezza + '" role="img" ' +
+            'aria-label="Parole indovinate negli ultimi giorni">';
+
+  const tacche = [0, 5, 10, 15];
+  for (let i = 0; i < tacche.length; i++) {
+    const valore = tacche[i];
+    const y = sopra + zona - (valore / 15) * zona;
+
+    svg += '<line x1="' + sinistra + '" y1="' + y + '" x2="' + (larghezza - destra) + '" y2="' + y +
+           '" stroke="#E3D8BE" stroke-width="1" stroke-dasharray="3 3"/>';
+    svg += '<text x="' + (sinistra - 6) + '" y="' + (y + 3.5) +
+           '" font-size="9" fill="#6B5E4A" text-anchor="end" font-family="monospace">' + valore + '</text>';
+  }
+
+  for (let i = 0; i < giorni.length; i++) {
+    const g = giorni[i];
+    const centro = sinistra + passo * i + passo / 2;
+    const x = centro - larghezzaBarra / 2;
+
+    if (g.fatto === false) {
+      svg += '<rect x="' + x + '" y="' + (sopra + zona - 4) + '" width="' + larghezzaBarra +
+             '" height="4" rx="2" fill="#E3D8BE"/>';
+    } else {
+      const altezzaBarra = (g.migliore / 15) * zona;
+      const y = sopra + zona - altezzaBarra;
+
+      let colore = "#E3A72F";
+      if (g.completatoAl !== null) {
+        colore = "#2E7D4F";
+      }
+
+      svg += '<rect x="' + x + '" y="' + y + '" width="' + larghezzaBarra +
+             '" height="' + altezzaBarra + '" rx="3" fill="' + colore + '"/>';
+      svg += '<text x="' + centro + '" y="' + (y - 4) +
+             '" font-size="10" fill="#241C12" text-anchor="middle" font-family="monospace">' +
+             g.migliore + '</text>';
+
+      let sottotesto = "×" + g.tentativi;
+      if (g.completatoAl !== null) {
+        sottotesto = "×" + g.completatoAl;
+      }
+      svg += '<text x="' + centro + '" y="' + (altezza - 20) +
+             '" font-size="9" fill="#B07C15" text-anchor="middle" font-family="monospace">' +
+             sottotesto + '</text>';
+    }
+
+    if (g.richiamo !== null) {
+      const yRichiamo = sopra + zona - (g.richiamo / 15) * zona;
+      svg += '<circle cx="' + centro + '" cy="' + yRichiamo + '" r="4.5" fill="#14402F"/>';
+    }
+
+    svg += '<text x="' + centro + '" y="' + (altezza - 33) +
+           '" font-size="9" fill="#6B5E4A" text-anchor="middle" font-family="monospace">' +
+           etichettaData(g.chiave) + '</text>';
+  }
+
+  svg += '<text x="' + (larghezza / 2) + '" y="' + (altezza - 4) +
+         '" font-size="8.5" fill="#6B5E4A" text-anchor="middle">' +
+         'sotto la data: quanti tentativi</text>';
+
+  svg += '</svg>';
+
+  document.getElementById("grafico").innerHTML = svg;
+}
+
+function disegnaPosizioni() {
+  const perse = [];
+  for (let i = 0; i < 15; i++) {
+    perse.push(0);
+  }
+
+  let totaleTentativi = 0;
+
+  for (let i = 0; i < stato.giorni.length; i++) {
+    const tentativi = stato.giorni[i].tentativi;
+
+    for (let j = 0; j < tentativi.length; j++) {
+      const mancate = tentativi[j].mancate;
+
+      if (mancate) {
+        totaleTentativi = totaleTentativi + 1;
+
+        for (let k = 0; k < mancate.length; k++) {
+          const indice = mancate[k];
+          perse[indice] = perse[indice] + 1;
+        }
+      }
+    }
+  }
+
+  const contenitore = document.getElementById("posizioni");
+
+  if (totaleTentativi < 3) {
+    contenitore.innerHTML =
+      '<p class="avviso" style="margin:0">Servono almeno tre tentativi per vedere dove perdi le parole.</p>';
+    return;
+  }
+
+  const larghezza = 340;
+  const altezza = 96;
+  const sopra = 6;
+  const sotto = 20;
+  const zona = altezza - sopra - sotto;
+  const passo = larghezza / 15;
+  const larghezzaBarra = passo * 0.62;
+
+  let svg = '<svg viewBox="0 0 ' + larghezza + ' ' + altezza + '" role="img" ' +
+            'aria-label="Quante volte perde ogni posizione">';
+
+  let peggiore = 0;
+  let indicePeggiore = 0;
+
+  for (let i = 0; i < 15; i++) {
+    const quota = perse[i] / totaleTentativi;
+
+    if (quota > peggiore) {
+      peggiore = quota;
+      indicePeggiore = i;
+    }
+  }
+
+  for (let i = 0; i < 15; i++) {
+    const quota = perse[i] / totaleTentativi;
+    const altezzaBarra = quota * zona;
+    const centro = passo * i + passo / 2;
+    const x = centro - larghezzaBarra / 2;
+    const y = sopra + zona - altezzaBarra;
+
+    let colore = "#E3D8BE";
+    if (quota >= peggiore * 0.75 && quota > 0) {
+      colore = "#B32B22";
+    } else if (quota > 0) {
+      colore = "#E3A72F";
+    }
+
+    svg += '<rect x="' + x + '" y="' + y + '" width="' + larghezzaBarra +
+           '" height="' + Math.max(altezzaBarra, 2) + '" rx="2" fill="' + colore + '"/>';
+    svg += '<text x="' + centro + '" y="' + (altezza - 7) +
+           '" font-size="8" fill="#6B5E4A" text-anchor="middle" font-family="monospace">' +
+           (i + 1) + '</text>';
+  }
+
+  svg += '</svg>';
+
+  const percentualePeggiore = Math.round(peggiore * 100);
+  svg += '<p class="avviso" style="margin-top:6px">La carta numero ' + (indicePeggiore + 1) +
+         ' è quella che perdi più spesso (' + percentualePeggiore +
+         '% delle volte). Di solito le prime e le ultime restano, quelle in mezzo cadono: ' +
+         'parti da lì la prossima volta.</p>';
+
+  contenitore.innerHTML = svg;
+}
+
+function disegnaElencoGiorni() {
+  const giorni = ultimiGiorni(GIORNI_NEL_GRAFICO);
+  const contenitore = document.getElementById("elenco-giorni");
+  contenitore.innerHTML = "";
+
+  for (let i = giorni.length - 1; i >= 0; i--) {
+    const g = giorni[i];
+    const riga = document.createElement("div");
+    riga.className = "giorno-riga";
+
+    let destra = "";
+
+    if (g.fatto === false && g.richiamo === null) {
+      riga.classList.add("vuoto");
+      destra = "non fatto";
+    } else if (g.fatto === false) {
+      destra = "solo richiamo " + g.richiamo + "/15";
+    } else {
+      const tempi = g.secondi.join("/") + "s";
+
+      if (g.completatoAl !== null) {
+        riga.classList.add("pieno");
+        destra = "15/15 in " + g.completatoAl + " prove · " + tempi;
+      } else {
+        destra = "max " + g.migliore + "/15 · " + g.tentativi + " prove · " + tempi;
+      }
+
+      if (g.richiamo !== null) {
+        destra = destra + " · richiamo " + g.richiamo;
+      }
+    }
+
+    riga.innerHTML = "<span>" + etichettaData(g.chiave) + "</span><span>" + destra + "</span>";
+    contenitore.appendChild(riga);
+  }
+}
+
+function aggiornaConsiglioTempo() {
+  let ultimoChiuso = null;
+  for (let i = 0; i < stato.giorni.length; i++) {
+    if (stato.giorni[i].completatoAl !== null) {
+      ultimoChiuso = stato.giorni[i];
+    }
+  }
+
+  let testo = "Le prime volte tieni 3 minuti. Si scende quando comincia a chiuderla al primo colpo.";
+
+  if (ultimoChiuso !== null) {
+    const prove = ultimoChiuso.completatoAl;
+    const ultimaProva = ultimoChiuso.tentativi[ultimoChiuso.tentativi.length - 1];
+
+    if (prove === 1) {
+      testo = "L'ultima volta le ha prese al primo colpo con " + formattaTempo(ultimaProva.secondi) +
+              ". Prova a togliere un minuto.";
+    } else if (prove >= 4) {
+      testo = "L'ultima volta ci sono volute " + prove + " prove. Dagli più tempo, non meno.";
+    } else {
+      testo = "L'ultima volta: " + prove + " prove con " + formattaTempo(ultimaProva.secondi) +
+              ". Tieni questo tempo finché non scende a una prova sola.";
+    }
+  }
+
+  document.getElementById("consiglio-tempo").textContent = testo;
+}
+
+function testoRiepilogo() {
+  const giorni = ultimiGiorni(GIORNI_NEL_GRAFICO);
+  const righe = [];
+  righe.push("Quindici parole — ultimi 7 giorni");
+
+  for (let i = 0; i < giorni.length; i++) {
+    const g = giorni[i];
+    let riga = etichettaData(g.chiave) + ": ";
+
+    if (g.fatto === false && g.richiamo === null) {
+      riga = riga + "non fatto";
+    } else if (g.fatto === false) {
+      riga = riga + "solo richiamo " + g.richiamo + "/15";
+    } else {
+      if (g.completatoAl !== null) {
+        riga = riga + "15/15 in " + g.completatoAl + " prove";
+      } else {
+        riga = riga + "max " + g.migliore + "/15 in " + g.tentativi + " prove";
+      }
+
+      riga = riga + " (" + g.secondi.join("/") + "s)";
+
+      if (g.richiamo !== null) {
+        riga = riga + ", richiamo " + g.richiamo + "/15";
+      }
+    }
+
+    righe.push(riga);
+  }
+
+  return righe.join("\n");
+}
+
+async function condividiRiepilogo() {
+  const testo = testoRiepilogo();
+
+  if (navigator.share) {
+    try {
+      await navigator.share({ text: testo });
+      return;
+    } catch (errore) {
+      // ha annullato: non faccio altro
+      return;
+    }
+  }
+
+  window.open("https://wa.me/?text=" + encodeURIComponent(testo), "_blank");
+}
+
+/* ---------- collegamenti ---------- */
+
+function impostaTempo(secondi) {
+  stato.secondiScelti = secondi;
+
+  const tutti = document.querySelectorAll("#scelte-tempo .scelta");
+  for (let i = 0; i < tutti.length; i++) {
+    const valore = parseInt(tutti[i].dataset.secondi, 10);
+
+    if (valore === secondi) {
+      tutti[i].classList.add("scelta-attiva");
+    } else {
+      tutti[i].classList.remove("scelta-attiva");
+    }
+  }
+}
+
+document.getElementById("scelte-livello").addEventListener("click", function (evento) {
+  const bottone = evento.target.closest(".scelta");
+  if (bottone === null) {
+    return;
+  }
+
+  const tutti = document.querySelectorAll("#scelte-livello .scelta");
+  for (let i = 0; i < tutti.length; i++) {
+    tutti[i].classList.remove("scelta-attiva");
+  }
+  bottone.classList.add("scelta-attiva");
+  stato.difficolta = bottone.dataset.livello;
+
+  if (stato.difficolta === "difficile") {
+    document.getElementById("spiega-livello").textContent =
+      "Parole astratte, quelle che non puoi immaginare: coerenza, inerzia, rammarico.";
+  } else {
+    document.getElementById("spiega-livello").textContent =
+      "Parole concrete ma poco usate: grondaia, mattarello, alveare.";
+  }
+});
+
+document.getElementById("scelte-tempo").addEventListener("click", function (evento) {
+  const bottone = evento.target.closest(".scelta");
+  if (bottone === null) {
+    return;
+  }
+  impostaTempo(parseInt(bottone.dataset.secondi, 10));
+});
+
+document.getElementById("bottone-inizia").addEventListener("click", iniziaSessione);
+document.getElementById("bottone-coprire").addEventListener("click", fermaStudio);
+document.getElementById("bottone-richiamo").addEventListener("click", iniziaRichiamo);
+
+document.getElementById("bottone-salta-richiamo").addEventListener("click", function () {
+  document.getElementById("pannello-richiamo").style.display = "none";
+});
+
+document.getElementById("griglia-numeri").addEventListener("click", function (evento) {
+  const bottone = evento.target.closest(".numero-disturbo");
+  if (bottone === null) {
+    return;
+  }
+  toccaNumero(bottone);
+});
+
+document.getElementById("casella").addEventListener("keydown", function (evento) {
+  if (evento.key === "Enter") {
+    evento.preventDefault();
+    aggiungiScritta();
+  }
+});
+
+document.getElementById("bottone-voce").addEventListener("click", function () {
+  if (stato.ascoltoAcceso === true) {
+    spegniVoce();
+  } else {
+    accendiVoce();
+  }
+});
+
+document.getElementById("gettoni").addEventListener("click", function (evento) {
+  const gettone = evento.target.closest(".gettone");
+  if (gettone === null) {
+    return;
+  }
+  const posizione = parseInt(gettone.dataset.posizione, 10);
+  stato.scritte.splice(posizione, 1);
+  aggiornaGettoni();
+});
+
+document.getElementById("bottone-controlla").addEventListener("click", controlla);
+
+document.getElementById("bottone-avanti").addEventListener("click", function () {
+  if (stato.modalita === "richiamo") {
+    stato.modalita = "sessione";
+    mostraSchermata("inizio");
+    return;
+  }
+
+  const giorno = trovaGiorno(chiaveData(new Date()));
+  let ultimoPunteggio = 0;
+
+  if (giorno !== null && giorno.tentativi.length > 0) {
+    ultimoPunteggio = giorno.tentativi[giorno.tentativi.length - 1].punti;
+  }
+
+  if (ultimoPunteggio === 15) {
+    mostraSchermata("inizio");
+  } else {
+    nuovoTentativo();
+  }
+});
+
+document.getElementById("bottone-condividi").addEventListener("click", condividiRiepilogo);
+
+document.getElementById("bottone-basta").addEventListener("click", function () {
+  mostraSchermata("inizio");
+});
+
+/* ---------- installazione sulla schermata Home ---------- */
+
+function preparaManifest() {
+  const icona192 = document.querySelector('link[rel="icon"]').href;
+
+  const manifest = {
+    name: "Quindici parole",
+    short_name: "Quindici",
+    start_url: ".",
+    display: "standalone",
+    background_color: "#14402F",
+    theme_color: "#14402F",
+    icons: [
+      { src: icona192, sizes: "192x192", type: "image/png", purpose: "any" },
+      { src: "data:image/png;base64,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", sizes: "512x512", type: "image/png", purpose: "any" }
+    ]
+  };
+
+  const blob = new Blob([JSON.stringify(manifest)], { type: "application/json" });
+  const link = document.createElement("link");
+  link.rel = "manifest";
+  link.href = URL.createObjectURL(blob);
+  document.head.appendChild(link);
+}
+
+preparaVoce();
+
+preparaManifest();
+caricaTutto();
+</script>
