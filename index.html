@@ -866,6 +866,7 @@ const stato = {
   vitaStorico: [],
   suggerimentoUsato: false,
   inizioTentativiSessione: 0,
+  inizioSessioneTimestamp: null,
   sessioniLivello: { media: 0, difficile: 0 }
 };
 
@@ -944,6 +945,13 @@ function chiaveData(data) {
 function etichettaData(chiave) {
   const pezzi = chiave.split("-");
   return pezzi[2] + "/" + pezzi[1];
+}
+
+function etichettaDataCompleta(chiave) {
+  const mesi = ["gennaio","febbraio","marzo","aprile","maggio","giugno",
+    "luglio","agosto","settembre","ottobre","novembre","dicembre"];
+  const pezzi = chiave.split("-");
+  return parseInt(pezzi[2], 10) + " " + mesi[parseInt(pezzi[1], 10) - 1];
 }
 
 function formattaTempo(secondi) {
@@ -1073,6 +1081,7 @@ function iniziaSessione() {
   }
 
   stato.modalita = "sessione";
+  stato.inizioSessioneTimestamp = Date.now();
   const giornoEsistente = trovaGiorno(chiaveData(new Date()));
   stato.inizioTentativiSessione = giornoEsistente === null ?
     0 : giornoEsistente.tentativi.length;
@@ -1547,11 +1556,17 @@ function datiSessioneCorrente() {
   const giorno = trovaGiorno(chiaveData(new Date()));
   const tentativi = giorno === null ? [] :
     giorno.tentativi.slice(stato.inizioTentativiSessione);
-  let tempoTotale = 0;
+  let tempoTotale = null;
 
   for (let i = 0; i < tentativi.length; i++) {
-    tempoTotale = tempoTotale + (typeof tentativi[i].tempoStudio === "number" ?
-      tentativi[i].tempoStudio : tentativi[i].secondi);
+    if (typeof tentativi[i].durataTotaleSessione === "number") {
+      tempoTotale = tentativi[i].durataTotaleSessione;
+    }
+  }
+
+  if (tempoTotale === null && typeof stato.inizioSessioneTimestamp === "number") {
+    tempoTotale = Math.max(0,
+      Math.round((Date.now() - stato.inizioSessioneTimestamp) / 1000));
   }
 
   return {
@@ -1583,13 +1598,14 @@ function disegnaRiepilogoFinale() {
     riga.className = "riga-tentativo";
     const tempo = typeof prova.tempoStudio === "number" ? prova.tempoStudio : prova.secondi;
     riga.textContent = "Tentativo " + (prova.numero || (i + 1)) +
-      " · " + prova.punti + "/15 · " + formattaTempo(tempo);
+      " · " + prova.punti + "/15 · studio " + formattaTempo(tempo);
     contenitore.appendChild(riga);
   }
 
   const totale = document.createElement("p");
   totale.className = "riepilogo-totale";
-  totale.textContent = "Tempo complessivo: " + formattaTempo(dati.tempoTotale);
+  totale.textContent = "Tempo reale dall'inizio alla fine: " +
+    formattaTempo(dati.tempoTotale || 0);
   contenitore.appendChild(totale);
   contenitore.style.display = "block";
 }
@@ -1765,14 +1781,21 @@ function giornoDiOggi() {
 function registraTentativo(punti, indiciMancanti) {
   const giorno = giornoDiOggi();
 
-  giorno.tentativi.push({
+  const prova = {
     numero: stato.tentativo,
     punti: punti,
     secondi: stato.secondiTentativo,
     tempoStudio: stato.secondiUsatiTentativo,
     livello: stato.difficolta,
     mancate: indiciMancanti
-  });
+  };
+
+  if (punti === 15 && typeof stato.inizioSessioneTimestamp === "number") {
+    prova.durataTotaleSessione = Math.max(1,
+      Math.round((Date.now() - stato.inizioSessioneTimestamp) / 1000));
+  }
+
+  giorno.tentativi.push(prova);
 
   if (punti === 15 && giorno.completatoAl === null) {
     giorno.completatoAl = giorno.tentativi.length;
@@ -1941,17 +1964,12 @@ function tempoTotaleCompletamento(giorno) {
     return null;
   }
 
-  let totale = 0;
-  for (let i = 0; i < giorno.completatoAl; i++) {
-    const prova = giorno.tentativi[i];
-    if (typeof prova.tempoStudio === "number") {
-      totale = totale + prova.tempoStudio;
-    } else {
-      // Compatibilità con gli allenamenti salvati prima di questa funzione.
-      totale = totale + prova.secondi;
+  for (let i = giorno.tentativi.length - 1; i >= 0; i--) {
+    if (typeof giorno.tentativi[i].durataTotaleSessione === "number") {
+      return giorno.tentativi[i].durataTotaleSessione;
     }
   }
-  return totale;
+  return null;
 }
 
 function riassuntoGiorno(giorno) {
@@ -2345,8 +2363,10 @@ function disegnaElencoGiorni() {
 
       if (g.completatoAl !== null) {
         riga.classList.add("pieno");
-        destra = "15/15 in " + g.completatoAl + " prove · totale " +
-          formattaTempo(g.tempoTotale) + " · " + tempi;
+        destra = "15/15 in " + g.completatoAl + " prove";
+        if (g.tempoTotale !== null) {
+          destra = destra + " · tempo reale " + formattaTempo(g.tempoTotale);
+        }
       } else {
         destra = "max " + g.migliore + "/15 · " + g.tentativi + " prove · " + tempi;
       }
@@ -2393,32 +2413,38 @@ function aggiornaConsiglioTempo() {
 function testoRiepilogo() {
   const giorni = ultimiGiorni(GIORNI_NEL_GRAFICO);
   const righe = [];
-  righe.push("Quindici parole — ultimi 7 giorni");
+  let giorniAllenati = 0;
+
+  righe.push("🧠 QUINDICI PAROLE");
+  righe.push("Riepilogo degli ultimi 7 giorni");
+  righe.push("");
+
+  for (let i = 0; i < giorni.length; i++) {
+    if (giorni[i].fatto === true || giorni[i].richiamo !== null) {
+      giorniAllenati = giorniAllenati + 1;
+    }
+  }
+
+  righe.push("🌱 Allenamenti: " + giorniAllenati + " " +
+    (giorniAllenati === 1 ? "giorno" : "giorni") + " su 7");
 
   for (let i = 0; i < giorni.length; i++) {
     const g = giorni[i];
-    let riga = etichettaData(g.chiave) + ": ";
-
     if (g.fatto === false && g.richiamo === null) {
-      riga = riga + "non fatto";
-    } else if (g.fatto === false) {
-      riga = riga + "solo richiamo " + g.richiamo + "/15";
-    } else {
-      if (g.completatoAl !== null) {
-        riga = riga + "15/15 in " + g.completatoAl + " prove, tempo totale " +
-          formattaTempo(g.tempoTotale);
-      } else {
-        riga = riga + "max " + g.migliore + "/15 in " + g.tentativi + " prove";
-      }
-
-      riga = riga + " (" + g.secondi.join("/") + "s)";
-
-      if (g.richiamo !== null) {
-        riga = riga + ", richiamo " + g.richiamo + "/15";
-      }
+      continue;
     }
 
-    righe.push(riga);
+    righe.push("");
+    righe.push("📅 " + etichettaDataCompleta(g.chiave));
+
+    if (g.completatoAl !== null) {
+      righe.push("✅ Completato: 15/15 in " + g.completatoAl + " tentativi");
+      righe.push(g.tempoTotale === null ?
+        "⏱ Tempo reale: non disponibile per questa partita precedente" :
+        "⏱ Tempo reale dall'inizio alla fine: " + formattaTempo(g.tempoTotale));
+    } else if (g.fatto === true) {
+      righe.push("🎯 Risultato migliore: " + g.migliore + "/15");
+    }
 
     const giornoOriginale = trovaGiorno(g.chiave);
     if (giornoOriginale !== null) {
@@ -2427,10 +2453,19 @@ function testoRiepilogo() {
         const tempoProva = typeof prova.tempoStudio === "number" ?
           prova.tempoStudio : prova.secondi;
         const livelloProva = prova.livello === "difficile" ? "Difficile" : "Media";
-        righe.push("  Tentativo " + (prova.numero || (j + 1)) + ": " + livelloProva +
-          ", " + prova.punti + "/15, " + formattaTempo(tempoProva));
+        righe.push("• T" + (prova.numero || (j + 1)) + " · " + livelloProva +
+          " · " + prova.punti + "/15 · studio " + formattaTempo(tempoProva));
       }
     }
+
+    if (g.richiamo !== null) {
+      righe.push("🌙 Richiamo del giorno dopo: " + g.richiamo + "/15");
+    }
+  }
+
+  if (giorniAllenati === 0) {
+    righe.push("");
+    righe.push("Nessun allenamento registrato in questi giorni.");
   }
 
   return righe.join("\n");
