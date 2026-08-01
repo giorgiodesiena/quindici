@@ -259,6 +259,14 @@ body {
 .riquadro b { font-weight: 600; }
 .riquadro.aiuto { border-style: solid; border-color: var(--oro); }
 
+.riepilogo-sessione { border-style: solid; border-color: var(--verde-ok); }
+.riepilogo-livello { margin: 8px 0 10px; font-weight: 600; color: var(--verde-ok); }
+.riga-tentativo, .tentativo-dettaglio {
+  font-family: 'DM Mono', 'Courier New', monospace;
+  font-size: 0.82rem; padding: 6px 0; border-top: 1px dashed var(--carta-ombra);
+}
+.riepilogo-totale { margin-top: 10px; font-weight: 600; }
+
 .iniziali {
   font-family: 'DM Mono', 'Courier New', monospace;
   font-size: 1.2rem; letter-spacing: 0.1em; color: var(--rosso); margin-top: 8px;
@@ -298,15 +306,81 @@ body {
 .pallino.tondo { border-radius: 99px; }
 
 .giorno-riga {
-  display: flex; justify-content: space-between; gap: 10px;
+  display: block;
   font-family: 'DM Mono', 'Courier New', monospace; font-size: 0.82rem;
   color: var(--inchiostro-tenue); padding: 9px 0;
   border-bottom: 1px dashed var(--carta-ombra);
 }
 
+.giorno-intestazione { display: flex; justify-content: space-between; gap: 10px; }
+.giorno-dettagli { margin-top: 7px; padding-left: 12px; border-left: 3px solid var(--carta-ombra); }
+.tentativo-dettaglio { border-top: none; padding: 3px 0; }
+
 .giorno-riga:last-child { border-bottom: none; }
 .giorno-riga.pieno { color: var(--verde-ok); }
 .giorno-riga.vuoto { opacity: 0.55; }
+
+/* ---------- ottimizzazione solo smartphone ---------- */
+
+@media (max-width: 519px) {
+  body {
+    min-height: 100svh;
+    padding: max(10px, env(safe-area-inset-top)) 8px
+      max(20px, env(safe-area-inset-bottom));
+    background: var(--tavolo);
+  }
+
+  body:not([data-schermata="inizio"]) .testata { display: none; }
+
+  .testata { margin: 4px 0 14px; }
+  .occhiello { font-size: 0.66rem; }
+  .titolo { font-size: clamp(2.35rem, 14vw, 3.25rem); margin-top: 4px; }
+  .sottotitolo { margin-top: 7px; font-size: 0.92rem; line-height: 1.35; }
+
+  .pannello {
+    border-radius: 16px;
+    padding: 17px 13px;
+    box-shadow: 0 8px 0 -4px rgba(0,0,0,0.25);
+  }
+  .pannello + .pannello { margin-top: 12px; }
+  .etichetta { margin-bottom: 9px; font-size: 0.68rem; }
+  .spiega { font-size: 1rem; line-height: 1.48; }
+
+  .bottone { min-height: 60px; font-size: 1.08rem; border-radius: 13px; touch-action: manipulation; }
+  .bottone.secondario { min-height: 50px; font-size: 0.94rem; }
+
+  #scelte-livello { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #scelte-tempo { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .scelta { min-height: 58px; font-size: 1rem; touch-action: manipulation; }
+
+  .griglia { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 12px; }
+  .carta { aspect-ratio: 1.08 / 1; }
+  .faccia { border-radius: 10px; padding: 3px; }
+  .faccia-parola { font-size: clamp(0.67rem, 3.3vw, 0.84rem); }
+
+  .griglia-numeri { grid-template-columns: repeat(3, 1fr); gap: 9px; }
+  .numero-disturbo { min-height: 64px; aspect-ratio: auto; font-size: 1.45rem; touch-action: manipulation; }
+
+  .riga-scrittura { gap: 6px; }
+  #casella { min-height: 60px; padding: 0 12px; font-size: 1.05rem; }
+  #bottone-voce { width: 58px; min-height: 60px; }
+  .gettone { padding: 10px 14px; }
+
+  #bottone-coprire, #bottone-controlla {
+    position: sticky;
+    bottom: max(8px, env(safe-area-inset-bottom));
+    z-index: 5;
+  }
+
+  .punteggio { font-size: clamp(3.2rem, 21vw, 4.8rem); }
+  .riquadro { padding: 12px; }
+  .numerone { min-width: calc(50% - 4px); padding: 11px 5px; }
+  .numerone b { font-size: 1.35rem; }
+  .legenda { justify-content: flex-start; gap: 8px 12px; }
+  .giorno-intestazione { flex-direction: column; gap: 3px; }
+  .giorno-dettagli { padding-left: 9px; }
+  .tentativo-dettaglio, .riga-tentativo { font-size: 0.8rem; line-height: 1.35; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .carta-interna, .barra-tempo span, .bottone { transition: none; }
@@ -460,6 +534,7 @@ body {
     <div class="pannello">
       <div class="punteggio" id="punteggio">0<small>/15</small></div>
       <div class="commento" id="commento"></div>
+      <div class="riquadro riepilogo-sessione" id="riepilogo-finale" style="display:none"></div>
       <div class="riquadro" id="tempo-intelligente" style="display:none"></div>
       <div class="griglia" id="griglia-esito"></div>
 
@@ -794,7 +869,8 @@ const stato = {
   vitaTipo: null,
   vitaTitolo: "",
   vitaStorico: [],
-  suggerimentoUsato: false
+  suggerimentoUsato: false,
+  inizioTentativiSessione: 0
 };
 
 /* ---------- deposito dati ----------
@@ -945,6 +1021,7 @@ function mostraSchermata(nome) {
     tutte[i].classList.remove("attiva");
   }
   document.getElementById("schermata-" + nome).classList.add("attiva");
+  document.body.dataset.schermata = nome;
   window.scrollTo(0, 0);
 }
 
@@ -990,6 +1067,9 @@ function iniziaSessione() {
   }
 
   stato.modalita = "sessione";
+  const giornoEsistente = trovaGiorno(chiaveData(new Date()));
+  stato.inizioTentativiSessione = giornoEsistente === null ?
+    0 : giornoEsistente.tentativi.length;
   stato.parole = pescaParole();
   stato.tentativo = 0;
   stato.secondiTentativo = stato.secondiScelti;
@@ -1454,6 +1534,57 @@ function calcolaTempoSuccessivo(punti, totale) {
   return { secondi: prossimo, motivo: motivo };
 }
 
+function datiSessioneCorrente() {
+  const giorno = trovaGiorno(chiaveData(new Date()));
+  const tentativi = giorno === null ? [] :
+    giorno.tentativi.slice(stato.inizioTentativiSessione);
+  let tempoTotale = 0;
+
+  for (let i = 0; i < tentativi.length; i++) {
+    tempoTotale = tempoTotale + (typeof tentativi[i].tempoStudio === "number" ?
+      tentativi[i].tempoStudio : tentativi[i].secondi);
+  }
+
+  return {
+    livello: stato.difficolta,
+    tentativi: tentativi,
+    tempoTotale: tempoTotale
+  };
+}
+
+function disegnaRiepilogoFinale() {
+  const dati = datiSessioneCorrente();
+  const contenitore = document.getElementById("riepilogo-finale");
+  contenitore.innerHTML = "";
+
+  const titolo = document.createElement("b");
+  titolo.textContent = "Riepilogo della partita";
+  contenitore.appendChild(titolo);
+
+  const livello = document.createElement("p");
+  livello.className = "riepilogo-livello";
+  livello.textContent = "Modalità: " +
+    (dati.livello === "difficile" ? "Difficile" : "Media") +
+    " · Tentativi: " + dati.tentativi.length;
+  contenitore.appendChild(livello);
+
+  for (let i = 0; i < dati.tentativi.length; i++) {
+    const prova = dati.tentativi[i];
+    const riga = document.createElement("div");
+    riga.className = "riga-tentativo";
+    const tempo = typeof prova.tempoStudio === "number" ? prova.tempoStudio : prova.secondi;
+    riga.textContent = "Tentativo " + (prova.numero || (i + 1)) +
+      " · " + prova.punti + "/15 · " + formattaTempo(tempo);
+    contenitore.appendChild(riga);
+  }
+
+  const totale = document.createElement("p");
+  totale.className = "riepilogo-totale";
+  totale.textContent = "Tempo complessivo: " + formattaTempo(dati.tempoTotale);
+  contenitore.appendChild(totale);
+  contenitore.style.display = "block";
+}
+
 function mostraEsito(punti, esiti) {
   const totale = stato.parole.length;
   document.getElementById("punteggio").innerHTML = punti + "<small>/" + totale + "</small>";
@@ -1464,10 +1595,12 @@ function mostraEsito(punti, esiti) {
   const riquadroAiuto = document.getElementById("riquadro-aiuto");
   const riquadroStoria = document.getElementById("riquadro-storia");
   const tempoIntelligente = document.getElementById("tempo-intelligente");
+  const riepilogoFinale = document.getElementById("riepilogo-finale");
 
   riquadroAiuto.style.display = "none";
   riquadroStoria.style.display = "none";
   tempoIntelligente.style.display = "none";
+  riepilogoFinale.style.display = "none";
 
   if (stato.modalita !== "richiamo" && punti < totale) {
     const adattamento = calcolaTempoSuccessivo(punti, totale);
@@ -1491,10 +1624,11 @@ function mostraEsito(punti, esiti) {
     bottoneAvanti.textContent = "Riprova con calma";
     bottoneBasta.style.display = "block";
   } else if (punti === 15) {
-    const oggiCompletato = trovaGiorno(chiaveData(new Date()));
-    const tempoComplessivo = tempoTotaleCompletamento(oggiCompletato);
+    const datiFinali = datiSessioneCorrente();
+    const tempoComplessivo = datiFinali.tempoTotale;
     commento.textContent = "Tutte e 15, in " + stato.tentativo + " tentativi e " +
       formattaTempo(tempoComplessivo) + " complessivi. Ottimo allenamento per oggi.";
+    disegnaRiepilogoFinale();
     bottoneAvanti.textContent = "Torna ai progressi";
     bottoneBasta.style.display = "none";
   } else {
@@ -1623,6 +1757,7 @@ function registraTentativo(punti, indiciMancanti) {
   const giorno = giornoDiOggi();
 
   giorno.tentativi.push({
+    numero: stato.tentativo,
     punti: punti,
     secondi: stato.secondiTentativo,
     tempoStudio: stato.secondiUsatiTentativo,
@@ -2197,7 +2332,30 @@ function disegnaElencoGiorni() {
       }
     }
 
-    riga.innerHTML = "<span>" + etichettaData(g.chiave) + "</span><span>" + destra + "</span>";
+    const intestazione = document.createElement("div");
+    intestazione.className = "giorno-intestazione";
+    intestazione.innerHTML = "<span>" + etichettaData(g.chiave) +
+      "</span><span>" + destra + "</span>";
+    riga.appendChild(intestazione);
+
+    const giornoOriginale = trovaGiorno(g.chiave);
+    if (giornoOriginale !== null && giornoOriginale.tentativi.length > 0) {
+      const dettagli = document.createElement("div");
+      dettagli.className = "giorno-dettagli";
+
+      for (let j = 0; j < giornoOriginale.tentativi.length; j++) {
+        const prova = giornoOriginale.tentativi[j];
+        const dettaglio = document.createElement("div");
+        dettaglio.className = "tentativo-dettaglio";
+        const tempoProva = typeof prova.tempoStudio === "number" ?
+          prova.tempoStudio : prova.secondi;
+        const livelloProva = prova.livello === "difficile" ? "Difficile" : "Media";
+        dettaglio.textContent = "T" + (prova.numero || (j + 1)) + " · " +
+          livelloProva + " · " + prova.punti + "/15 · " + formattaTempo(tempoProva);
+        dettagli.appendChild(dettaglio);
+      }
+      riga.appendChild(dettagli);
+    }
     contenitore.appendChild(riga);
   }
 }
@@ -2237,6 +2395,18 @@ function testoRiepilogo() {
     }
 
     righe.push(riga);
+
+    const giornoOriginale = trovaGiorno(g.chiave);
+    if (giornoOriginale !== null) {
+      for (let j = 0; j < giornoOriginale.tentativi.length; j++) {
+        const prova = giornoOriginale.tentativi[j];
+        const tempoProva = typeof prova.tempoStudio === "number" ?
+          prova.tempoStudio : prova.secondi;
+        const livelloProva = prova.livello === "difficile" ? "Difficile" : "Media";
+        righe.push("  Tentativo " + (prova.numero || (j + 1)) + ": " + livelloProva +
+          ", " + prova.punti + "/15, " + formattaTempo(tempoProva));
+      }
+    }
   }
 
   return righe.join("\n");
@@ -2445,6 +2615,7 @@ function preparaManifest() {
   document.head.appendChild(link);
 }
 
+document.body.dataset.schermata = "inizio";
 preparaVoce();
 
 preparaManifest();
