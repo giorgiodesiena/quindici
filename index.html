@@ -461,12 +461,12 @@ body {
       <div class="griglia" id="griglia-esito"></div>
 
       <div class="riquadro aiuto" id="riquadro-aiuto" style="display:none">
-        <b>Ti do una mano.</b> Le parole che ti mancano cominciano per:
+        <b>Un piccolo indizio.</b> Guarda le iniziali, poi prova a recuperare le parole senza scoprirle subito:
         <div class="iniziali" id="iniziali-mancanti"></div>
       </div>
 
       <div class="riquadro" id="riquadro-storia" style="display:none">
-        <b>Prova così, invece di ripeterle.</b>
+        <b id="titolo-strategia">Prova una strategia diversa.</b>
         <p id="testo-storia" style="margin-top:8px"></p>
       </div>
 
@@ -1450,7 +1450,9 @@ function mostraEsito(punti, esiti) {
 
     if (stato.tentativo >= TENTATIVI_PRIMA_DELLA_STORIA) {
       riquadroStoria.style.display = "block";
-      document.getElementById("testo-storia").textContent = costruisciStoria();
+      const suggerimento = costruisciSuggerimento();
+      document.getElementById("titolo-strategia").textContent = suggerimento.titolo;
+      document.getElementById("testo-storia").textContent = suggerimento.testo;
     }
 
     if (stato.tentativo >= TENTATIVI_PRIMA_DELL_AIUTO) {
@@ -1500,27 +1502,61 @@ function iniziali() {
   return lettere.join(" · ");
 }
 
-function costruisciStoria() {
+function parolePerSuggerimento(quante) {
   const base = [];
 
   for (let i = 0; i < stato.mancanti.length; i++) {
     base.push(stato.mancanti[i]);
   }
   for (let i = 0; i < stato.parole.length; i++) {
-    if (base.length < 3) {
+    if (base.length < quante && base.indexOf(stato.parole[i]) === -1) {
       base.push(stato.parole[i]);
     }
   }
+  return base.slice(0, quante);
+}
 
-  const tre = [];
-  for (let i = 0; i < 3 && i < base.length; i++) {
-    tre.push(base[i].toUpperCase());
+function costruisciSuggerimento() {
+  const parole = parolePerSuggerimento(5);
+  const a = parole[0].toUpperCase();
+  const b = parole[1].toUpperCase();
+  const c = parole[2].toUpperCase();
+  const strategia = (stato.tentativo - TENTATIVI_PRIMA_DELLA_STORIA) % 4;
+
+  if (strategia === 0) {
+    return {
+      titolo: "Crea una mini-scena con tre parole.",
+      testo: "Usa " + a + ", " + b + " e " + c + ". Immagina " + a +
+        " enorme che rimbalza sopra " + b + ", mentre " + c +
+        " gira tutt'intorno alla scena. Deve essere una scena vivace, strana e in movimento. " +
+        "Poi crea un'altra mini-scena con le tre parole successive."
+    };
   }
 
-  return "Non ripeterle a pappagallo: legale. Prendi " + tre.join(" → ") +
-         " e mettile in una scena sola, la più assurda che ti viene, con dentro dei movimenti. " +
-         "Poi aggancia la quarta alla terza, la quinta alla quarta e vai avanti così. " +
-         "Una catena si ricorda, una lista no.";
+  if (strategia === 1) {
+    return {
+      titolo: "Metti le parole in posti che conosci.",
+      testo: "Immagina di entrare in casa: " + a + " è sulla porta, " + b +
+        " sul tavolo e " + c + " sul divano. Continua con le altre parole in cucina, " +
+        "alla finestra e vicino al letto. Poi ripercorri lentamente la casa con la mente."
+    };
+  }
+
+  if (strategia === 2) {
+    return {
+      titolo: "Dividi la lista in piccoli gruppi.",
+      testo: "Non affrontare tutte le 15 parole insieme. Forma tre gruppi da cinque: " +
+        "puoi unirle per significato, suono, colore oppure inventare tu un legame. " +
+        "Dai a ogni gruppo un titolo breve e ricorda prima i tre titoli."
+    };
+  }
+
+  return {
+    titolo: "Prova il richiamo attivo, cinque alla volta.",
+    testo: "Guarda cinque parole, poi distogli lo sguardo e prova subito a dirle senza leggere. " +
+      "Controlla, correggi con calma e passa alle cinque successive. Alla fine prova a " +
+      "richiamare i tre gruppi nell'ordine che preferisci."
+  };
 }
 
 /* ---------- registro ---------- */
