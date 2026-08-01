@@ -266,10 +266,10 @@ body {
 
 /* ---------- progressi ---------- */
 
-.numeroni { display: flex; gap: 8px; margin-bottom: 16px; }
+.numeroni { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
 
 .numerone {
-  flex: 1; background: #FFFDF6; border: 2px solid var(--carta-ombra);
+  flex: 1; min-width: calc(50% - 8px); background: #FFFDF6; border: 2px solid var(--carta-ombra);
   border-radius: 12px; padding: 10px 4px; text-align: center;
 }
 
@@ -356,6 +356,7 @@ body {
         <button class="scelta" data-secondi="60">1 min</button>
         <button class="scelta" data-secondi="120">2 min</button>
         <button class="scelta scelta-attiva" data-secondi="180">3 min</button>
+        <button class="scelta" data-secondi="240">4 min</button>
         <button class="scelta" data-secondi="300">5 min</button>
       </div>
       <p class="avviso" id="consiglio-tempo">
@@ -628,6 +629,7 @@ const stato = {
   difficolta: "media",
   secondiScelti: 180,
   secondiTentativo: 180,
+  secondiUsatiTentativo: 0,
   secondiRimasti: 0,
   secondiTotaliFase: 0,
   fase: "blocco",
@@ -852,6 +854,7 @@ function iniziaVita(tipo) {
 function nuovoTentativo() {
   stato.tentativo = stato.tentativo + 1;
   stato.scritte = [];
+  stato.secondiUsatiTentativo = 0;
   partiTimer();
 }
 
@@ -937,6 +940,8 @@ function fermaStudio() {
     return;
   }
   stato.fase = "fine";
+  stato.secondiUsatiTentativo = stato.secondiTotaliFase -
+    Math.max(0, stato.secondiRimasti);
 
   if (stato.idTimer !== null) {
     clearInterval(stato.idTimer);
@@ -1281,7 +1286,10 @@ function mostraEsito(punti, esiti) {
     bottoneAvanti.textContent = "Riprova con calma";
     bottoneBasta.style.display = "block";
   } else if (punti === 15) {
-    commento.textContent = "Tutte e 15, in " + stato.tentativo + " tentativi. Ottimo allenamento per oggi.";
+    const oggiCompletato = trovaGiorno(chiaveData(new Date()));
+    const tempoComplessivo = tempoTotaleCompletamento(oggiCompletato);
+    commento.textContent = "Tutte e 15, in " + stato.tentativo + " tentativi e " +
+      formattaTempo(tempoComplessivo) + " complessivi. Ottimo allenamento per oggi.";
     bottoneAvanti.textContent = "Torna ai progressi";
     bottoneBasta.style.display = "none";
   } else {
@@ -1407,6 +1415,7 @@ function registraTentativo(punti, indiciMancanti) {
   giorno.tentativi.push({
     punti: punti,
     secondi: stato.secondiTentativo,
+    tempoStudio: stato.secondiUsatiTentativo,
     livello: stato.difficolta,
     mancate: indiciMancanti
   });
@@ -1558,10 +1567,28 @@ function iniziaRichiamo() {
 
 /* ---------- progressi ---------- */
 
+function tempoTotaleCompletamento(giorno) {
+  if (giorno === null || giorno.completatoAl === null) {
+    return null;
+  }
+
+  let totale = 0;
+  for (let i = 0; i < giorno.completatoAl; i++) {
+    const prova = giorno.tentativi[i];
+    if (typeof prova.tempoStudio === "number") {
+      totale = totale + prova.tempoStudio;
+    } else {
+      // Compatibilità con gli allenamenti salvati prima di questa funzione.
+      totale = totale + prova.secondi;
+    }
+  }
+  return totale;
+}
+
 function riassuntoGiorno(giorno) {
   const riassunto = {
     fatto: false, migliore: 0, tentativi: 0,
-    completatoAl: null, richiamo: null, secondi: []
+    completatoAl: null, richiamo: null, secondi: [], tempoTotale: null
   };
 
   if (giorno === null) {
@@ -1570,6 +1597,7 @@ function riassuntoGiorno(giorno) {
 
   riassunto.tentativi = giorno.tentativi.length;
   riassunto.completatoAl = giorno.completatoAl;
+  riassunto.tempoTotale = tempoTotaleCompletamento(giorno);
 
   if (giorno.richiamo) {
     riassunto.richiamo = giorno.richiamo.punti;
@@ -1690,6 +1718,7 @@ function disegnaNumeroni() {
   let sommaTentativi = 0;
   let sommaRichiamo = 0;
   let quantiRichiami = 0;
+  let ultimoTempoTotale = null;
 
   for (let i = 0; i < stato.giorni.length; i++) {
     const giorno = stato.giorni[i];
@@ -1701,6 +1730,7 @@ function disegnaNumeroni() {
     if (giorno.completatoAl !== null) {
       giorniCompletati = giorniCompletati + 1;
       sommaTentativi = sommaTentativi + giorno.completatoAl;
+      ultimoTempoTotale = tempoTotaleCompletamento(giorno);
     }
 
     if (giorno.richiamo) {
@@ -1717,6 +1747,11 @@ function disegnaNumeroni() {
   let mediaRichiamo = "—";
   if (quantiRichiami > 0) {
     mediaRichiamo = (sommaRichiamo / quantiRichiami).toFixed(1);
+  }
+
+  let tempoMostrato = "—";
+  if (ultimoTempoTotale !== null) {
+    tempoMostrato = formattaTempo(ultimoTempoTotale);
   }
 
   let striscia = 0;
@@ -1750,7 +1785,8 @@ function disegnaNumeroni() {
   document.getElementById("numeroni").innerHTML =
     '<div class="numerone"><b>' + striscia + '</b><span>giorni di fila</span></div>' +
     '<div class="numerone"><b>' + mediaTentativi + '</b><span>prove per il pieno</span></div>' +
-    '<div class="numerone"><b>' + mediaRichiamo + '</b><span>ricordate il giorno dopo</span></div>';
+    '<div class="numerone"><b>' + mediaRichiamo + '</b><span>ricordate il giorno dopo</span></div>' +
+    '<div class="numerone"><b>' + tempoMostrato + '</b><span>tempo ultimo 15/15</span></div>';
 }
 
 function disegnaGrafico() {
@@ -1940,7 +1976,8 @@ function disegnaElencoGiorni() {
 
       if (g.completatoAl !== null) {
         riga.classList.add("pieno");
-        destra = "15/15 in " + g.completatoAl + " prove · " + tempi;
+        destra = "15/15 in " + g.completatoAl + " prove · totale " +
+          formattaTempo(g.tempoTotale) + " · " + tempi;
       } else {
         destra = "max " + g.migliore + "/15 · " + g.tentativi + " prove · " + tempi;
       }
@@ -1976,7 +2013,8 @@ function testoRiepilogo() {
       riga = riga + "solo richiamo " + g.richiamo + "/15";
     } else {
       if (g.completatoAl !== null) {
-        riga = riga + "15/15 in " + g.completatoAl + " prove";
+        riga = riga + "15/15 in " + g.completatoAl + " prove, tempo totale " +
+          formattaTempo(g.tempoTotale);
       } else {
         riga = riga + "max " + g.migliore + "/15 in " + g.tentativi + " prove";
       }
