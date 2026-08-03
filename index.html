@@ -868,6 +868,7 @@ const stato = {
   suggerimentoUsato: false,
   inizioTentativiSessione: 0,
   inizioSessioneTimestamp: null,
+  inizioTentativoTimestamp: null,
   sessioniLivello: { media: 0, mix: 0, difficile: 0 }
 };
 
@@ -1137,6 +1138,7 @@ function nuovoTentativo() {
   stato.tentativo = stato.tentativo + 1;
   stato.scritte = [];
   stato.secondiUsatiTentativo = 0;
+  stato.inizioTentativoTimestamp = Date.now();
   partiTimer();
 }
 
@@ -1808,6 +1810,8 @@ function registraTentativo(punti, indiciMancanti) {
     punti: punti,
     secondi: stato.secondiTentativo,
     tempoStudio: stato.secondiUsatiTentativo,
+    durataTotaleTentativo: typeof stato.inizioTentativoTimestamp === "number" ?
+      Math.max(1, Math.round((Date.now() - stato.inizioTentativoTimestamp) / 1000)) : null,
     livello: stato.difficolta,
     mancate: indiciMancanti
   };
@@ -2473,11 +2477,11 @@ function testoRiepilogo() {
     if (giornoOriginale !== null) {
       for (let j = 0; j < giornoOriginale.tentativi.length; j++) {
         const prova = giornoOriginale.tentativi[j];
-        const tempoProva = typeof prova.tempoStudio === "number" ?
-          prova.tempoStudio : prova.secondi;
         const livelloProva = nomeLivello(prova.livello);
+        const tempoTentativo = typeof prova.durataTotaleTentativo === "number" ?
+          formattaTempo(prova.durataTotaleTentativo) : "non disponibile";
         righe.push("• T" + (prova.numero || (j + 1)) + " · " + livelloProva +
-          " · " + prova.punti + "/15 · studio " + formattaTempo(tempoProva));
+          " · " + prova.punti + "/15 · tempo complessivo " + tempoTentativo);
       }
     }
 
