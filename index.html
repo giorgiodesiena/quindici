@@ -349,7 +349,7 @@ body {
   .bottone { min-height: 60px; font-size: 1.08rem; border-radius: 13px; touch-action: manipulation; }
   .bottone.secondario { min-height: 50px; font-size: 0.94rem; }
 
-  #scelte-livello { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #scelte-livello { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
   #scelte-tempo { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
   .scelta { min-height: 58px; font-size: 1rem; touch-action: manipulation; }
 
@@ -419,6 +419,7 @@ body {
       <div class="etichetta" style="margin-top:22px">Livello</div>
       <div class="scelte" id="scelte-livello">
         <button class="scelta scelta-attiva" data-livello="media">Media</button>
+        <button class="scelta" data-livello="mix">Mix</button>
         <button class="scelta" data-livello="difficile">Difficile</button>
       </div>
       <p class="avviso" id="spiega-livello">
@@ -867,7 +868,7 @@ const stato = {
   suggerimentoUsato: false,
   inizioTentativiSessione: 0,
   inizioSessioneTimestamp: null,
-  sessioniLivello: { media: 0, difficile: 0 }
+  sessioniLivello: { media: 0, mix: 0, difficile: 0 }
 };
 
 /* ---------- deposito dati ----------
@@ -914,12 +915,10 @@ async function scriviDeposito(chiave, valore) {
 
 /* ---------- utilità ---------- */
 
-function elencoAttivo() {
-  if (stato.difficolta === "difficile") {
-    return PAROLE_DIFFICILI;
-  } else {
-    return PAROLE_MEDIE;
-  }
+function nomeLivello(livello) {
+  if (livello === "difficile") return "Difficile";
+  if (livello === "mix") return "Mix";
+  return "Media";
 }
 
 function normalizza(testo) {
@@ -969,11 +968,7 @@ function mescola(lista) {
   return lista;
 }
 
-function pescaParole() {
-  const elenco = elencoAttivo();
-  const conteggi = stato.difficolta === "difficile" ?
-    BLOCCHI_DIFFICILI_PER_CATEGORIA : BLOCCHI_MEDI_PER_CATEGORIA;
-  const sessioniFatte = stato.sessioniLivello[stato.difficolta] || 0;
+function pescaDaRaccolta(elenco, conteggi, sessioniFatte, quantita) {
   const progresso = Math.min(sessioniFatte, 40) / 40;
   const categorie = [];
   let posizione = 0;
@@ -1000,8 +995,8 @@ function pescaParole() {
   mescola(categorie);
 
   const scelte = [];
-  while (scelte.length < 15) {
-    for (let i = 0; i < categorie.length && scelte.length < 15; i++) {
+  while (scelte.length < quantita) {
+    for (let i = 0; i < categorie.length && scelte.length < quantita; i++) {
       if (categorie[i].length > 0) {
         const blocco = categorie[i].pop();
         scelte.push(blocco[Math.floor(Math.random() * blocco.length)]);
@@ -1010,6 +1005,33 @@ function pescaParole() {
   }
   mescola(scelte);
   return scelte;
+}
+
+function pescaParole() {
+  const sessioniFatte = stato.sessioniLivello[stato.difficolta] || 0;
+
+  if (stato.difficolta === "mix") {
+    // Il rapporto cambia casualmente tra 8+7 e 7+8, così nessuna raccolta prevale.
+    const quantitaMedie = Math.random() < 0.5 ? 8 : 7;
+    const medie = pescaDaRaccolta(
+      PAROLE_MEDIE, BLOCCHI_MEDI_PER_CATEGORIA, sessioniFatte, quantitaMedie
+    );
+    const difficili = pescaDaRaccolta(
+      PAROLE_DIFFICILI, BLOCCHI_DIFFICILI_PER_CATEGORIA,
+      sessioniFatte, 15 - quantitaMedie
+    );
+    return mescola(medie.concat(difficili));
+  }
+
+  if (stato.difficolta === "difficile") {
+    return pescaDaRaccolta(
+      PAROLE_DIFFICILI, BLOCCHI_DIFFICILI_PER_CATEGORIA, sessioniFatte, 15
+    );
+  }
+
+  return pescaDaRaccolta(
+    PAROLE_MEDIE, BLOCCHI_MEDI_PER_CATEGORIA, sessioniFatte, 15
+  );
 }
 
 function pescaVita(tipo) {
@@ -1588,7 +1610,7 @@ function disegnaRiepilogoFinale() {
   const livello = document.createElement("p");
   livello.className = "riepilogo-livello";
   livello.textContent = "Modalità: " +
-    (dati.livello === "difficile" ? "Difficile" : "Media") +
+    nomeLivello(dati.livello) +
     " · Tentativi: " + dati.tentativi.length;
   contenitore.appendChild(livello);
 
@@ -1900,9 +1922,10 @@ async function caricaTutto() {
     try {
       const sessioniSalvate = JSON.parse(testoSessioni);
       stato.sessioniLivello.media = Math.max(0, parseInt(sessioniSalvate.media, 10) || 0);
+      stato.sessioniLivello.mix = Math.max(0, parseInt(sessioniSalvate.mix, 10) || 0);
       stato.sessioniLivello.difficile = Math.max(0, parseInt(sessioniSalvate.difficile, 10) || 0);
     } catch (errore) {
-      stato.sessioniLivello = { media: 0, difficile: 0 };
+      stato.sessioniLivello = { media: 0, mix: 0, difficile: 0 };
     }
   }
 
@@ -2393,7 +2416,7 @@ function disegnaElencoGiorni() {
         dettaglio.className = "tentativo-dettaglio";
         const tempoProva = typeof prova.tempoStudio === "number" ?
           prova.tempoStudio : prova.secondi;
-        const livelloProva = prova.livello === "difficile" ? "Difficile" : "Media";
+        const livelloProva = nomeLivello(prova.livello);
         dettaglio.textContent = "T" + (prova.numero || (j + 1)) + " · " +
           livelloProva + " · " + prova.punti + "/15 · " + formattaTempo(tempoProva);
         dettagli.appendChild(dettaglio);
@@ -2452,7 +2475,7 @@ function testoRiepilogo() {
         const prova = giornoOriginale.tentativi[j];
         const tempoProva = typeof prova.tempoStudio === "number" ?
           prova.tempoStudio : prova.secondi;
-        const livelloProva = prova.livello === "difficile" ? "Difficile" : "Media";
+        const livelloProva = nomeLivello(prova.livello);
         righe.push("• T" + (prova.numero || (j + 1)) + " · " + livelloProva +
           " · " + prova.punti + "/15 · studio " + formattaTempo(tempoProva));
       }
@@ -2520,6 +2543,9 @@ document.getElementById("scelte-livello").addEventListener("click", function (ev
   if (stato.difficolta === "difficile") {
     document.getElementById("spiega-livello").textContent =
       "Parole astratte, quelle che non puoi immaginare: coerenza, inerzia, rammarico.";
+  } else if (stato.difficolta === "mix") {
+    document.getElementById("spiega-livello").textContent =
+      "Un equilibrio sempre diverso di parole medie e difficili, scelte da entrambe le raccolte.";
   } else {
     document.getElementById("spiega-livello").textContent =
       "Parole concrete ma poco usate: grondaia, mattarello, alveare.";
