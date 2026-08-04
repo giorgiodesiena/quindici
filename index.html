@@ -1816,7 +1816,7 @@ function registraTentativo(punti, indiciMancanti) {
     mancate: indiciMancanti
   };
 
-  if (punti === 15 && typeof stato.inizioSessioneTimestamp === "number") {
+  if (typeof stato.inizioSessioneTimestamp === "number") {
     prova.durataTotaleSessione = Math.max(1,
       Math.round((Date.now() - stato.inizioSessioneTimestamp) / 1000));
   }
@@ -2437,62 +2437,123 @@ function aggiornaConsiglioTempo() {
     "se ricordi bene oppure lo aumenta se serve più calma (da 30 secondi a 5 minuti).";
 }
 
+function inizioSettimana(data) {
+  const giorno = data.getDay();
+  const distanzaDaLunedi = giorno === 0 ? 6 : giorno - 1;
+  return new Date(data.getFullYear(), data.getMonth(), data.getDate() - distanzaDaLunedi);
+}
+
+function giorniDellaSettimana(lunedi) {
+  const giorni = [];
+  for (let i = 0; i < 7; i++) {
+    const data = new Date(lunedi.getFullYear(), lunedi.getMonth(), lunedi.getDate() + i);
+    const riassunto = riassuntoGiorno(trovaGiorno(chiaveData(data)));
+    riassunto.chiave = chiaveData(data);
+    riassunto.data = data;
+    giorni.push(riassunto);
+  }
+  return giorni;
+}
+
+function tempoRegistratoTentativo(prova) {
+  if (typeof prova.durataTotaleTentativo === "number") {
+    return { etichetta: "tempo complessivo", secondi: prova.durataTotaleTentativo };
+  }
+  if (typeof prova.tempoStudio === "number") {
+    return { etichetta: "tempo registrato", secondi: prova.tempoStudio };
+  }
+  return { etichetta: "tempo registrato", secondi: prova.secondi || 0 };
+}
+
+function tempoGiornaliero(giorno) {
+  if (giorno === null || giorno.tentativi.length === 0) return null;
+
+  for (let i = giorno.tentativi.length - 1; i >= 0; i--) {
+    if (typeof giorno.tentativi[i].durataTotaleSessione === "number") {
+      return { etichetta: "Tempo reale dall'inizio alla fine", secondi: giorno.tentativi[i].durataTotaleSessione };
+    }
+  }
+
+  let totale = 0;
+  let tuttiCompleti = true;
+  for (let i = 0; i < giorno.tentativi.length; i++) {
+    const tempo = tempoRegistratoTentativo(giorno.tentativi[i]);
+    totale = totale + tempo.secondi;
+    if (tempo.etichetta !== "tempo complessivo") tuttiCompleti = false;
+  }
+  return {
+    etichetta: tuttiCompleti ? "Tempo complessivo dei tentativi" : "Tempo registrato",
+    secondi: totale
+  };
+}
+
 function testoRiepilogo() {
-  const giorni = ultimiGiorni(GIORNI_NEL_GRAFICO);
   const righe = [];
-  let giorniAllenati = 0;
+  const oggi = new Date();
+  const oggiChiave = chiaveData(oggi);
+  const lunediCorrente = inizioSettimana(oggi);
+  const lunediPrecedente = new Date(
+    lunediCorrente.getFullYear(), lunediCorrente.getMonth(), lunediCorrente.getDate() - 7
+  );
+  const settimane = [giorniDellaSettimana(lunediPrecedente), giorniDellaSettimana(lunediCorrente)];
 
   righe.push("🧠 QUINDICI PAROLE");
-  righe.push("Riepilogo degli ultimi 7 giorni");
-  righe.push("");
+  righe.push("Riepilogo per settimane · da lunedì a domenica");
 
-  for (let i = 0; i < giorni.length; i++) {
-    if (giorni[i].fatto === true || giorni[i].richiamo !== null) {
-      giorniAllenati = giorniAllenati + 1;
-    }
-  }
-
-  righe.push("🌱 Allenamenti: " + giorniAllenati + " " +
-    (giorniAllenati === 1 ? "giorno" : "giorni") + " su 7");
-
-  for (let i = 0; i < giorni.length; i++) {
-    const g = giorni[i];
-    if (g.fatto === false && g.richiamo === null) {
-      continue;
+  for (let s = 0; s < settimane.length; s++) {
+    const giorni = settimane[s];
+    let giorniAllenati = 0;
+    for (let i = 0; i < giorni.length; i++) {
+      if (giorni[i].fatto === true || giorni[i].richiamo !== null) giorniAllenati++;
     }
 
     righe.push("");
-    righe.push("📅 " + etichettaDataCompleta(g.chiave));
+    righe.push("📆 Settimana " + etichettaDataCompleta(giorni[0].chiave) +
+      " – " + etichettaDataCompleta(giorni[6].chiave));
+    righe.push("🌱 Allenamenti: " + giorniAllenati + " " +
+      (giorniAllenati === 1 ? "giorno" : "giorni") + " su 7");
 
-    if (g.completatoAl !== null) {
-      righe.push("✅ Completato: 15/15 in " + g.completatoAl + " tentativi");
-      righe.push(g.tempoTotale === null ?
-        "⏱ Tempo reale: non disponibile per questa partita precedente" :
-        "⏱ Tempo reale dall'inizio alla fine: " + formattaTempo(g.tempoTotale));
-    } else if (g.fatto === true) {
-      righe.push("🎯 Risultato migliore: " + g.migliore + "/15");
-    }
+    for (let i = 0; i < giorni.length; i++) {
+      const g = giorni[i];
+      righe.push("");
+      righe.push("📅 " + etichettaDataCompleta(g.chiave));
 
-    const giornoOriginale = trovaGiorno(g.chiave);
-    if (giornoOriginale !== null) {
-      for (let j = 0; j < giornoOriginale.tentativi.length; j++) {
-        const prova = giornoOriginale.tentativi[j];
-        const livelloProva = nomeLivello(prova.livello);
-        const tempoTentativo = typeof prova.durataTotaleTentativo === "number" ?
-          formattaTempo(prova.durataTotaleTentativo) : "non disponibile";
-        righe.push("• T" + (prova.numero || (j + 1)) + " · " + livelloProva +
-          " · " + prova.punti + "/15 · tempo complessivo " + tempoTentativo);
+      if (g.chiave > oggiChiave) {
+        righe.push("▫️ Giorno non ancora trascorso");
+        continue;
+      }
+      if (g.fatto === false && g.richiamo === null) {
+        righe.push("⏭ Allenamento saltato");
+        continue;
+      }
+
+      if (g.completatoAl !== null) {
+        righe.push("✅ Completato: 15/15 in " + g.completatoAl + " tentativi");
+      } else if (g.fatto === true) {
+        righe.push("🎯 Risultato migliore: " + g.migliore + "/15");
+      }
+
+      const giornoOriginale = trovaGiorno(g.chiave);
+      const tempoDelGiorno = tempoGiornaliero(giornoOriginale);
+      if (tempoDelGiorno !== null) {
+        righe.push("⏱ " + tempoDelGiorno.etichetta + ": " + formattaTempo(tempoDelGiorno.secondi));
+      }
+
+      if (giornoOriginale !== null) {
+        for (let j = 0; j < giornoOriginale.tentativi.length; j++) {
+          const prova = giornoOriginale.tentativi[j];
+          const livelloProva = nomeLivello(prova.livello);
+          const tempoTentativo = tempoRegistratoTentativo(prova);
+          righe.push("• T" + (prova.numero || (j + 1)) + " · " + livelloProva +
+            " · " + prova.punti + "/15 · " + tempoTentativo.etichetta + " " +
+            formattaTempo(tempoTentativo.secondi));
+        }
+      }
+
+      if (g.richiamo !== null) {
+        righe.push("🌙 Richiamo del giorno dopo: " + g.richiamo + "/15");
       }
     }
-
-    if (g.richiamo !== null) {
-      righe.push("🌙 Richiamo del giorno dopo: " + g.richiamo + "/15");
-    }
-  }
-
-  if (giorniAllenati === 0) {
-    righe.push("");
-    righe.push("Nessun allenamento registrato in questi giorni.");
   }
 
   return righe.join("\n");
