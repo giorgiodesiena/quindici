@@ -2492,13 +2492,10 @@ function testoRiepilogo() {
   const oggi = new Date();
   const oggiChiave = chiaveData(oggi);
   const lunediCorrente = inizioSettimana(oggi);
-  const lunediPrecedente = new Date(
-    lunediCorrente.getFullYear(), lunediCorrente.getMonth(), lunediCorrente.getDate() - 7
-  );
-  const settimane = [giorniDellaSettimana(lunediPrecedente), giorniDellaSettimana(lunediCorrente)];
+  const settimane = [giorniDellaSettimana(lunediCorrente)];
 
   righe.push("🧠 QUINDICI PAROLE");
-  righe.push("Riepilogo per settimane · da lunedì a domenica");
+  righe.push("Riepilogo della settimana corrente · da lunedì a domenica");
 
   for (let s = 0; s < settimane.length; s++) {
     const giorni = settimane[s];
