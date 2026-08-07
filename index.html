@@ -2446,7 +2446,7 @@ function aggiornaConsiglioTempo() {
     "se ricordi bene oppure lo aumenta se serve più calma (da 30 secondi a 5 minuti).";
 }
 
-function giornateRecentiMedia() {
+function giornateRecentiLivello(livello) {
   const giornate = [];
 
   for (let i = 0; i < stato.giorni.length; i++) {
@@ -2455,7 +2455,7 @@ function giornateRecentiMedia() {
 
     for (let j = 0; j < giorno.tentativi.length; j++) {
       const prova = giorno.tentativi[j];
-      if ((prova.livello || "media") === "media" && prova.punti > migliore) {
+      if ((prova.livello || "media") === livello && prova.punti > migliore) {
         migliore = prova.punti;
       }
     }
@@ -2474,10 +2474,16 @@ function giornateRecentiMedia() {
 function aggiornaConsiglioAvanzamento() {
   const pannello = document.getElementById("pannello-avanzamento");
   const testo = document.getElementById("testo-avanzamento");
-  const giornate = giornateRecentiMedia();
+  const livello = stato.difficolta;
+  const nome = nomeLivello(livello);
+  const giornate = giornateRecentiLivello(livello);
 
-  if (giornate.length < 3 || stato.difficolta !== "media") {
-    pannello.style.display = "none";
+  if (giornate.length < 3) {
+    const mancanti = 3 - giornate.length;
+    const attesa = mancanti === 1 ? "un'altra giornata" : "altre " + mancanti + " giornate";
+    testo.textContent = "Continua con " + nome + " per " + attesa +
+      ". Dopo 3 giornate il gioco ti consiglierà se alzare il livello o diminuire il tempo.";
+    pannello.style.display = "block";
     return;
   }
 
@@ -2486,16 +2492,24 @@ function aggiornaConsiglioAvanzamento() {
   const media = somma / giornate.length;
   let consiglio = "";
 
-  if (media >= 12) {
-    consiglio = "Hai allenato Media per almeno 3 giornate con buona continuità. " +
-      "Quando te la senti, prova Mix mantenendo lo stesso tempo: aggiungerà alcune parole difficili senza cambiare tutto insieme.";
-  } else if (stato.secondiScelti > 60) {
-    consiglio = "Hai completato almeno 3 giornate in Media. Per avanzare con gradualità, " +
-      "puoi restare in Media e provare " + formattaTempo(stato.secondiScelti - 60) +
-      " invece di " + formattaTempo(stato.secondiScelti) + ". Se risulta faticoso, torna pure al tempo precedente.";
+  if (media >= 12 && livello !== "difficile") {
+    const prossimo = livello === "media" ? "Mix" : "Difficile";
+    consiglio = "Negli ultimi 3 allenamenti con " + nome + " il ricordo è stato stabile. " +
+      "Puoi provare " + prossimo + " mantenendo lo stesso tempo. Se risulta faticoso, torna pure al livello precedente.";
+  } else if (media >= 9 && stato.secondiScelti > 60) {
+    consiglio = "I risultati degli ultimi 3 allenamenti con " + nome + " permettono un passo graduale: " +
+      "resta a questo livello e prova " + formattaTempo(stato.secondiScelti - 60) +
+      " invece di " + formattaTempo(stato.secondiScelti) + ". Puoi ripristinare il tempo precedente quando serve più calma.";
+  } else if (media >= 9 && livello !== "difficile") {
+    const prossimo = livello === "media" ? "Mix" : "Difficile";
+    consiglio = "Usi già il tempo più breve con " + nome + ". Il prossimo passo può essere " +
+      prossimo + " con 2:00 minuti, così aumenta il livello ma resta tempo per creare i collegamenti.";
+  } else if (media >= 9) {
+    consiglio = "Sei già a Difficile con il tempo più breve. Mantieni questa impostazione finché resta gestibile: " +
+      "non serve aumentare ancora la difficoltà.";
   } else {
-    consiglio = "Hai completato almeno 3 giornate in Media usando già il tempo più breve. " +
-      "Il prossimo passo può essere Mix con 2:00 minuti, così il livello sale ma resta abbastanza tempo per creare i collegamenti.";
+    consiglio = "Per ora mantieni " + nome + " e lo stesso tempo. Quando il miglior risultato degli ultimi " +
+      "3 allenamenti arriva in media almeno a 9/15, potrai diminuire il tempo; da 12/15 potrai alzare il livello.";
   }
 
   testo.textContent = consiglio;
