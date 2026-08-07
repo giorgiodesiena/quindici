@@ -407,6 +407,11 @@ body {
       <button class="bottone" id="bottone-richiamo">Ricordo le parole di ieri</button>
     </div>
 
+    <div class="pannello acceso" id="pannello-avanzamento" style="display:none">
+      <div class="etichetta">Prossimo passo</div>
+      <p class="spiega" id="testo-avanzamento"></p>
+    </div>
+
     <div class="pannello">
       <div class="etichetta">Come funziona</div>
       <p class="spiega">
@@ -2067,6 +2072,7 @@ function disegnaProgressi() {
   disegnaPosizioni();
   disegnaElencoGiorni();
   aggiornaConsiglioTempo();
+  aggiornaConsiglioAvanzamento();
 }
 
 function disegnaIncoraggiamento() {
@@ -2440,6 +2446,62 @@ function aggiornaConsiglioTempo() {
     "se ricordi bene oppure lo aumenta se serve più calma (da 30 secondi a 5 minuti).";
 }
 
+function giornateRecentiMedia() {
+  const giornate = [];
+
+  for (let i = 0; i < stato.giorni.length; i++) {
+    const giorno = stato.giorni[i];
+    let migliore = -1;
+
+    for (let j = 0; j < giorno.tentativi.length; j++) {
+      const prova = giorno.tentativi[j];
+      if ((prova.livello || "media") === "media" && prova.punti > migliore) {
+        migliore = prova.punti;
+      }
+    }
+
+    if (migliore >= 0) {
+      giornate.push({ data: giorno.data, migliore: migliore });
+    }
+  }
+
+  giornate.sort(function (a, b) {
+    return a.data < b.data ? -1 : 1;
+  });
+  return giornate.slice(-3);
+}
+
+function aggiornaConsiglioAvanzamento() {
+  const pannello = document.getElementById("pannello-avanzamento");
+  const testo = document.getElementById("testo-avanzamento");
+  const giornate = giornateRecentiMedia();
+
+  if (giornate.length < 3 || stato.difficolta !== "media") {
+    pannello.style.display = "none";
+    return;
+  }
+
+  let somma = 0;
+  for (let i = 0; i < giornate.length; i++) somma = somma + giornate[i].migliore;
+  const media = somma / giornate.length;
+  let consiglio = "";
+
+  if (media >= 12) {
+    consiglio = "Hai allenato Media per almeno 3 giornate con buona continuità. " +
+      "Quando te la senti, prova Mix mantenendo lo stesso tempo: aggiungerà alcune parole difficili senza cambiare tutto insieme.";
+  } else if (stato.secondiScelti > 60) {
+    consiglio = "Hai completato almeno 3 giornate in Media. Per avanzare con gradualità, " +
+      "puoi restare in Media e provare " + formattaTempo(stato.secondiScelti - 60) +
+      " invece di " + formattaTempo(stato.secondiScelti) + ". Se risulta faticoso, torna pure al tempo precedente.";
+  } else {
+    consiglio = "Hai completato almeno 3 giornate in Media usando già il tempo più breve. " +
+      "Il prossimo passo può essere Mix con 2:00 minuti, così il livello sale ma resta abbastanza tempo per creare i collegamenti.";
+  }
+
+  testo.textContent = consiglio;
+  pannello.style.display = "block";
+}
+
 function inizioSettimana(data) {
   const giorno = data.getDay();
   const distanzaDaLunedi = giorno === 0 ? 6 : giorno - 1;
@@ -2604,6 +2666,7 @@ document.getElementById("scelte-livello").addEventListener("click", function (ev
   }
   bottone.classList.add("scelta-attiva");
   stato.difficolta = bottone.dataset.livello;
+  aggiornaConsiglioAvanzamento();
 
   if (stato.difficolta === "difficile") {
     document.getElementById("spiega-livello").textContent =
@@ -2623,6 +2686,7 @@ document.getElementById("scelte-tempo").addEventListener("click", function (even
     return;
   }
   impostaTempo(parseInt(bottone.dataset.secondi, 10));
+  aggiornaConsiglioAvanzamento();
 });
 
 document.getElementById("bottone-inizia").addEventListener("click", iniziaSessione);
