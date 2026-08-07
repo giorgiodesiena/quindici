@@ -402,10 +402,9 @@ body {
       <div class="etichetta">Prima di tutto</div>
       <p class="spiega">
         Ti ricordi le 15 parole di <b id="data-richiamo">ieri</b>?
-        Scrivile senza rivederle. Questa è la memoria che conta davvero.
+        Scrivile senza rivederle. Prima di iniziare il gioco di oggi, completa questo richiamo.
       </p>
-      <button class="bottone" id="bottone-richiamo">Provo a ricordare quelle di ieri</button>
-      <button class="bottone secondario" id="bottone-salta-richiamo">Salta, vado all'esercizio di oggi</button>
+      <button class="bottone" id="bottone-richiamo">Ricordo le parole di ieri</button>
     </div>
 
     <div class="pannello">
@@ -1096,11 +1095,11 @@ function disegnaGriglia(contenitore, parole, coperte) {
 /* ---------- sessione ---------- */
 
 function iniziaSessione() {
-  // se c'è ancora una serie da richiamare, la metto da parte prima di sovrascriverla
-  const daRichiamare = serieDaRichiamare();
-  if (daRichiamare !== null) {
-    stato.pendente = daRichiamare;
-    salvaPendente();
+  const richiamoObbligatorio = serieDaRichiamare();
+  if (richiamoObbligatorio !== null) {
+    aggiornaPannelloRichiamo();
+    document.getElementById("pannello-richiamo").scrollIntoView({ behavior: "smooth", block: "start" });
+    return;
   }
 
   stato.modalita = "sessione";
@@ -1940,19 +1939,23 @@ async function caricaTutto() {
 /* ---------- richiamo del giorno dopo ---------- */
 
 function serieDaRichiamare() {
-  const oggi = chiaveData(new Date());
+  const dataOggi = new Date();
+  const oggi = chiaveData(dataOggi);
+  const ieri = chiaveData(new Date(
+    dataOggi.getFullYear(), dataOggi.getMonth(), dataOggi.getDate() - 1
+  ));
   const giorno = trovaGiorno(oggi);
 
-  if (giorno !== null && giorno.richiamo !== null) {
+  if (giorno !== null && giorno.richiamo !== null && giorno.richiamo.da === ieri) {
     return null;
   }
 
-  if (stato.pendente !== null && stato.pendente.data !== oggi) {
-    return stato.pendente;
+  if (stato.serie !== null && stato.serie.data === ieri) {
+    return stato.serie;
   }
 
-  if (stato.serie !== null && stato.serie.data !== oggi) {
-    return stato.serie;
+  if (stato.pendente !== null && stato.pendente.data === ieri) {
+    return stato.pendente;
   }
 
   return null;
@@ -2632,10 +2635,6 @@ document.getElementById("scelte-vita").addEventListener("click", function (event
     return;
   }
   iniziaVita(bottone.dataset.vita);
-});
-
-document.getElementById("bottone-salta-richiamo").addEventListener("click", function () {
-  document.getElementById("pannello-richiamo").style.display = "none";
 });
 
 document.getElementById("griglia-numeri").addEventListener("click", function (evento) {
