@@ -870,6 +870,9 @@ const stato = {
   vitaTitolo: "",
   vitaStorico: [],
   suggerimentoUsato: false,
+  sfidaAutomatica: false,
+  livelloBaseSfida: null,
+  tempoBaseSfida: null,
   inizioTentativiSessione: 0,
   inizioSessioneTimestamp: null,
   inizioTentativoTimestamp: null,
@@ -1099,6 +1102,94 @@ function disegnaGriglia(contenitore, parole, coperte) {
 
 /* ---------- sessione ---------- */
 
+function numeroGiornateLivello(livello) {
+  let totale = 0;
+  for (let i = 0; i < stato.giorni.length; i++) {
+    for (let j = 0; j < stato.giorni[i].tentativi.length; j++) {
+      if ((stato.giorni[i].tentativi[j].livello || "media") === livello) {
+        totale++;
+        break;
+      }
+    }
+  }
+  return totale;
+}
+
+function ultimoGiornoAllenato() {
+  const oggi = chiaveData(new Date());
+  let ultimo = null;
+  for (let i = 0; i < stato.giorni.length; i++) {
+    const giorno = stato.giorni[i];
+    if (giorno.data < oggi && giorno.tentativi.length > 0 &&
+        (ultimo === null || giorno.data > ultimo.data)) {
+      ultimo = giorno;
+    }
+  }
+  return ultimo;
+}
+
+function livelloSuccessivo(livello) {
+  if (livello === "media") return "mix";
+  if (livello === "mix") return "difficile";
+  return null;
+}
+
+function indiceLivello(livello) {
+  if (livello === "difficile") return 2;
+  if (livello === "mix") return 1;
+  return 0;
+}
+
+function prontoPerSfida(livello) {
+  const giornate = giornateRecentiLivello(livello);
+  if (giornate.length < 3) return false;
+  let somma = 0;
+  for (let i = 0; i < giornate.length; i++) somma += giornate[i].migliore;
+  return somma / giornate.length >= 9 || numeroGiornateLivello(livello) >= 7;
+}
+
+function preparaSfidaAutomatica() {
+  stato.sfidaAutomatica = false;
+  stato.livelloBaseSfida = null;
+  stato.tempoBaseSfida = null;
+
+  const oggi = trovaGiorno(chiaveData(new Date()));
+  if (oggi !== null && oggi.tentativi.length > 0) return;
+
+  const ultimoGiorno = ultimoGiornoAllenato();
+  if (ultimoGiorno === null) return;
+  const ultimaProva = ultimoGiorno.tentativi[ultimoGiorno.tentativi.length - 1];
+
+  // Dopo un giorno sfida si torna al livello base. Quando il livello superiore
+  // è stato allenato abbastanza, diventa il nuovo livello base.
+  if (ultimaProva.sfidaAutomatica === true && ultimaProva.livelloBaseSfida) {
+    const livelloSfida = ultimaProva.livello;
+    const promuoviBase = numeroGiornateLivello(livelloSfida) >= 5 && prontoPerSfida(livelloSfida);
+    impostaLivello(promuoviBase ? livelloSfida : ultimaProva.livelloBaseSfida);
+    impostaTempo(ultimaProva.tempoBaseSfida || stato.secondiScelti);
+    return;
+  }
+
+  const ultimoLivello = ultimaProva.livello || "media";
+  if (indiceLivello(ultimoLivello) > indiceLivello(stato.difficolta) &&
+      numeroGiornateLivello(ultimoLivello) >= 5 && prontoPerSfida(ultimoLivello)) {
+    impostaLivello(ultimoLivello);
+  }
+
+  const livelloBase = stato.difficolta;
+  const prossimo = livelloSuccessivo(livelloBase);
+  if (prossimo === null || numeroGiornateLivello(livelloBase) < 5 ||
+      !prontoPerSfida(livelloBase) || (ultimaProva.livello || "media") !== livelloBase) {
+    return;
+  }
+
+  stato.sfidaAutomatica = true;
+  stato.livelloBaseSfida = livelloBase;
+  stato.tempoBaseSfida = stato.secondiScelti;
+  impostaLivello(prossimo);
+  impostaTempo(Math.min(300, stato.secondiScelti + 60));
+}
+
 function iniziaSessione() {
   const richiamoObbligatorio = serieDaRichiamare();
   if (richiamoObbligatorio !== null) {
@@ -1107,6 +1198,7 @@ function iniziaSessione() {
     return;
   }
 
+  preparaSfidaAutomatica();
   stato.modalita = "sessione";
   stato.inizioSessioneTimestamp = Date.now();
   const giornoEsistente = trovaGiorno(chiaveData(new Date()));
@@ -1156,6 +1248,9 @@ function partiTimer() {
 
   if (stato.modalita === "vita") {
     document.getElementById("fase-studio").textContent = stato.vitaTitolo + " — preparati";
+  } else if (stato.sfidaAutomatica === true) {
+    document.getElementById("fase-studio").textContent =
+      "Giorno sfida " + nomeLivello(stato.difficolta) + " — tentativo " + stato.tentativo;
   } else {
     document.getElementById("fase-studio").textContent =
       "Tentativo " + stato.tentativo + " — preparati";
@@ -1817,6 +1912,9 @@ function registraTentativo(punti, indiciMancanti) {
     durataTotaleTentativo: typeof stato.inizioTentativoTimestamp === "number" ?
       Math.max(1, Math.round((Date.now() - stato.inizioTentativoTimestamp) / 1000)) : null,
     livello: stato.difficolta,
+    sfidaAutomatica: stato.sfidaAutomatica,
+    livelloBaseSfida: stato.livelloBaseSfida,
+    tempoBaseSfida: stato.tempoBaseSfida,
     mancate: indiciMancanti
   };
 
@@ -2490,12 +2588,22 @@ function aggiornaConsiglioAvanzamento() {
   let somma = 0;
   for (let i = 0; i < giornate.length; i++) somma = somma + giornate[i].migliore;
   const media = somma / giornate.length;
+  const totaleGiornate = numeroGiornateLivello(livello);
+  const prossimoLivello = livelloSuccessivo(livello);
   let consiglio = "";
 
-  if (media >= 12 && livello !== "difficile") {
+  if (prossimoLivello !== null && totaleGiornate >= 5 && prontoPerSfida(livello)) {
+    consiglio = "Hai allenato " + nome + " abbastanza a lungo. Da ora il gioco alternerà automaticamente " +
+      nome + " e " + nomeLivello(prossimoLivello) + ": nel giorno sfida avrai un minuto in più, " +
+      "poi tornerai al livello precedente. Dopo abbastanza giorni sfida, il livello superiore diventerà quello abituale.";
+  } else if (media >= 12 && livello !== "difficile") {
     const prossimo = livello === "media" ? "Mix" : "Difficile";
+    const mancantiSfida = Math.max(0, 5 - totaleGiornate);
+    const attesaSfida = mancantiSfida === 1 ?
+      "un'altra giornata" : "altre " + mancantiSfida + " giornate";
     consiglio = "Negli ultimi 3 allenamenti con " + nome + " il ricordo è stato stabile. " +
-      "Puoi provare " + prossimo + " mantenendo lo stesso tempo. Se risulta faticoso, torna pure al livello precedente.";
+      "Puoi provare " + prossimo + " mantenendo lo stesso tempo. Dopo " + attesaSfida +
+      " il gioco inizierà anche ad alternare automaticamente i due livelli.";
   } else if (media >= 9 && stato.secondiScelti > 60) {
     consiglio = "I risultati degli ultimi 3 allenamenti con " + nome + " permettono un passo graduale: " +
       "resta a questo livello e prova " + formattaTempo(stato.secondiScelti - 60) +
@@ -2668,30 +2776,33 @@ function impostaTempo(secondi) {
   }
 }
 
-document.getElementById("scelte-livello").addEventListener("click", function (evento) {
-  const bottone = evento.target.closest(".scelta");
-  if (bottone === null) {
-    return;
-  }
-
+function impostaLivello(livello) {
+  stato.difficolta = livello;
   const tutti = document.querySelectorAll("#scelte-livello .scelta");
   for (let i = 0; i < tutti.length; i++) {
-    tutti[i].classList.remove("scelta-attiva");
+    tutti[i].classList.toggle("scelta-attiva", tutti[i].dataset.livello === livello);
   }
-  bottone.classList.add("scelta-attiva");
-  stato.difficolta = bottone.dataset.livello;
-  aggiornaConsiglioAvanzamento();
 
-  if (stato.difficolta === "difficile") {
+  if (livello === "difficile") {
     document.getElementById("spiega-livello").textContent =
       "Parole astratte, quelle che non puoi immaginare: coerenza, inerzia, rammarico.";
-  } else if (stato.difficolta === "mix") {
+  } else if (livello === "mix") {
     document.getElementById("spiega-livello").textContent =
       "Un equilibrio sempre diverso di parole medie e difficili, scelte da entrambe le raccolte.";
   } else {
     document.getElementById("spiega-livello").textContent =
       "Parole concrete ma poco usate: grondaia, mattarello, alveare.";
   }
+  aggiornaConsiglioAvanzamento();
+}
+
+document.getElementById("scelte-livello").addEventListener("click", function (evento) {
+  const bottone = evento.target.closest(".scelta");
+  if (bottone === null) {
+    return;
+  }
+
+  impostaLivello(bottone.dataset.livello);
 });
 
 document.getElementById("scelte-tempo").addEventListener("click", function (evento) {
