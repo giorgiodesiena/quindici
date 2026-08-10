@@ -59,6 +59,7 @@ body {
 
 .schermata { display: none; }
 .schermata.attiva { display: block; }
+.schermata:focus { outline: none; }
 
 .pannello {
   background: var(--carta); color: var(--inchiostro);
@@ -116,7 +117,7 @@ body {
 /* ---------- scelte ---------- */
 
 .scelte { display: flex; gap: 10px; }
-#scelte-vita { flex-direction: column; }
+#scelte-vita { flex-direction: column; margin-top: 14px; }
 
 .scelta {
   flex: 1; min-height: 54px; border-radius: 12px;
@@ -133,6 +134,40 @@ body {
 .scelta:disabled {
   opacity: 1; cursor: default;
 }
+
+.scelta-vita {
+  position: relative; display: grid; grid-template-columns: 42px minmax(0, 1fr);
+  align-items: center; gap: 2px 10px; width: 100%; min-height: 76px;
+  padding: 11px 12px; text-align: left; font-family: 'Archivo', sans-serif;
+}
+
+.scelta-vita .vita-icona {
+  grid-row: 1 / span 2; align-self: center; font-size: 1.55rem; text-align: center;
+}
+
+.scelta-vita .vita-nome { font-size: 1.02rem; line-height: 1.2; color: var(--inchiostro); }
+.scelta-vita .vita-descrizione {
+  display: block; margin-top: 3px; font-size: 0.84rem; line-height: 1.32;
+  color: var(--inchiostro-tenue); font-weight: 400;
+}
+
+.scelta-vita.scelta-consigliata {
+  border-color: var(--verde-ok); background: #E6F2EA;
+  box-shadow: inset 4px 0 0 var(--verde-ok);
+}
+
+.vita-badge {
+  display: none; grid-column: 2; width: max-content; margin-top: 5px;
+  padding: 3px 7px; border-radius: 999px; background: var(--verde-ok); color: #FFF;
+  font-size: 0.75rem; line-height: 1.2; letter-spacing: 0.04em; text-transform: uppercase;
+}
+
+.scelta-vita.scelta-consigliata .vita-badge { display: inline-block; }
+.vita-stato { border-style: solid; border-color: var(--verde-ok); }
+.vita-stato b { display: block; margin-bottom: 3px; color: var(--verde-ok); }
+.vita-stato .avviso { margin-top: 8px; }
+.vita-contesto { margin-top: 12px; border-style: solid; border-color: var(--verde-ok); }
+.vita-contesto .avviso { margin-top: 5px; }
 
 /* ---------- timer ---------- */
 
@@ -189,6 +224,22 @@ body {
 
 .carta.giusta .faccia-parola { background: #E6F2EA; border-color: var(--verde-ok); color: var(--verde-ok); }
 .carta.persa .faccia-parola { background: #FBE9E7; border-color: var(--rosso); color: var(--rosso); }
+
+.griglia.vita-griglia { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.griglia.vita-griglia .carta { aspect-ratio: 1.35 / 1; min-height: 100px; }
+.griglia.vita-griglia.vita-frasi { grid-template-columns: 1fr; }
+.griglia.vita-griglia.vita-frasi .carta { aspect-ratio: 2.5 / 1; min-height: 120px; }
+.griglia.vita-griglia .faccia-parola {
+  flex-direction: column; gap: 5px; padding: 8px;
+  font-size: clamp(1rem, 4.2vw, 1.12rem); line-height: 1.2;
+}
+.griglia.vita-griglia .carta.persa .faccia-parola {
+  background: #FFF7DF; border-color: #A86F00; color: var(--inchiostro);
+}
+.esito-vita-testo {
+  display: block; font-size: 0.8rem; line-height: 1.2; font-weight: 500;
+  color: var(--inchiostro-tenue);
+}
 
 /* ---------- disturbo ---------- */
 
@@ -472,6 +523,11 @@ body {
   .tentativo-dettaglio, .riga-tentativo { font-size: 0.84rem; line-height: 1.4; }
 }
 
+@media (max-width: 360px) {
+  .griglia.vita-griglia { grid-template-columns: 1fr; }
+  .griglia.vita-griglia .carta { aspect-ratio: 2.7 / 1; min-height: 104px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .carta-interna, .barra-tempo span, .bottone { transition: none; }
 }
@@ -539,13 +595,36 @@ body {
     <div class="pannello acceso">
       <div class="etichetta">Vita quotidiana</div>
       <p class="spiega">
-        Allenati con piccole cose utili nella giornata. Scegli una situazione:
-        sono esercizi brevi da 3 a 5 elementi e non cambiano il punteggio delle 15 parole.
+        Piccoli esercizi per ricordare cose utili nella giornata. Il gioco sceglie da solo
+        da 3 a 5 elementi e un tempo adatto. Si fanno al massimo due prove e non cambiano
+        il risultato delle 15 parole.
       </p>
+      <div class="riquadro vita-stato" id="vita-stato" aria-live="polite"></div>
       <div class="scelte" id="scelte-vita">
-        <button class="scelta" data-vita="spesa">Lista della spesa</button>
-        <button class="scelta" data-vita="appuntamento">Appuntamento</button>
-        <button class="scelta" data-vita="cose">Tre cose da fare</button>
+        <button class="scelta scelta-vita" data-vita="spesa">
+          <span class="vita-icona" aria-hidden="true">🛒</span>
+          <span><b class="vita-nome">Lista della spesa</b>
+            <small class="vita-descrizione">Prodotti di reparti diversi, come in un acquisto vero.</small></span>
+          <span class="vita-badge">Consigliato oggi</span>
+        </button>
+        <button class="scelta scelta-vita" data-vita="appuntamento">
+          <span class="vita-icona" aria-hidden="true">📅</span>
+          <span><b class="vita-nome">Un appuntamento</b>
+            <small class="vita-descrizione">Giorno, ora, luogo e altri dettagli utili.</small></span>
+          <span class="vita-badge">Consigliato oggi</span>
+        </button>
+        <button class="scelta scelta-vita" data-vita="cose">
+          <span class="vita-icona" aria-hidden="true">✓</span>
+          <span><b class="vita-nome">Cose da fare</b>
+            <small class="vita-descrizione">Azioni concrete da organizzare durante la giornata.</small></span>
+          <span class="vita-badge">Consigliato oggi</span>
+        </button>
+        <button class="scelta scelta-vita" data-vita="uscita">
+          <span class="vita-icona" aria-hidden="true">🧥</span>
+          <span><b class="vita-nome">Prepararsi a uscire</b>
+            <small class="vita-descrizione">Le cose da portare prima di lasciare casa.</small></span>
+          <span class="vita-badge">Consigliato oggi</span>
+        </button>
       </div>
     </div>
 
@@ -593,6 +672,7 @@ body {
       <div class="etichetta" id="fase-studio" style="text-align:center">Preparati</div>
       <div class="orologio" id="orologio">0:05</div>
       <div class="barra-tempo"><span id="barra"></span></div>
+      <div class="riquadro vita-contesto" id="contesto-vita-studio" style="display:none"></div>
       <div class="griglia" id="griglia-studio"></div>
       <button class="bottone" id="bottone-coprire">Carte ancora coperte</button>
     </div>
@@ -601,10 +681,10 @@ body {
   <!-- ============ DISTURBO ============ -->
   <section class="schermata" id="schermata-disturbo">
     <div class="pannello">
-      <div class="etichetta" style="text-align:center">Pausa obbligata</div>
+      <div class="etichetta" id="etichetta-disturbo" style="text-align:center">Pausa obbligata</div>
       <div class="orologio" id="orologio-disturbo">0:20</div>
       <div class="barra-tempo"><span id="barra-disturbo"></span></div>
-      <p class="spiega" style="text-align:center; margin-top:14px">
+      <p class="spiega" id="istruzione-disturbo" style="text-align:center; margin-top:14px">
         Tocca i numeri <b>in ordine</b>, dall'1 al 12.
       </p>
       <div class="griglia-numeri" id="griglia-numeri"></div>
@@ -629,7 +709,7 @@ body {
         <input id="casella" type="text" placeholder="Una parola, poi Invio"
                autocomplete="off" autocorrect="off" autocapitalize="off"
                spellcheck="false" enterkeyhint="done" aria-describedby="istruzione-ripeti">
-        <button id="bottone-voce" title="Detta a voce" aria-label="Detta una parola a voce"
+        <button id="bottone-voce" title="Detta a voce" aria-label="Detta una parola a voce" aria-pressed="false"
                 style="display:none">🎤</button>
       </div>
       <div class="contatore" id="contatore">0 parole scritte</div>
@@ -993,29 +1073,115 @@ const BLOCCHI_DIFFICILI_COMPLETI = BLOCCHI_DIFFICILI_PER_CATEGORIA.concat([3, 3,
 const VITA_QUOTIDIANA = {
   spesa: {
     titolo: "Piccola lista della spesa",
-    quanti: 5,
-    gruppi: [[
-      "pane","latte","pasta","riso","olio","burro","formaggio","uova","miele","caffè",
-      "mele","pere","arance","limoni","banane","pomodori","patate","carote","zucchine","insalata",
-      "biscotti","farina","zucchero","sale","sapone","dentifricio","tovaglioli","acqua","yogurt","prosciutto"
-    ]]
+    nomeBreve: "Spesa",
+    minimo: 3,
+    massimo: 5,
+    selezione: "categorie",
+    contesto: "Immagina di entrare al supermercato e percorrere i reparti in ordine.",
+    strategia: "Metti ogni prodotto nel suo reparto mentale: così ricordi un piccolo percorso, non una lista.",
+    gruppi: [
+      { categoria: "frutta", valori: ["mele","pere","arance","limoni","banane","pesche","kiwi","uva","fragole","mandarini"] },
+      { categoria: "verdura", valori: ["pomodori","patate","carote","zucchine","insalata","cipolle","spinaci","peperoni","finocchi","melanzane"] },
+      { categoria: "dispensa", valori: ["pasta","riso","olio","farina","zucchero","sale","caffè","biscotti","miele","tonno"] },
+      { categoria: "frigorifero", valori: ["latte","burro","formaggio","uova","yogurt","prosciutto","mozzarella","ricotta","panna","margarina"] },
+      { categoria: "casa", valori: ["sapone","dentifricio","tovaglioli","spugne","detersivo","pellicola","fazzoletti","sacchetti","carta","shampoo"] },
+      { categoria: "bevande", valori: ["acqua","tè","camomilla","succo","aranciata","limonata","sciroppo","cacao","orzo","bibita"] }
+    ]
   },
   appuntamento: {
     titolo: "Dettagli dell'appuntamento",
-    quanti: 3,
+    nomeBreve: "Appuntamento",
+    minimo: 3,
+    massimo: 5,
+    selezione: "ordinate",
+    contesto: "Immagina di segnare l'appuntamento sul calendario e di prepararti per uscire.",
+    strategia: "Unisci i dettagli in una frase: giorno, ora, luogo, motivo e cosa portare.",
+    scenari: [
+      { luogo: "ambulatorio", motivo: "controllo", portare: "tessera" },
+      { luogo: "dentista", motivo: "visita", portare: "tessera" },
+      { luogo: "fisioterapia", motivo: "seduta", portare: "asciugamano" },
+      { luogo: "barbiere", motivo: "taglio", portare: "contanti" },
+      { luogo: "posta", motivo: "spedizione", portare: "pacco" },
+      { luogo: "banca", motivo: "documenti", portare: "tessera" },
+      { luogo: "officina", motivo: "riparazione", portare: "chiavi" },
+      { luogo: "municipio", motivo: "documenti", portare: "modulo" },
+      { luogo: "biblioteca", motivo: "ritiro", portare: "tessera" },
+      { luogo: "ottico", motivo: "controllo", portare: "occhiali" }
+    ],
     gruppi: [
-      ["lunedì","martedì","mercoledì","giovedì","venerdì","sabato"],
-      ["medico","dentista","farmacia","fisioterapia","barbiere","posta","banca","officina"],
-      ["nove","dieci","undici","quindici","sedici","diciassette"]
+      { campo: "Giorno", categoria: "giorno", valori: ["lunedì","martedì","mercoledì","giovedì","venerdì","sabato"] },
+      { campo: "Ora", categoria: "ora", valori: ["nove","dieci","undici","quattordici","quindici","sedici","diciassette","diciotto"] },
+      { campo: "Luogo", categoria: "luogo", valori: ["ambulatorio","dentista","fisioterapia","barbiere","posta","banca","officina","municipio","biblioteca","ottico"] },
+      { campo: "Motivo", categoria: "motivo", valori: ["controllo","visita","seduta","taglio","spedizione","documenti","riparazione","ritiro"] },
+      { campo: "Portare", categoria: "oggetto", valori: ["tessera","asciugamano","contanti","pacco","chiavi","modulo","occhiali"] }
     ]
   },
   cose: {
-    titolo: "Tre cose da fare",
-    quanti: 3,
-    gruppi: [[
-      "telefonare","camminare","annaffiare","riordinare","cucinare","comprare","ritirare","spedire",
-      "prenotare","controllare","pagare","leggere","scrivere","riposare","stendere","apparecchiare"
-    ]]
+    titolo: "Cose da fare oggi",
+    nomeBreve: "Cose da fare",
+    minimo: 3,
+    massimo: 5,
+    selezione: "categorie",
+    contesto: "Immagina la giornata dal mattino alla sera e colloca ogni azione in un momento preciso.",
+    strategia: "Visualizza te stesso mentre completi le azioni, una dopo l'altra.",
+    gruppi: [
+      { categoria: "casa", valori: [
+        { testo: "annaffiare le piante", aliases: ["annaffiare","piante"] },
+        { testo: "riordinare il tavolo", aliases: ["riordinare","tavolo"] },
+        { testo: "stendere il bucato", aliases: ["stendere","bucato"] },
+        { testo: "apparecchiare la tavola", aliases: ["apparecchiare","tavola"] },
+        { testo: "svuotare la lavastoviglie", aliases: ["svuotare","lavastoviglie"] },
+        { testo: "chiudere le finestre", aliases: ["chiudere","finestre"] }
+      ]},
+      { categoria: "contatti", valori: [
+        { testo: "telefonare a Marco", aliases: ["telefonare","Marco"] },
+        { testo: "scrivere ad Anna", aliases: ["scrivere","Anna"] },
+        { testo: "chiamare il barbiere", aliases: ["chiamare","barbiere"] },
+        { testo: "salutare il vicino", aliases: ["salutare","vicino"] },
+        { testo: "rispondere a Paolo", aliases: ["rispondere","Paolo"] },
+        { testo: "avvisare Lucia", aliases: ["avvisare","Lucia"] }
+      ]},
+      { categoria: "commissioni", valori: [
+        { testo: "ritirare un pacco", aliases: ["ritirare","pacco"] },
+        { testo: "comprare il pane", aliases: ["comprare","pane"] },
+        { testo: "spedire una lettera", aliases: ["spedire","lettera"] },
+        { testo: "pagare una bolletta", aliases: ["pagare","bolletta"] },
+        { testo: "portare le bottiglie", aliases: ["portare","bottiglie"] },
+        { testo: "prenotare il barbiere", aliases: ["prenotare","barbiere"] }
+      ]},
+      { categoria: "tempo libero", valori: [
+        { testo: "fare una passeggiata", aliases: ["passeggiata","camminare"] },
+        { testo: "leggere il giornale", aliases: ["leggere","giornale"] },
+        { testo: "ascoltare la radio", aliases: ["ascoltare","radio"] },
+        { testo: "chiamare un amico", aliases: ["chiamare","amico"] },
+        { testo: "sistemare le fotografie", aliases: ["sistemare","fotografie"] },
+        { testo: "fare le parole crociate", aliases: ["crociate","parolecrociate"] }
+      ]},
+      { categoria: "organizzazione", valori: [
+        { testo: "controllare la posta", aliases: ["controllare","posta"] },
+        { testo: "scrivere la lista", aliases: ["scrivere","lista"] },
+        { testo: "preparare i vestiti", aliases: ["preparare","vestiti"] },
+        { testo: "mettere la sveglia", aliases: ["sveglia","mettere"] },
+        { testo: "caricare il telefono", aliases: ["caricare","telefono"] },
+        { testo: "controllare il calendario", aliases: ["calendario","controllare"] }
+      ]}
+    ]
+  },
+  uscita: {
+    titolo: "Prepararsi a uscire",
+    nomeBreve: "Prepararsi a uscire",
+    minimo: 3,
+    massimo: 5,
+    selezione: "categorie",
+    contesto: "Immagina di essere davanti alla porta e di controllare ciò che porti con te.",
+    strategia: "Fai un percorso mentale: tasche, borsa, abbigliamento, commissione e comfort.",
+    gruppi: [
+      { categoria: "essenziali", valori: ["chiavi","telefono","portafoglio","occhiali","agenda","monete","fazzoletti","penna"] },
+      { categoria: "documenti", valori: ["tessera","patente","documenti","biglietto","ricevuta","modulo","indirizzo","promemoria"] },
+      { categoria: "meteo", valori: ["ombrello","cappello","sciarpa","giacca","guanti","occhiali da sole","impermeabile","ventaglio"] },
+      { categoria: "commissione", valori: ["pacco","bottiglie","lettera","borsa","libro","spesa","giornale","scarpe"] },
+      { categoria: "comfort", valori: ["acqua","caramelle","salviette","custodia","pettine","fazzoletti","borraccia","spuntino"] }
+    ]
   }
 };
 
@@ -1048,6 +1214,15 @@ const stato = {
   ascoltoAcceso: false,
   vitaTipo: null,
   vitaTitolo: "",
+  vitaElementi: [],
+  vitaQuanti: 3,
+  vitaLivello: 1,
+  vitaSecondiIniziali: 45,
+  vitaMaxTentativi: 2,
+  vitaSessioneId: null,
+  vitaInizioSessioneTimestamp: null,
+  vitaPrescrizione: null,
+  vitaRevisioneUsata: false,
   vitaStorico: [],
   suggerimentoUsato: false,
   strategiaBreveMostrata: false,
@@ -1077,6 +1252,7 @@ const stato = {
   sessioniLivello: { media: 0, mix: 0, difficile: 0 }
 };
 let codaSalvataggioGiorni = Promise.resolve();
+let codaSalvataggioVita = Promise.resolve();
 
 /* ---------- deposito dati ----------
    Dentro l'anteprima di Claude esiste window.storage.
@@ -1349,21 +1525,358 @@ function pescaParole() {
   return scelte;
 }
 
-function pescaVita(tipo) {
-  const esercizio = VITA_QUOTIDIANA[tipo];
-  const scelte = [];
+function primaProvaRecordVita(record) {
+  if (!record || !record.tipo) return null;
+  if (Array.isArray(record.tentativi) && record.tentativi.length > 0) {
+    return {
+      data: record.data,
+      tipo: record.tipo,
+      punti: Number(record.tentativi[0].punti) || 0,
+      totale: Number(record.totale) || Number(record.tentativi[0].totale) || 0,
+      secondi: Number(record.secondiIniziali) || Number(record.tentativi[0].secondi) || null
+    };
+  }
+  if ((parseInt(record.tentativo, 10) || 0) === 1) {
+    return {
+      data: record.data,
+      tipo: record.tipo,
+      punti: Number(record.punti) || 0,
+      totale: Number(record.totale) || 0,
+      secondi: Number(record.secondiIniziali) || Number(record.secondi) || null
+    };
+  }
+  return null;
+}
 
-  if (esercizio.gruppi.length === 1) {
-    const copia = esercizio.gruppi[0].slice();
-    mescola(copia);
-    return copia.slice(0, esercizio.quanti);
+function primeProveVita(tipo) {
+  const prove = [];
+  const dateUsate = {};
+  for (let i = 0; i < stato.vitaStorico.length; i++) {
+    const prova = primaProvaRecordVita(stato.vitaStorico[i]);
+    const chiave = prova !== null && prova.data ? prova.data : "record-" + i;
+    if (prova !== null && prova.tipo === tipo && prova.totale > 0 && !dateUsate[chiave]) {
+      prove.push(prova);
+      dateUsate[chiave] = true;
+    }
+  }
+  return prove;
+}
+
+function tempoBaseVita(quanti) {
+  if (quanti >= 5) return 75;
+  if (quanti === 4) return 60;
+  return 45;
+}
+
+function profiloVita(tipo) {
+  const esercizio = VITA_QUOTIDIANA[tipo];
+  const prove = primeProveVita(tipo);
+  const ultima = prove.length > 0 ? prove[prove.length - 1] : null;
+  let quanti = esercizio.minimo;
+  let secondi = tempoBaseVita(quanti);
+  let motivo = "Partiamo con una prova breve e tranquilla.";
+
+  if (ultima !== null && Number.isFinite(ultima.secondi)) {
+    quanti = Math.max(esercizio.minimo, Math.min(esercizio.massimo, ultima.totale));
+    secondi = ultima.secondi;
+    motivo = "Mantengo un carico simile alle prove recenti.";
+  } else if (ultima !== null) {
+    motivo = "Il nuovo percorso parte con tre elementi e un tempo breve, senza usare i vecchi tempi.";
   }
 
-  for (let i = 0; i < esercizio.gruppi.length; i++) {
-    const gruppo = esercizio.gruppi[i];
-    scelte.push(gruppo[Math.floor(Math.random() * gruppo.length)]);
+  const proveComparabili = [];
+  for (let i = prove.length - 1; i >= 0; i--) {
+    const prova = prove[i];
+    if (prova.totale !== quanti || !Number.isFinite(prova.secondi) || prova.secondi !== secondi) break;
+    proveComparabili.unshift(prova);
+  }
+  const ultimeQuattro = proveComparabili.slice(-4);
+  const ultimeTre = proveComparabili.slice(-3);
+  const solide = ultimeQuattro.filter(function (prova) {
+    return prova.punti / prova.totale >= 0.8;
+  }).length;
+  const faticose = ultimeTre.filter(function (prova) {
+    return prova.punti / prova.totale <= 0.5;
+  }).length;
+
+  if (ultimeQuattro.length >= 4 && solide >= 3) {
+    if (quanti < esercizio.massimo) {
+      quanti++;
+      motivo = "Le ultime prove sono state solide: aggiungo un solo elemento.";
+    } else {
+      secondi = Math.max(25, secondi - 5);
+      motivo = "La quantità è già adatta: riduco il tempo di appena 5 secondi.";
+    }
+  } else if (ultimeTre.length >= 3 && faticose >= 2) {
+    if (quanti > esercizio.minimo) {
+      quanti--;
+      motivo = "Alleggerisco la prova di un elemento per lasciare più energia alla strategia.";
+    } else {
+      secondi = Math.min(90, secondi + 10);
+      motivo = "Mantengo tre elementi e aggiungo 10 secondi di calma.";
+    }
+  }
+
+  secondi = Math.max(25, Math.min(90, Math.round(secondi / 5) * 5));
+  return {
+    tipo: tipo,
+    quanti: quanti,
+    livello: quanti - esercizio.minimo + 1,
+    secondi: secondi,
+    motivo: motivo
+  };
+}
+
+function tipoVitaConsigliato() {
+  const tipi = Object.keys(VITA_QUOTIDIANA);
+  const conteggi = {};
+  for (let i = 0; i < tipi.length; i++) conteggi[tipi[i]] = 0;
+  const primeRecenti = [];
+  for (let i = 0; i < stato.vitaStorico.length; i++) {
+    const prova = primaProvaRecordVita(stato.vitaStorico[i]);
+    if (prova !== null) primeRecenti.push(prova);
+  }
+  const storicoRecente = primeRecenti.slice(-12);
+  for (let i = 0; i < storicoRecente.length; i++) {
+    const prova = storicoRecente[i];
+    if (prova !== null && conteggi[prova.tipo] !== undefined) conteggi[prova.tipo]++;
+  }
+  let minimo = Infinity;
+  for (let i = 0; i < tipi.length; i++) minimo = Math.min(minimo, conteggi[tipi[i]]);
+  const candidate = tipi.filter(function (tipo) { return conteggi[tipo] === minimo; });
+  const oggi = new Date();
+  const numeroGiorno = Math.floor(Date.UTC(
+    oggi.getFullYear(), oggi.getMonth(), oggi.getDate()
+  ) / 86400000);
+  return candidate[numeroGiorno % candidate.length];
+}
+
+function aggiornaPannelloVita() {
+  const tipo = tipoVitaConsigliato();
+  const profilo = profiloVita(tipo);
+  const esercizio = VITA_QUOTIDIANA[tipo];
+  const bottoni = document.querySelectorAll("#scelte-vita [data-vita]");
+  for (let i = 0; i < bottoni.length; i++) {
+    const consigliato = bottoni[i].dataset.vita === tipo;
+    bottoni[i].classList.toggle("scelta-consigliata", consigliato);
+    if (consigliato) bottoni[i].setAttribute("aria-describedby", "vita-stato");
+    else bottoni[i].removeAttribute("aria-describedby");
+  }
+
+  const contenitore = document.getElementById("vita-stato");
+  contenitore.innerHTML = "";
+  const titolo = document.createElement("b");
+  titolo.textContent = "Oggi ti propongo: " + esercizio.nomeBreve;
+  const testo = document.createElement("span");
+  testo.textContent = profilo.quanti + " elementi · " + formattaTempo(profilo.secondi) +
+    ". Puoi comunque scegliere un'altra situazione.";
+  contenitore.appendChild(titolo);
+  contenitore.appendChild(testo);
+
+  const lunedi = chiaveData(inizioSettimana(new Date()));
+  const oggi = chiaveData(new Date());
+  let sessioniSettimana = 0;
+  for (let i = 0; i < stato.vitaStorico.length; i++) {
+    const prova = primaProvaRecordVita(stato.vitaStorico[i]);
+    if (prova !== null && prova.data >= lunedi && prova.data <= oggi) sessioniSettimana++;
+  }
+  if (sessioniSettimana > 0) {
+    const attivita = document.createElement("p");
+    attivita.className = "avviso";
+    attivita.textContent = "Questa settimana: " + sessioniSettimana +
+      (sessioniSettimana === 1 ? " esercizio breve di vita quotidiana." :
+        " esercizi brevi di vita quotidiana.");
+    contenitore.appendChild(attivita);
+  }
+}
+
+function elementiRecentiVita(tipo) {
+  const recenti = [];
+  const storico = stato.vitaStorico.slice(-12);
+  for (let i = 0; i < storico.length; i++) {
+    const record = storico[i];
+    const elementi = record && Array.isArray(record.valori) ? record.valori :
+      (record && Array.isArray(record.elementi) ? record.elementi : []);
+    if (record && record.tipo === tipo) {
+      for (let j = 0; j < elementi.length; j++) {
+        recenti.push(normalizza(elementi[j]));
+      }
+    }
+  }
+  return recenti;
+}
+
+function terminiSignificativiVita(testo) {
+  const paroleDaSaltare = ["a","ad","al","alla","alle","da","di","del","della",
+    "il","lo","la","i","gli","le","un","uno","una"];
+  return String(testo).split(/[^A-Za-zÀ-ÿ0-9]+/).map(function (parola) {
+    return normalizza(parola);
+  }).filter(function (parola) {
+    return parola.length >= 4 && paroleDaSaltare.indexOf(parola) === -1;
+  });
+}
+
+function creaElementoVita(valore, gruppo) {
+  const testo = typeof valore === "string" ? valore : valore.testo;
+  const campo = gruppo.campo || null;
+  const etichetta = campo === null ? testo : campo + ": " + testo;
+  const aliases = [etichetta, testo];
+  const parole = testo.split(/[^A-Za-zÀ-ÿ0-9]+/);
+  const termini = terminiSignificativiVita(testo);
+  if (parole.length <= 1 && typeof valore === "object" && Array.isArray(valore.aliases)) {
+    for (let i = 0; i < valore.aliases.length; i++) aliases.push(valore.aliases[i]);
+  } else if (termini.length >= 2) {
+    aliases.push(termini.join(" "));
+  }
+  return {
+    label: etichetta,
+    valore: testo,
+    aliases: aliases,
+    termini: termini,
+    categoria: gruppo.categoria || "",
+    campo: campo
+  };
+}
+
+function valoreVitaNonRecente(gruppo, recenti) {
+  const valori = gruppo.valori.slice();
+  mescola(valori);
+  for (let i = 0; i < valori.length; i++) {
+    const testo = typeof valori[i] === "string" ? valori[i] : valori[i].testo;
+    if (recenti.indexOf(normalizza(testo)) === -1) return valori[i];
+  }
+  return valori[0];
+}
+
+function pescaVita(tipo, quanti) {
+  const esercizio = VITA_QUOTIDIANA[tipo];
+  const gruppi = esercizio.gruppi.slice();
+  const recenti = elementiRecentiVita(tipo);
+  const scelte = [];
+  const usate = [];
+  const terminiUsati = [];
+
+  if (tipo === "appuntamento" && Array.isArray(esercizio.scenari)) {
+    const giorno = valoreVitaNonRecente(gruppi[0], recenti);
+    const ora = valoreVitaNonRecente(gruppi[1], recenti);
+    const scenari = esercizio.scenari.slice();
+    mescola(scenari);
+    scenari.sort(function (a, b) {
+      const ripetizioniA = [a.luogo, a.motivo, a.portare].filter(function (valore) {
+        return recenti.indexOf(normalizza(valore)) !== -1;
+      }).length;
+      const ripetizioniB = [b.luogo, b.motivo, b.portare].filter(function (valore) {
+        return recenti.indexOf(normalizza(valore)) !== -1;
+      }).length;
+      return ripetizioniA - ripetizioniB;
+    });
+    const scenario = scenari[0];
+    const valoriScenario = [giorno, ora, scenario.luogo, scenario.motivo, scenario.portare];
+    for (let i = 0; i < quanti; i++) scelte.push(creaElementoVita(valoriScenario[i], gruppi[i]));
+    return scelte;
+  }
+
+  if (esercizio.selezione === "categorie") mescola(gruppi);
+
+  for (let i = 0; i < gruppi.length && scelte.length < quanti; i++) {
+    const gruppo = gruppi[i];
+    const valori = gruppo.valori.slice();
+    mescola(valori);
+    let scelta = null;
+
+    for (let passaggio = 0; passaggio < 2 && scelta === null; passaggio++) {
+      for (let j = 0; j < valori.length; j++) {
+        const elemento = creaElementoVita(valori[j], gruppo);
+        const chiave = normalizza(elemento.valore);
+        const troppoRecente = recenti.indexOf(chiave) !== -1;
+        const collisione = elemento.termini.some(function (termine) {
+          return terminiUsati.indexOf(termine) !== -1;
+        });
+        if (usate.indexOf(chiave) === -1 && !collisione &&
+            (passaggio === 1 || !troppoRecente)) {
+          scelta = elemento;
+          break;
+        }
+      }
+    }
+    if (scelta !== null) {
+      scelte.push(scelta);
+      usate.push(normalizza(scelta.valore));
+      for (let i = 0; i < scelta.termini.length; i++) terminiUsati.push(scelta.termini[i]);
+    }
   }
   return scelte;
+}
+
+function sostituisciNumeriVita(testo) {
+  const numeri = {
+    "9": "nove", "10": "dieci", "11": "undici", "14": "quattordici",
+    "15": "quindici", "16": "sedici", "17": "diciassette", "18": "diciotto"
+  };
+  return testo.replace(/\b(9|10|11|14|15|16|17|18)\b/g, function (numero) {
+    return numeri[numero] || numero;
+  });
+}
+
+function formaCompletaVita(testo) {
+  const preparato = sostituisciNumeriVita(String(testo).toLowerCase());
+  return normalizza(preparato);
+}
+
+function formeInputVita(testo) {
+  const preparato = sostituisciNumeriVita(String(testo).toLowerCase());
+  const formaCompleta = normalizza(preparato);
+  const forme = formaCompleta.length >= 2 ? [formaCompleta] : [];
+  const parole = preparato.split(/[^A-Za-zÀ-ÿ0-9]+/);
+  for (let i = 0; i < parole.length; i++) {
+    const forma = normalizza(parole[i]);
+    if (forma.length >= 3 && forme.indexOf(forma) === -1) forme.push(forma);
+  }
+  return forme;
+}
+
+function distanzaMassimoUno(a, b) {
+  if (Math.abs(a.length - b.length) > 1) return false;
+  let i = 0;
+  let j = 0;
+  let differenze = 0;
+  while (i < a.length && j < b.length) {
+    if (a[i] === b[j]) {
+      i++;
+      j++;
+    } else {
+      differenze++;
+      if (differenze > 1) return false;
+      if (a.length > b.length) i++;
+      else if (b.length > a.length) j++;
+      else {
+        i++;
+        j++;
+      }
+    }
+  }
+  if (i < a.length || j < b.length) differenze++;
+  return differenze <= 1;
+}
+
+function corrispondeElementoVita(testoUtente, elemento) {
+  const formeUtente = formeInputVita(testoUtente);
+  const aliases = Array.isArray(elemento.aliases) ? elemento.aliases : [elemento.label];
+  const elementoFrase = typeof elemento.valore === "string" && elemento.valore.trim().indexOf(" ") !== -1;
+  for (let i = 0; i < aliases.length; i++) {
+    const formaAlias = formaCompletaVita(aliases[i]);
+    if (formaAlias.length < 2) continue;
+    for (let j = 0; j < formeUtente.length; j++) {
+      if (formeUtente[j] === formaAlias) return true;
+      if (elementoFrase && formaAlias.length >= 8 &&
+          formeUtente[j].length > formaAlias.length && formeUtente[j].indexOf(formaAlias) !== -1) return true;
+      if (formeUtente[j].length >= 4 && formeUtente[j].length === formaAlias.length &&
+          formeUtente[j].slice(0, -1) === formaAlias.slice(0, -1)) return true;
+      if (formeUtente[j].length >= 5 && formaAlias.length >= 5 &&
+          distanzaMassimoUno(formeUtente[j], formaAlias)) return true;
+    }
+  }
+  return false;
 }
 
 function mostraSchermata(nome) {
@@ -1371,9 +1884,14 @@ function mostraSchermata(nome) {
   for (let i = 0; i < tutte.length; i++) {
     tutte[i].classList.remove("attiva");
   }
-  document.getElementById("schermata-" + nome).classList.add("attiva");
+  const schermataAttiva = document.getElementById("schermata-" + nome);
+  schermataAttiva.classList.add("attiva");
   document.body.dataset.schermata = nome;
   window.scrollTo(0, 0);
+  if (nome !== "ripeti") {
+    schermataAttiva.setAttribute("tabindex", "-1");
+    setTimeout(function () { schermataAttiva.focus(); }, 0);
+  }
 }
 
 /* ---------- carte ---------- */
@@ -1400,6 +1918,8 @@ function disegnaGriglia(contenitore, parole, coperte) {
     const dietro = document.createElement("div");
     dietro.className = "faccia faccia-retro";
     dietro.textContent = String(i + 1);
+    dietro.setAttribute("aria-label", "Carta coperta " + (i + 1));
+    dietro.setAttribute("aria-hidden", coperte === true ? "false" : "true");
 
     interna.appendChild(davanti);
     interna.appendChild(dietro);
@@ -1692,12 +2212,22 @@ function iniziaVita(tipo) {
     return;
   }
 
+  const profilo = profiloVita(tipo);
   stato.modalita = "vita";
   stato.vitaTipo = tipo;
   stato.vitaTitolo = esercizio.titolo;
-  stato.parole = pescaVita(tipo);
+  stato.vitaPrescrizione = profilo;
+  stato.vitaQuanti = profilo.quanti;
+  stato.vitaLivello = profilo.livello;
+  stato.vitaSecondiIniziali = profilo.secondi;
+  stato.vitaElementi = pescaVita(tipo, profilo.quanti);
+  stato.parole = stato.vitaElementi.map(function (elemento) { return elemento.label; });
+  stato.vitaSessioneId = chiaveData(new Date()) + "-vita-" + Date.now() + "-" +
+    Math.floor(Math.random() * 100000);
+  stato.vitaInizioSessioneTimestamp = Date.now();
+  stato.vitaRevisioneUsata = false;
   stato.tentativo = 0;
-  stato.secondiTentativo = stato.secondiScelti;
+  stato.secondiTentativo = profilo.secondi;
   nuovoTentativo();
 }
 
@@ -1710,7 +2240,11 @@ function nuovoTentativo() {
 }
 
 function partiTimer() {
-  disegnaGriglia(document.getElementById("griglia-studio"), stato.parole, true);
+  const grigliaStudio = document.getElementById("griglia-studio");
+  grigliaStudio.classList.toggle("vita-griglia", stato.modalita === "vita");
+  grigliaStudio.classList.toggle("vita-frasi", stato.modalita === "vita" &&
+    (stato.vitaTipo === "appuntamento" || stato.vitaTipo === "cose"));
+  disegnaGriglia(grigliaStudio, stato.parole, true);
   mostraSchermata("studio");
 
   const bottone = document.getElementById("bottone-coprire");
@@ -1718,11 +2252,15 @@ function partiTimer() {
   bottone.textContent = "Carte ancora coperte";
 
   if (stato.modalita === "vita") {
-    document.getElementById("fase-studio").textContent = stato.vitaTitolo + " — preparati";
+    document.getElementById("fase-studio").textContent = stato.vitaTitolo +
+      " — prova " + stato.tentativo + " di " + stato.vitaMaxTentativi;
+    aggiornaContestoVitaStudio();
   } else if (stato.sfidaAutomatica === true) {
+    document.getElementById("contesto-vita-studio").style.display = "none";
     document.getElementById("fase-studio").textContent =
       "Giorno sfida " + nomeLivello(stato.difficolta) + " — tentativo " + stato.tentativo;
   } else {
+    document.getElementById("contesto-vita-studio").style.display = "none";
     document.getElementById("fase-studio").textContent =
       "Tentativo " + stato.tentativo + " — preparati";
   }
@@ -1748,12 +2286,47 @@ function partiTimer() {
   }, 1000);
 }
 
+function aggiornaContestoVitaStudio() {
+  const esercizio = VITA_QUOTIDIANA[stato.vitaTipo];
+  const contenitore = document.getElementById("contesto-vita-studio");
+  contenitore.innerHTML = "";
+  const titolo = document.createElement("b");
+  const testo = document.createElement("p");
+  testo.className = "avviso";
+  if (stato.tentativo === 1) {
+    titolo.textContent = esercizio.contesto;
+    if (stato.vitaTipo === "appuntamento") {
+      const campi = stato.vitaElementi.map(function (elemento) {
+        return elemento.campo ? elemento.campo.toLowerCase() : elemento.categoria;
+      });
+      testo.textContent = "Unisci i dettagli in una frase: " + campi.join(", ") + ".";
+    } else if (stato.vitaTipo === "spesa") {
+      testo.textContent = "Percorri mentalmente questi reparti: " +
+        stato.vitaElementi.map(function (elemento) { return elemento.categoria; }).join(" → ") + ".";
+    } else if (stato.vitaTipo === "uscita") {
+      testo.textContent = "Controlla mentalmente " + stato.vitaElementi.length +
+        " punti prima della porta: " +
+        stato.vitaElementi.map(function (elemento) { return elemento.categoria; }).join(", ") + ".";
+    } else {
+      testo.textContent = esercizio.strategia;
+    }
+  } else {
+    titolo.textContent = "Seconda e ultima prova.";
+    testo.textContent = "Riprendi lo stesso percorso mentale che hai già creato, senza aggiungere altre tecniche.";
+  }
+  contenitore.appendChild(titolo);
+  contenitore.appendChild(testo);
+  contenitore.style.display = "block";
+}
+
 function scopriEMemorizza() {
   const carte = document.querySelectorAll("#griglia-studio .carta");
   for (let i = 0; i < carte.length; i++) {
     carte[i].classList.remove("coperta");
     const facciaParola = carte[i].querySelector(".faccia-parola");
     if (facciaParola) facciaParola.setAttribute("aria-hidden", "false");
+    const facciaRetro = carte[i].querySelector(".faccia-retro");
+    if (facciaRetro) facciaRetro.setAttribute("aria-hidden", "true");
   }
 
   if (stato.modalita === "sessione") salvaSerie();
@@ -1762,7 +2335,8 @@ function scopriEMemorizza() {
   bottone.disabled = false;
   bottone.textContent = "Le so, copri le carte";
 
-  document.getElementById("fase-studio").textContent =
+  document.getElementById("fase-studio").textContent = stato.modalita === "vita" ?
+    stato.vitaTitolo + " — " + formattaTempo(stato.secondiTentativo) :
     "Memorizza — " + formattaTempo(stato.secondiTentativo);
 
   stato.fase = "studio";
@@ -1809,6 +2383,10 @@ function fermaStudio() {
   const carte = document.querySelectorAll("#griglia-studio .carta");
   for (let i = 0; i < carte.length; i++) {
     carte[i].classList.add("coperta");
+    const facciaParola = carte[i].querySelector(".faccia-parola");
+    const facciaRetro = carte[i].querySelector(".faccia-retro");
+    if (facciaParola) facciaParola.setAttribute("aria-hidden", "true");
+    if (facciaRetro) facciaRetro.setAttribute("aria-hidden", "false");
   }
 
   setTimeout(function () {
@@ -1818,17 +2396,33 @@ function fermaStudio() {
 
 /* ---------- compito di disturbo ---------- */
 
+function durataDisturboCorrente() {
+  return stato.modalita === "vita" ? 12 : SECONDI_DISTURBO;
+}
+
+function ultimoNumeroDisturbo() {
+  return stato.modalita === "vita" ? 6 : 12;
+}
+
 function partiDisturbo() {
   mostraSchermata("disturbo");
   stato.sequenzaDisturboCompletata = false;
   stato.tempoDisturboScaduto = false;
   preparaNumeri();
 
-  let rimasti = SECONDI_DISTURBO;
+  const durataDisturbo = durataDisturboCorrente();
+  const ultimoNumero = ultimoNumeroDisturbo();
+  let rimasti = durataDisturbo;
   document.getElementById("orologio-disturbo").textContent = formattaTempo(rimasti);
   document.getElementById("barra-disturbo").style.width = "100%";
+  document.getElementById("etichetta-disturbo").textContent = stato.modalita === "vita" ?
+    "Breve cambio di attenzione" : "Pausa obbligata";
+  document.getElementById("istruzione-disturbo").innerHTML =
+    "Tocca i numeri <b>in ordine</b>, dall'1 al " + ultimoNumero + ".";
   document.getElementById("stato-numeri").textContent =
-    "Completa almeno una sequenza. Serve a spostare davvero l'attenzione dalle parole.";
+    stato.modalita === "vita" ?
+      "Una piccola pausa aiuta a verificare ciò che è rimasto in mente, senza fretta." :
+      "Completa almeno una sequenza. Serve a spostare davvero l'attenzione dalle parole.";
   document.getElementById("bottone-salta-numeri").style.display = "none";
 
   if (stato.idTimerDisturbo !== null) {
@@ -1842,7 +2436,7 @@ function partiDisturbo() {
   stato.idTimerDisturbo = setInterval(function () {
     rimasti = rimasti - 1;
     document.getElementById("orologio-disturbo").textContent = formattaTempo(rimasti);
-    const percentuale = (rimasti / SECONDI_DISTURBO) * 100;
+    const percentuale = (rimasti / durataDisturbo) * 100;
     document.getElementById("barra-disturbo").style.width = percentuale + "%";
 
     if (rimasti <= 0) {
@@ -1854,11 +2448,11 @@ function partiDisturbo() {
         concludiDisturbo();
       } else {
         document.getElementById("stato-numeri").textContent =
-          "Il tempo è finito. Completa la sequenza da 1 a 12 per continuare.";
+          "La pausa è finita. Completa la sequenza da 1 a " + ultimoNumero + " per continuare.";
         stato.idTimeoutSaltaDisturbo = setTimeout(function () {
           document.getElementById("bottone-salta-numeri").style.display = "block";
           stato.idTimeoutSaltaDisturbo = null;
-        }, 10000);
+        }, stato.modalita === "vita" ? 6000 : 10000);
       }
     }
   }, 1000);
@@ -1879,7 +2473,8 @@ function concludiDisturbo() {
 
 function preparaNumeri() {
   const numeri = [];
-  for (let i = 1; i <= 12; i++) {
+  const ultimoNumero = ultimoNumeroDisturbo();
+  for (let i = 1; i <= ultimoNumero; i++) {
     numeri.push(i);
   }
   mescola(numeri);
@@ -1911,11 +2506,11 @@ function toccaNumero(bottone) {
     bottone.classList.remove("sbagliato");
     stato.prossimoNumero = stato.prossimoNumero + 1;
 
-    if (stato.prossimoNumero > 12) {
+    if (stato.prossimoNumero > ultimoNumeroDisturbo()) {
       stato.sequenzaDisturboCompletata = true;
       document.getElementById("stato-numeri").textContent =
         stato.tempoDisturboScaduto === true ?
-          "Sequenza completata." : "Sequenza completata. Aspetta che finiscano i 20 secondi.";
+          "Sequenza completata." : "Sequenza completata. Aspetta che finisca la breve pausa.";
 
       if (stato.tempoDisturboScaduto === true) {
         concludiDisturbo();
@@ -1936,6 +2531,8 @@ function preparaRipeti() {
   const istruzione = document.getElementById("istruzione-ripeti");
   const bottoneControlla = document.getElementById("bottone-controlla");
   const etichettaCasella = document.getElementById("etichetta-casella");
+  const casella = document.getElementById("casella");
+  const bottoneVoce = document.getElementById("bottone-voce");
   bottoneControlla.disabled = false;
 
   if (stato.modalita === "richiamo") {
@@ -1945,25 +2542,34 @@ function preparaRipeti() {
     bottoneControlla.textContent = "Non me ne vengono altre: continua";
     etichettaCasella.textContent = "Scrivi una parola di ieri che ti è tornata in mente";
   } else if (stato.modalita === "vita") {
-    etichetta.textContent = stato.vitaTitolo;
-    istruzione.textContent = "Scrivi gli elementi che ricordi. Va bene anche procedere con calma.";
-    bottoneControlla.textContent = "Vediamo cosa ricordo";
-    etichettaCasella.textContent = "Scrivi un elemento ricordato";
+    etichetta.textContent = stato.vitaTitolo + " — prova " + stato.tentativo +
+      " di " + stato.vitaMaxTentativi;
+    istruzione.textContent = "Scrivi gli elementi che sono rimasti in mente. Quando non ne vengono altri, puoi continuare: non serve ricordarli tutti.";
+    bottoneControlla.textContent = "Non me ne vengono altri: continua";
+    etichettaCasella.textContent = "Scrivi un elemento che ti è tornato in mente";
+    casella.placeholder = "Un elemento, poi Invio";
   } else {
     etichetta.textContent = "Tentativo " + stato.tentativo;
     istruzione.textContent = "Scrivi tutto quello che ricordi.";
     bottoneControlla.textContent = "Vediamo quante ne ho prese";
     etichettaCasella.textContent = "Scrivi una parola ricordata";
+    casella.placeholder = "Una parola, poi Invio";
   }
 
-  document.getElementById("casella").value = "";
+  if (stato.modalita === "richiamo") casella.placeholder = "Una parola, poi Invio";
+  const etichettaVoce = stato.modalita === "vita" ?
+    "Detta una risposta a voce" : "Detta una parola a voce";
+  bottoneVoce.setAttribute("aria-label", etichettaVoce);
+  bottoneVoce.setAttribute("aria-pressed", "false");
+  bottoneVoce.title = etichettaVoce;
+  casella.value = "";
   aggiornaGettoni();
   mostraSchermata("ripeti");
-  document.getElementById("casella").focus();
+  casella.focus();
 }
 
 function aggiungiTesto(testo) {
-  const pulita = normalizza(testo);
+  const pulita = stato.modalita === "vita" ? formaCompletaVita(testo) : normalizza(testo);
 
   if (pulita.length < 2) {
     return;
@@ -1971,7 +2577,9 @@ function aggiungiTesto(testo) {
 
   let giaPresente = false;
   for (let i = 0; i < stato.scritte.length; i++) {
-    if (normalizza(stato.scritte[i]) === pulita) {
+    const chiaveScritta = stato.modalita === "vita" ?
+      formaCompletaVita(stato.scritte[i]) : normalizza(stato.scritte[i]);
+    if (chiaveScritta === pulita) {
       giaPresente = true;
     }
   }
@@ -2000,9 +2608,10 @@ function aggiornaGettoni() {
     contenitore.appendChild(gettone);
   }
 
-  let testo = stato.scritte.length + " parole scritte";
+  const nomeElementi = stato.modalita === "vita" ? " risposte inserite" : " parole scritte";
+  let testo = stato.scritte.length + nomeElementi;
   if (stato.scritte.length === 1) {
-    testo = "1 parola scritta";
+    testo = stato.modalita === "vita" ? "1 risposta inserita" : "1 parola scritta";
   }
   document.getElementById("contatore").textContent = testo;
 }
@@ -2030,10 +2639,13 @@ function preparaVoce() {
   ascolto.onresult = function (evento) {
     for (let i = evento.resultIndex; i < evento.results.length; i++) {
       const frase = evento.results[i][0].transcript;
-      const pezzi = frase.split(" ");
-
-      for (let j = 0; j < pezzi.length; j++) {
-        aggiungiTesto(pezzi[j]);
+      if (stato.modalita === "vita") {
+        aggiungiTesto(frase);
+      } else {
+        const pezzi = frase.split(" ");
+        for (let j = 0; j < pezzi.length; j++) {
+          aggiungiTesto(pezzi[j]);
+        }
       }
     }
     aggiornaGettoni();
@@ -2058,7 +2670,11 @@ function accendiVoce() {
     return;
   }
   stato.ascoltoAcceso = true;
-  document.getElementById("bottone-voce").classList.add("acceso");
+  const bottone = document.getElementById("bottone-voce");
+  bottone.classList.add("acceso");
+  bottone.setAttribute("aria-pressed", "true");
+  bottone.setAttribute("aria-label", "Interrompi la dettatura");
+  bottone.title = "Interrompi la dettatura";
 
   try {
     stato.ascolto.start();
@@ -2072,7 +2688,13 @@ function spegniVoce() {
     return;
   }
   stato.ascoltoAcceso = false;
-  document.getElementById("bottone-voce").classList.remove("acceso");
+  const bottone = document.getElementById("bottone-voce");
+  const etichetta = stato.modalita === "vita" ?
+    "Detta una risposta a voce" : "Detta una parola a voce";
+  bottone.classList.remove("acceso");
+  bottone.setAttribute("aria-pressed", "false");
+  bottone.setAttribute("aria-label", etichetta);
+  bottone.title = etichetta;
 
   try {
     stato.ascolto.stop();
@@ -2099,14 +2721,21 @@ function controlla() {
   const esiti = [];
   const mancanti = [];
   const indiciMancanti = [];
+  const scritteUsate = [];
 
   for (let i = 0; i < stato.parole.length; i++) {
     const parolaNormale = normalizza(stato.parole[i]);
     let trovata = false;
 
     for (let j = 0; j < scritteNormali.length; j++) {
-      if (scritteNormali[j] === parolaNormale) {
+      if (stato.modalita !== "vita" && scritteUsate[j] === true) continue;
+      const corrisponde = stato.modalita === "vita" && stato.vitaElementi[i] ?
+        corrispondeElementoVita(stato.scritte[j], stato.vitaElementi[i]) :
+        scritteNormali[j] === parolaNormale;
+      if (corrisponde) {
         trovata = true;
+        if (stato.modalita !== "vita") scritteUsate[j] = true;
+        break;
       }
     }
 
@@ -2168,6 +2797,62 @@ function puntiAdattiviUltimoTentativo(puntiGrezzi) {
   const giorno = trovaGiorno(chiaveData(new Date()));
   if (giorno === null || giorno.tentativi.length === 0) return puntiGrezzi;
   return puntiPerCalibrazione(giorno.tentativi[giorno.tentativi.length - 1]);
+}
+
+function tempoSecondaProvaVita(punti, totale) {
+  const rapporto = totale > 0 ? punti / totale : 0;
+  let secondi = stato.secondiTentativo;
+  let motivo = "Mantengo lo stesso tempo: è già adatto a questa piccola lista.";
+  if (rapporto >= 0.8) {
+    secondi = Math.max(25, secondi - 10);
+    motivo = "È rimasto quasi tutto: il secondo giro sarà più breve di 10 secondi.";
+  } else if (rapporto < 0.5) {
+    secondi = Math.min(90, secondi + 15);
+    motivo = "Questa situazione richiede più calma: aggiungo 15 secondi.";
+  }
+  return { secondi: secondi, motivo: motivo };
+}
+
+function sessioneVitaCorrente() {
+  for (let i = stato.vitaStorico.length - 1; i >= 0; i--) {
+    if (stato.vitaStorico[i].sessioneId === stato.vitaSessioneId) return stato.vitaStorico[i];
+  }
+  return null;
+}
+
+function disegnaRiepilogoVita() {
+  const sessione = sessioneVitaCorrente();
+  if (sessione === null) return;
+  const contenitore = document.getElementById("riepilogo-finale");
+  contenitore.innerHTML = "";
+  const titolo = document.createElement("b");
+  titolo.textContent = "Allenamento di vita quotidiana concluso";
+  contenitore.appendChild(titolo);
+
+  const situazione = document.createElement("p");
+  situazione.className = "riepilogo-livello";
+  situazione.textContent = VITA_QUOTIDIANA[sessione.tipo].nomeBreve + " · " +
+    sessione.totale + " elementi · tempo iniziale " + formattaTempo(sessione.secondiIniziali);
+  contenitore.appendChild(situazione);
+
+  const tentativi = Array.isArray(sessione.tentativi) ? sessione.tentativi : [];
+  for (let i = 0; i < tentativi.length; i++) {
+    const riga = document.createElement("div");
+    riga.className = "riga-tentativo";
+    const tipoRicordo = tentativi[i].dopoRevisione ?
+      " ricordati dopo il ripasso · " : " ricordati da solo · ";
+    riga.textContent = "Prova " + tentativi[i].numero + " · " + tentativi[i].punti +
+      "/" + sessione.totale + tipoRicordo +
+      formattaTempo(tentativi[i].durataTotale || 0);
+    contenitore.appendChild(riga);
+  }
+
+  const totale = document.createElement("p");
+  totale.className = "riepilogo-totale";
+  totale.textContent = "Tempo complessivo: " + formattaTempo(sessione.durataTotale || 0) +
+    ". Non era necessario ricordare tutto.";
+  contenitore.appendChild(totale);
+  contenitore.style.display = "block";
 }
 
 function datiSessioneCorrente() {
@@ -2259,8 +2944,10 @@ function mostraEsito(punti, esiti) {
   tempoIntelligente.style.display = "none";
   riepilogoFinale.style.display = "none";
   bottoneMostraParole.style.display = "none";
+  bottoneMostraParole.textContent = "Ora mostrami tutte le parole";
   riquadroRecupero.style.display = "none";
   bottoneAvanti.style.display = "block";
+  bottoneBasta.textContent = "Lascia stare per oggi";
 
   if (stato.modalita === "sessione" && punti < totale) {
     const adattamento = calcolaTempoSuccessivo(puntiAdattiviUltimoTentativo(punti), totale);
@@ -2278,14 +2965,34 @@ function mostraEsito(punti, esiti) {
     bottoneAvanti.style.display = recuperoDaMostrare ? "none" : "block";
     bottoneBasta.style.display = "none";
   } else if (stato.modalita === "vita" && punti === totale) {
-    commento.textContent = "Hai ricordato tutto. Ottimo lavoro: questa strategia può aiutarti anche nella giornata.";
-    bottoneAvanti.textContent = "Torna alla pagina iniziale";
+    commento.textContent = "Hai recuperato tutti gli elementi da solo. Porta con te il percorso mentale che hai usato: è la parte più utile dell'esercizio.";
+    disegnaRiepilogoVita();
+    bottoneAvanti.textContent = "Concludi l'allenamento";
     bottoneBasta.style.display = "none";
   } else if (stato.modalita === "vita") {
-    commento.textContent = "Hai ricordato " + punti + " elementi su " + totale +
-      ". Ogni tentativo è utile: puoi riprovare con la stessa piccola lista.";
-    bottoneAvanti.textContent = "Riprova con calma";
-    bottoneBasta.style.display = "block";
+    const mancano = totale - punti;
+    bottoneMostraParole.textContent = mancano === 1 ?
+      "Rivedi l'elemento che mancava" : "Rivedi insieme i " + mancano + " elementi mancanti";
+    bottoneMostraParole.style.display = "block";
+    if (stato.tentativo < stato.vitaMaxTentativi) {
+      const adattamentoVita = tempoSecondaProvaVita(punti, totale);
+      stato.secondiTentativo = adattamentoVita.secondi;
+      commento.textContent = "Hai recuperato " + punti + " elementi da solo. Puoi fare un ultimo giro; non è necessario arrivare al risultato pieno.";
+      tempoIntelligente.style.display = "block";
+      tempoIntelligente.innerHTML = "<b>Seconda e ultima prova: " +
+        formattaTempo(adattamentoVita.secondi) + "</b><br>" + adattamentoVita.motivo;
+      bottoneAvanti.textContent = "Fai un ultimo giro";
+      bottoneBasta.textContent = "Va bene così per oggi";
+      bottoneBasta.style.display = "block";
+    } else {
+      const elementiMancanti = mancano === 1 ? "l'altro elemento" :
+        "gli altri " + mancano + " elementi";
+      commento.textContent = "Hai recuperato " + punti + " elementi da solo. Se vuoi, rivediamo insieme " +
+        elementiMancanti + "; poi abbiamo finito.";
+      disegnaRiepilogoVita();
+      bottoneAvanti.textContent = "Concludi l'allenamento";
+      bottoneBasta.style.display = "none";
+    }
   } else if (punti === 15) {
     const datiFinali = datiSessioneCorrente();
     const tempoComplessivo = datiFinali.tempoTotale;
@@ -2314,6 +3021,9 @@ function mostraEsito(punti, esiti) {
     griglia.style.display = "none";
   } else {
     griglia.style.display = "grid";
+    griglia.classList.toggle("vita-griglia", stato.modalita === "vita");
+    griglia.classList.toggle("vita-frasi", stato.modalita === "vita" &&
+      (stato.vitaTipo === "appuntamento" || stato.vitaTipo === "cose"));
     disegnaGriglia(griglia, stato.parole, true);
 
     const carte = griglia.querySelectorAll(".carta");
@@ -2323,6 +3033,12 @@ function mostraEsito(punti, esiti) {
       } else {
         carte[i].classList.add("persa");
       }
+      if (stato.modalita === "vita") {
+        const testoEsito = document.createElement("span");
+        testoEsito.className = "esito-vita-testo";
+        testoEsito.textContent = esiti[i] === true ? "Ricordato da solo" : "Da rivedere insieme";
+        carte[i].querySelector(".faccia-parola").appendChild(testoEsito);
+      }
     }
   }
 
@@ -2331,6 +3047,8 @@ function mostraEsito(punti, esiti) {
   if (recuperoDaMostrare) {
     disegnaRecuperoGuidato(true);
   } else if (supportoAttivo) {
+    bottoneMostraParole.style.display = "block";
+  } else if (stato.modalita === "vita" && punti < totale) {
     bottoneMostraParole.style.display = "block";
   } else if (!richiamoGentile) {
     setTimeout(scopriCarteEsito, 150);
@@ -2678,11 +3396,37 @@ function scopriCarteEsito() {
   for (let i = 0; i < carte.length; i++) {
     carte[i].classList.remove("coperta");
     const facciaParola = carte[i].querySelector(".faccia-parola");
+    const facciaRetro = carte[i].querySelector(".faccia-retro");
     if (facciaParola) facciaParola.setAttribute("aria-hidden", "false");
+    if (facciaRetro) facciaRetro.setAttribute("aria-hidden", "true");
   }
   document.getElementById("bottone-mostra-parole").style.display = "none";
   document.getElementById("riquadro-storia").style.display = "none";
   document.getElementById("riquadro-aiuto").style.display = "none";
+}
+
+function scopriCarteMancantiVita() {
+  const carte = document.querySelectorAll("#griglia-esito .carta.persa");
+  let primaParola = null;
+  for (let i = 0; i < carte.length; i++) {
+    carte[i].classList.remove("coperta");
+    const facciaParola = carte[i].querySelector(".faccia-parola");
+    const facciaRetro = carte[i].querySelector(".faccia-retro");
+    if (facciaParola) facciaParola.setAttribute("aria-hidden", "false");
+    if (facciaRetro) facciaRetro.setAttribute("aria-hidden", "true");
+    if (primaParola === null && facciaParola) primaParola = facciaParola;
+  }
+  stato.vitaRevisioneUsata = true;
+  const sessione = sessioneVitaCorrente();
+  if (sessione !== null) {
+    sessione.revisioneUsata = true;
+    salvaVita();
+  }
+  document.getElementById("bottone-mostra-parole").style.display = "none";
+  if (primaParola !== null) {
+    primaParola.setAttribute("tabindex", "-1");
+    setTimeout(function () { primaParola.focus(); }, 0);
+  }
 }
 
 /* ---------- registro ---------- */
@@ -2801,13 +3545,46 @@ function registraRichiamo(punti, mancate) {
 }
 
 function registraVita(punti) {
-  stato.vitaStorico.push({
-    data: chiaveData(new Date()),
-    tipo: stato.vitaTipo,
+  const adesso = Date.now();
+  let sessione = sessioneVitaCorrente();
+  if (sessione === null) {
+    sessione = {
+      data: chiaveData(new Date()),
+      tipo: stato.vitaTipo,
+      sessioneId: stato.vitaSessioneId,
+      livello: stato.vitaLivello,
+      totale: stato.parole.length,
+      elementi: stato.parole.slice(),
+      valori: stato.vitaElementi.map(function (elemento) { return elemento.valore; }),
+      secondiIniziali: stato.vitaSecondiIniziali,
+      motivoAdattamento: stato.vitaPrescrizione ? stato.vitaPrescrizione.motivo : "",
+      iniziataAl: stato.vitaInizioSessioneTimestamp,
+      conclusaAl: null,
+      completata: false,
+      conclusa: false,
+      migliore: 0,
+      durataTotale: 0,
+      tentativi: []
+    };
+    stato.vitaStorico.push(sessione);
+  }
+
+  sessione.tentativi.push({
+    numero: stato.tentativo,
     punti: punti,
     totale: stato.parole.length,
-    tentativo: stato.tentativo
+    secondi: stato.secondiTentativo,
+    tempoStudio: stato.secondiUsatiTentativo,
+    dopoRevisione: stato.tentativo > 1 && stato.vitaRevisioneUsata,
+    durataTotale: typeof stato.inizioTentativoTimestamp === "number" ?
+      Math.max(0, Math.round((adesso - stato.inizioTentativoTimestamp) / 1000)) : 0
   });
+  sessione.migliore = Math.max(sessione.migliore || 0, punti);
+  sessione.completata = sessione.completata || punti === stato.parole.length;
+  sessione.conclusa = sessione.completata || stato.tentativo >= stato.vitaMaxTentativi;
+  sessione.durataTotale = typeof stato.vitaInizioSessioneTimestamp === "number" ?
+    Math.max(0, Math.round((adesso - stato.vitaInizioSessioneTimestamp) / 1000)) : 0;
+  if (sessione.conclusa) sessione.conclusaAl = adesso;
 
   if (stato.vitaStorico.length > 120) {
     stato.vitaStorico = stato.vitaStorico.slice(stato.vitaStorico.length - 120);
@@ -2815,6 +3592,20 @@ function registraVita(punti) {
 
   salvaVita();
   disegnaProgressi();
+}
+
+function concludiVitaSenzaAltraProva() {
+  const sessione = sessioneVitaCorrente();
+  if (sessione === null) return;
+  if (sessione.conclusa === true) return;
+  const adesso = Date.now();
+  sessione.conclusa = true;
+  sessione.conclusaAl = adesso;
+  sessione.durataTotale = typeof stato.vitaInizioSessioneTimestamp === "number" ?
+    Math.max(0, Math.round((adesso - stato.vitaInizioSessioneTimestamp) / 1000)) :
+    sessione.durataTotale;
+  salvaVita();
+  aggiornaPannelloVita();
 }
 
 function salvaGiorni() {
@@ -2846,8 +3637,14 @@ async function salvaPendente() {
   await scriviDeposito("quindici:pendente", JSON.stringify(stato.pendente));
 }
 
-async function salvaVita() {
-  await scriviDeposito("quindici:vita", JSON.stringify(stato.vitaStorico));
+function salvaVita() {
+  const fotografia = JSON.stringify(stato.vitaStorico);
+  codaSalvataggioVita = codaSalvataggioVita.catch(function () {
+    // Una scrittura fallita non deve bloccare quelle successive.
+  }).then(function () {
+    return scriviDeposito("quindici:vita", fotografia);
+  });
+  return codaSalvataggioVita;
 }
 
 async function salvaSessioniLivello() {
@@ -2893,7 +3690,8 @@ async function caricaTutto() {
   const testoVita = await leggiDeposito("quindici:vita");
   if (testoVita !== null) {
     try {
-      stato.vitaStorico = JSON.parse(testoVita);
+      const vitaSalvata = JSON.parse(testoVita);
+      stato.vitaStorico = Array.isArray(vitaSalvata) ? vitaSalvata : [];
     } catch (errore) {
       stato.vitaStorico = [];
     }
@@ -3090,6 +3888,7 @@ function disegnaProgressi() {
   disegnaElencoGiorni();
   aggiornaConsiglioTempo();
   aggiornaConsiglioAvanzamento();
+  aggiornaPannelloVita();
 }
 
 function disegnaIncoraggiamento() {
@@ -3123,10 +3922,6 @@ function disegnaIncoraggiamento() {
       if (aiuti[j].tipo === "storia") haStoria = true;
       if (aiuti[j].tipo === "iniziali") haIniziali = true;
     }
-  }
-
-  for (let i = 0; i < stato.vitaStorico.length; i++) {
-    dateAllenate[stato.vitaStorico[i].data] = true;
   }
 
   if (massimoTentativi > 1) {
@@ -4474,7 +5269,10 @@ document.getElementById("bottone-iniziali").addEventListener("click", function (
   document.getElementById("riquadro-aiuto").style.display = "block";
 });
 
-document.getElementById("bottone-mostra-parole").addEventListener("click", scopriCarteEsito);
+document.getElementById("bottone-mostra-parole").addEventListener("click", function () {
+  if (stato.modalita === "vita") scopriCarteMancantiVita();
+  else scopriCarteEsito();
+});
 document.getElementById("bottone-parola-ritrovata").addEventListener("click", completaParolaRecupero);
 document.getElementById("bottone-altro-aiuto-recupero").addEventListener("click", altroAiutoRecupero);
 
@@ -4486,7 +5284,8 @@ document.getElementById("bottone-avanti").addEventListener("click", function () 
   }
 
   if (stato.modalita === "vita") {
-    if (stato.mancanti.length === 0) {
+    if (stato.mancanti.length === 0 || stato.tentativo >= stato.vitaMaxTentativi) {
+      concludiVitaSenzaAltraProva();
       mostraSchermata("inizio");
     } else {
       nuovoTentativo();
@@ -4520,6 +5319,7 @@ window.addEventListener("resize", function () {
 });
 
 document.getElementById("bottone-basta").addEventListener("click", function () {
+  if (stato.modalita === "vita") concludiVitaSenzaAltraProva();
   mostraSchermata("inizio");
 });
 
