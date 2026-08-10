@@ -2718,6 +2718,15 @@ function testoRiepilogo() {
       }
 
       const giornoOriginale = trovaGiorno(g.chiave);
+      if (giornoOriginale !== null && giornoOriginale.tentativi.length > 0) {
+        const secondiIniziali = giornoOriginale.tentativi[0].secondi;
+        if (typeof secondiIniziali === "number") {
+          const minutiIniziali = Math.max(1, Math.round(secondiIniziali / 60));
+          righe.push("👀 Tempo iniziale scelto per vedere le parole: " + minutiIniziali + " " +
+            (minutiIniziali === 1 ? "minuto" : "minuti"));
+        }
+      }
+
       const tempoDelGiorno = tempoGiornaliero(giornoOriginale);
       if (tempoDelGiorno !== null) {
         righe.push("⏱ " + tempoDelGiorno.etichetta + ": " + formattaTempo(tempoDelGiorno.secondi));
