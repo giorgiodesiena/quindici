@@ -2825,10 +2825,30 @@ function tempoRegistratoTentativo(prova) {
 function tempoGiornaliero(giorno) {
   if (giorno === null || giorno.tentativi.length === 0) return null;
 
-  for (let i = giorno.tentativi.length - 1; i >= 0; i--) {
-    if (typeof giorno.tentativi[i].durataTotaleSessione === "number") {
-      return { etichetta: "Tempo reale dall'inizio alla fine", secondi: giorno.tentativi[i].durataTotaleSessione };
+  let totaleSessioni = 0;
+  let massimoSessione = null;
+  let cumulativoPrecedente = null;
+  for (let i = 0; i < giorno.tentativi.length; i++) {
+    const prova = giorno.tentativi[i];
+    const cumulativo = Number(prova.durataTotaleSessione);
+    if (Number.isFinite(cumulativo) && cumulativo > 0) {
+      const nuovaSessione = massimoSessione !== null &&
+        (Number(prova.numero) === 1 || cumulativo < cumulativoPrecedente);
+      if (nuovaSessione) {
+        totaleSessioni = totaleSessioni + massimoSessione;
+        massimoSessione = cumulativo;
+      } else {
+        massimoSessione = massimoSessione === null ? cumulativo :
+          Math.max(massimoSessione, cumulativo);
+      }
+      cumulativoPrecedente = cumulativo;
     }
+  }
+  if (massimoSessione !== null) {
+    return {
+      etichetta: "Tempo reale dall'inizio alla fine",
+      secondi: totaleSessioni + massimoSessione
+    };
   }
 
   let totale = 0;
@@ -2842,6 +2862,149 @@ function tempoGiornaliero(giorno) {
     etichetta: tuttiCompleti ? "Tempo complessivo dei tentativi" : "Tempo registrato",
     secondi: totale
   };
+}
+
+function limitaMetricaGrafico(valore) {
+  return Math.max(0, Math.min(1, valore));
+}
+
+function simboloMetricaGrafico(valore) {
+  const livelli = ["▁", "▂", "▃", "▄", "▅", "▆", "▇", "█"];
+  const indice = Math.round(limitaMetricaGrafico(valore) * (livelli.length - 1));
+  return livelli[indice];
+}
+
+function punteggioMetricaGrafico(valore) {
+  if (valore === null || valore === undefined || valore === "") return null;
+  const numero = Number(valore);
+  if (!Number.isFinite(numero)) return null;
+  return Math.max(0, Math.min(15, numero));
+}
+
+function metricheGiornoGrafico(giornoRiassunto, oggiChiave) {
+  if (giornoRiassunto.chiave > oggiChiave) return { stato: "futuro" };
+
+  const giorno = trovaGiorno(giornoRiassunto.chiave);
+  if (giorno === null) {
+    return { stato: giornoRiassunto.chiave === oggiChiave ? "inAttesa" : "saltato" };
+  }
+
+  const richiamoOggi = giorno.richiamo ?
+    punteggioMetricaGrafico(giorno.richiamo.punti) : null;
+  const tentativi = Array.isArray(giorno.tentativi) ? giorno.tentativi : [];
+  if (tentativi.length === 0) {
+    if (richiamoOggi === null) {
+      return { stato: giornoRiassunto.chiave === oggiChiave ? "inAttesa" : "saltato" };
+    }
+    return {
+      stato: "soloRichiamo",
+      prima: null, migliore: null, richiamo: richiamoOggi / 15,
+      tentativi: null, tempo: null, sfida: null, livello: "R",
+      sintesi: null
+    };
+  }
+
+  const primaProva = tentativi[0];
+  const primoPunteggio = punteggioMetricaGrafico(primaProva.punti);
+  let migliore = null;
+  for (let i = 0; i < tentativi.length; i++) {
+    const punti = punteggioMetricaGrafico(tentativi[i].punti);
+    if (punti !== null && (migliore === null || punti > migliore)) migliore = punti;
+  }
+
+  const efficienzaTentativi = 1 -
+    Math.min(14, Math.max(0, tentativi.length - 1)) / 14;
+
+  const tempo = tempoGiornaliero(giorno);
+  const tempoValido = tempo !== null && Number.isFinite(Number(tempo.secondi)) &&
+    Number(tempo.secondi) > 0 && tempo.etichetta !== "Tempo registrato";
+  const efficienzaTempo = !tempoValido ? null :
+    limitaMetricaGrafico((3600 - tempo.secondi) / 3000);
+  const secondiIniziali = primaProva.secondi !== null && primaProva.secondi !== undefined &&
+    primaProva.secondi !== "" && Number.isFinite(Number(primaProva.secondi)) &&
+    Number(primaProva.secondi) >= 30 && Number(primaProva.secondi) <= 300 ?
+    Number(primaProva.secondi) : null;
+  const sfidaTempo = secondiIniziali === null ? null :
+    limitaMetricaGrafico((300 - secondiIniziali) / 270);
+
+  const livello = primaProva.livello === "difficile" || primaProva.livello === "mix" ?
+    primaProva.livello : "media";
+  const difficoltaAssegnata = livello === "difficile" ? 0.8 :
+    (livello === "mix" ? 0.55 : 0.25);
+
+  const componenti = [
+    { valore: primoPunteggio === null ? null : primoPunteggio / 15, peso: 0.28 },
+    { valore: migliore === null ? null : migliore / 15, peso: 0.14 },
+    { valore: richiamoOggi === null ? null : richiamoOggi / 15, peso: 0.24 },
+    { valore: efficienzaTentativi, peso: 0.14 },
+    { valore: efficienzaTempo, peso: 0.07 },
+    { valore: difficoltaAssegnata, peso: 0.07 },
+    { valore: sfidaTempo, peso: 0.06 }
+  ];
+  let sintesi = 0;
+  let sintesiCompleta = true;
+  for (let i = 0; i < componenti.length; i++) {
+    if (typeof componenti[i].valore !== "number" ||
+        !Number.isFinite(componenti[i].valore)) sintesiCompleta = false;
+    else sintesi = sintesi + limitaMetricaGrafico(componenti[i].valore) * componenti[i].peso;
+  }
+
+  return {
+    stato: "allenato",
+    prima: primoPunteggio === null ? null : primoPunteggio / 15,
+    migliore: migliore === null ? null : migliore / 15,
+    richiamo: richiamoOggi === null ? null : richiamoOggi / 15,
+    tentativi: efficienzaTentativi === null ? null : limitaMetricaGrafico(efficienzaTentativi),
+    tempo: efficienzaTempo,
+    sfida: sfidaTempo,
+    livello: livello === "difficile" ? "D" : (livello === "mix" ? "X" : "M"),
+    sintesi: sintesiCompleta ? sintesi : null
+  };
+}
+
+function graficoTestualeSettimana(giorni, oggiChiave) {
+  const metriche = giorni.map(function (giorno) {
+    return metricheGiornoGrafico(giorno, oggiChiave);
+  });
+
+  function cella(valore) {
+    return " " + valore;
+  }
+
+  function valoreRiga(metrica, nome) {
+    if (metrica.stato === "saltato") return "–";
+    if (metrica.stato === "futuro" || metrica.stato === "inAttesa") return "○";
+    if (nome === "livello") return metrica.livello;
+    if (metrica[nome] === null) return "○";
+    return simboloMetricaGrafico(metrica[nome]);
+  }
+
+  function riga(nome, metrica) {
+    return nome.padEnd(11, " ") + metriche.map(function (giorno) {
+      return cella(valoreRiga(giorno, metrica));
+    }).join(" ");
+  }
+
+  const righe = [];
+  righe.push("📊 ANDAMENTO COMPLESSIVO DELLA SETTIMANA");
+  righe.push("```");
+  righe.push("Giorno".padEnd(11, " ") + giorni.map(function (giorno) {
+    return giorno.chiave.slice(-2);
+  }).join(" "));
+  righe.push(riga("Prima", "prima"));
+  righe.push(riga("Migliore", "migliore"));
+  righe.push(riga("24 ore", "richiamo"));
+  righe.push(riga("Tentativi", "tentativi"));
+  righe.push(riga("Tempo tot.", "tempo"));
+  righe.push(riga("Tempo iniz.", "sfida"));
+  righe.push(riga("Livello", "livello"));
+  righe.push(riga("Sintesi", "sintesi"));
+  righe.push("```");
+  righe.push("▁ più basso · █ più alto · – saltato · ○ non disponibile");
+  righe.push("Tentativi e tempi: una barra più alta indica meno prove o meno tempo.");
+  righe.push("M = Media · X = Mix · D = Difficile · R = solo richiamo");
+  righe.push("La sintesi compare quando tutte le metriche della giornata sono disponibili.");
+  return righe;
 }
 
 function testoRiepilogo() {
@@ -2877,7 +3040,8 @@ function testoRiepilogo() {
         continue;
       }
       if (g.fatto === false && g.richiamo === null) {
-        righe.push("⏭ Allenamento saltato");
+        righe.push(g.chiave === oggiChiave ?
+          "▫️ Allenamento non ancora fatto oggi" : "⏭ Allenamento saltato");
         continue;
       }
 
@@ -2916,6 +3080,10 @@ function testoRiepilogo() {
       }
     }
   }
+
+  righe.push("");
+  const righeGrafico = graficoTestualeSettimana(settimane[0], oggiChiave);
+  for (let i = 0; i < righeGrafico.length; i++) righe.push(righeGrafico[i]);
 
   return righe.join("\n");
 }
