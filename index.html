@@ -406,7 +406,8 @@ body {
       <div class="etichetta">Prima di tutto</div>
       <p class="spiega">
         Ti ricordi le 15 parole di <b id="data-richiamo">ieri</b>?
-        Scrivile senza rivederle. Prima di iniziare il gioco di oggi, completa questo richiamo.
+        Prima ricostruisci mentalmente la storia o il percorso usato ieri, poi scrivile senza rivederle.
+        Prima di iniziare il gioco di oggi, completa questo richiamo.
       </p>
       <button class="bottone" id="bottone-richiamo">Ricordo le parole di ieri</button>
     </div>
@@ -549,18 +550,23 @@ body {
       </div>
 
       <div class="riquadro" id="riquadro-storia" style="display:none">
-        <b id="titolo-strategia">Se sei bloccato, puoi chiedere un solo esempio.</b>
+        <b id="titolo-strategia">Prova prima a creare un collegamento tuo.</b>
         <p class="avviso" id="spiega-suggerimento">
-          L'esempio collegherà tre parole. Le altre storielle le creerai tu: è quella la parte che allena la memoria.
+          Scegli tre parole mancanti e mettile in una scena con azione, colori e movimento.
+          Il gioco offrirà un esempio soltanto se resti bloccato.
         </p>
         <button class="bottone secondario" id="bottone-suggerimento" style="margin-top:10px">
           Mostra un esempio
         </button>
         <button class="bottone secondario" id="bottone-iniziali" style="margin-top:8px; display:none">
-          Oppure mostrami le iniziali
+          Mostrami fino a 3 iniziali
         </button>
         <p id="testo-storia" style="margin-top:10px; display:none"></p>
       </div>
+
+      <button class="bottone secondario" id="bottone-mostra-parole" style="display:none">
+        Ora mostrami tutte le parole
+      </button>
 
       <button class="bottone" id="bottone-avanti">Rifai da capo</button>
       <button class="bottone secondario" id="bottone-basta">Lascia stare per oggi</button>
@@ -573,8 +579,11 @@ body {
 const SECONDI_BLOCCO = 5;
 const SECONDI_DISTURBO = 20;
 const GIORNI_NEL_GRAFICO = 7;
-const TENTATIVI_PRIMA_DELLA_STORIA = 3;
-const TENTATIVI_PRIMA_DELL_AIUTO = 6;
+const MAX_GIORNI_STORICO = 400;
+const MAX_PAROLE_RINFORZO = 3;
+const TENTATIVI_PRIMA_DELLA_STRATEGIA = 3;
+const TENTATIVI_PRIMA_DELLE_INIZIALI = 5;
+const TENTATIVI_PRIMA_DELLA_STORIA = 8;
 
 const PAROLE_MEDIE = [
   "pergolato","incrocio","pedaggio","bozzolo","sciame","orizzonte","zoccolo","spartito","vialetto","spugna",
@@ -926,6 +935,17 @@ const stato = {
   vitaTitolo: "",
   vitaStorico: [],
   suggerimentoUsato: false,
+  strategiaBreveMostrata: false,
+  esempioOfferto: false,
+  inizialiOfferte: false,
+  tentativoStrategiaMostrata: 0,
+  tentativoInizialiOfferte: 0,
+  punteggiSessione: [],
+  rinforziOggi: [],
+  rinforziSerieRichiamata: [],
+  rinforzoFonteData: null,
+  aiutoPerProssimoTentativo: null,
+  sessioneId: null,
   sfidaAutomatica: false,
   livelloBaseSfida: null,
   tempoBaseSfida: null,
@@ -938,6 +958,7 @@ const stato = {
   paroleRecenti: [],
   sessioniLivello: { media: 0, mix: 0, difficile: 0 }
 };
+let codaSalvataggioGiorni = Promise.resolve();
 
 /* ---------- deposito dati ----------
    Dentro l'anteprima di Claude esiste window.storage.
@@ -1118,6 +1139,97 @@ function pescaDaRaccolta(elenco, conteggi, fascia, quantita, escluse) {
   return scelte;
 }
 
+function numeroParoleRinforzo(punti) {
+  const valore = Math.max(0, Math.min(15, parseInt(punti, 10) || 0));
+  return Math.min(MAX_PAROLE_RINFORZO, 15 - valore);
+}
+
+function limiteRinforziRecenti() {
+  const oggi = new Date();
+  return chiaveData(new Date(oggi.getFullYear(), oggi.getMonth(), oggi.getDate() - 7));
+}
+
+function cicliRinforzoRecenti(parola) {
+  const chiaveParola = normalizza(parola);
+  const limite = limiteRinforziRecenti();
+  let cicli = 0;
+  for (let i = 0; i < stato.giorni.length; i++) {
+    const giorno = stato.giorni[i];
+    if (giorno.data < limite || !giorno.richiamo || !Array.isArray(giorno.richiamo.prioritarie)) continue;
+    if (giorno.richiamo.prioritarie.some(function (prioritaria) {
+      return normalizza(prioritaria) === chiaveParola;
+    })) cicli++;
+  }
+  return cicli;
+}
+
+function richiamoDaRinforzare() {
+  const oggi = chiaveData(new Date());
+  if (stato.serie !== null && stato.serie.data === oggi) return null;
+  const limite = limiteRinforziRecenti();
+  for (let i = stato.giorni.length - 1; i >= 0; i--) {
+    const giorno = stato.giorni[i];
+    const richiamo = giorno.richiamo;
+    if (giorno.data > oggi || giorno.data < limite || !richiamo ||
+        richiamo.rinforziServiti === true || !Array.isArray(richiamo.mancate)) continue;
+    if (richiamo.mancate.some(function (parola) { return cicliRinforzoRecenti(parola) < 3; })) {
+      return { giorno: giorno, richiamo: richiamo };
+    }
+  }
+  return null;
+}
+
+function numeroRinforziOggi() {
+  const fonte = richiamoDaRinforzare();
+  if (fonte === null) return 0;
+  const eleggibili = fonte.richiamo.mancate.filter(function (parola) {
+    return cicliRinforzoRecenti(parola) < 3;
+  });
+  return Math.min(MAX_PAROLE_RINFORZO, eleggibili.length,
+    numeroParoleRinforzo(fonte.richiamo.punti));
+}
+
+function paroleRinforzoPerOggi() {
+  const fonte = richiamoDaRinforzare();
+  const quanti = numeroRinforziOggi();
+  stato.rinforzoFonteData = fonte === null ? null : fonte.giorno.data;
+  if (fonte === null || quanti === 0) return [];
+  const richiamo = fonte.richiamo;
+
+  const mancate = richiamo.mancate.filter(function (parola) {
+    return typeof parola === "string" && parola.trim().length > 0 &&
+      cicliRinforzoRecenti(parola) < 3;
+  });
+  const prioritarie = Array.isArray(richiamo.prioritarie) ? richiamo.prioritarie : [];
+  const risultato = [];
+  const viste = {};
+
+  function aggiungi(parola) {
+    const chiave = normalizza(parola);
+    if (chiave === "" || viste[chiave] || risultato.length >= quanti) return;
+    const presente = mancate.some(function (mancata) { return normalizza(mancata) === chiave; });
+    if (!presente) return;
+    viste[chiave] = true;
+    risultato.push(parola);
+  }
+
+  prioritarie.forEach(aggiungi);
+  mescola(mancate);
+  mancate.forEach(aggiungi);
+  return risultato.slice(0, quanti);
+}
+
+function raccoltaDellaParola(parola) {
+  const chiave = normalizza(parola);
+  if (PAROLE_DIFFICILI_COMPLETE.some(function (voce) { return normalizza(voce) === chiave; })) {
+    return "difficile";
+  }
+  if (PAROLE_MEDIE_COMPLETE.some(function (voce) { return normalizza(voce) === chiave; })) {
+    return "media";
+  }
+  return null;
+}
+
 function pescaParole() {
   const fascia = fasciaSicura(stato.fasciaParole);
   const recenti = stato.paroleRecenti.slice(-120);
@@ -1149,6 +1261,38 @@ function pescaParole() {
       PAROLE_MEDIE_COMPLETE, BLOCCHI_MEDI_COMPLETI, fascia, 15, recenti
     );
   }
+
+  // Dopo un richiamo debole, poche parole non ricordate tornano mescolate alle
+  // nuove. Il punteggio delle 24 ore resta invariato e la lista resta di 15 parole.
+  const rinforzi = paroleRinforzoPerOggi();
+  if (rinforzi.length > 0) {
+    const chiaviRinforzo = rinforzi.map(normalizza);
+    const nuove = scelte.filter(function (parola) {
+      return chiaviRinforzo.indexOf(normalizza(parola)) === -1;
+    });
+    let daRimuovere = nuove.length - (15 - rinforzi.length);
+    for (let i = 0; i < rinforzi.length && daRimuovere > 0; i++) {
+      const raccolta = raccoltaDellaParola(rinforzi[i]);
+      let indice = -1;
+      for (let j = nuove.length - 1; j >= 0; j--) {
+        if (raccolta !== null && raccoltaDellaParola(nuove[j]) === raccolta) {
+          indice = j;
+          break;
+        }
+      }
+      if (indice === -1) indice = nuove.length - 1;
+      if (indice >= 0) {
+        nuove.splice(indice, 1);
+        daRimuovere--;
+      }
+    }
+    while (daRimuovere > 0 && nuove.length > 0) {
+      nuove.pop();
+      daRimuovere--;
+    }
+    scelte = mescola(rinforzi.concat(nuove));
+  }
+  stato.rinforziOggi = rinforzi.slice();
 
   stato.paroleRecenti = stato.paroleRecenti.concat(scelte).slice(-120);
   salvaParoleRecenti();
@@ -1201,6 +1345,7 @@ function disegnaGriglia(contenitore, parole, coperte) {
     const davanti = document.createElement("div");
     davanti.className = "faccia faccia-parola";
     davanti.textContent = parole[i];
+    davanti.setAttribute("aria-hidden", coperte === true ? "true" : "false");
 
     const dietro = document.createElement("div");
     dietro.className = "faccia faccia-retro";
@@ -1236,24 +1381,55 @@ function livelloSuccessivo(livello) {
   return null;
 }
 
-function richiamoDellaSerie(dataSerie) {
+function recordRichiamoDellaSerie(dataSerie) {
   for (let i = 0; i < stato.giorni.length; i++) {
     const richiamo = stato.giorni[i].richiamo;
-    if (richiamo && richiamo.da === dataSerie) return richiamo.punti;
+    if (richiamo && richiamo.da === dataSerie) return richiamo;
   }
   return null;
 }
 
+function richiamoGrezzoDellaSerie(dataSerie) {
+  const richiamo = recordRichiamoDellaSerie(dataSerie);
+  return richiamo === null ? null : richiamo.punti;
+}
+
+function richiamoDellaSerie(dataSerie) {
+  const richiamo = recordRichiamoDellaSerie(dataSerie);
+  return richiamo === null ? null : puntiPerCalibrazione(richiamo);
+}
+
+function tentativiSeriePrincipale(giorno) {
+  const tentativi = giorno && Array.isArray(giorno.tentativi) ? giorno.tentativi : [];
+  if (tentativi.length === 0 || !tentativi[0].sessioneId) return tentativi;
+  const sessioneId = tentativi[0].sessioneId;
+  return tentativi.filter(function (prova) { return prova.sessioneId === sessioneId; });
+}
+
+function puntiPerCalibrazione(prova) {
+  const punti = Number(prova.punti) || 0;
+  const rinforzi = Array.isArray(prova.rinforzi) ? prova.rinforzi.length : 0;
+  if (rinforzi === 0 || rinforzi >= 15) return punti;
+
+  const ricordati = Math.max(0, Math.min(rinforzi,
+    Number(prova.rinforziRicordati) || 0));
+  const paroleNuove = 15 - rinforzi;
+  const ricordateNuove = Math.max(0, punti - ricordati);
+  return 15 * ricordateNuove / paroleNuove;
+}
+
 function valutaDifficoltaGiorno(giorno) {
-  const tentativi = giorno.tentativi;
+  const tentativi = tentativiSeriePrincipale(giorno);
   if (tentativi.length === 0) return "neutro";
 
-  const primo = tentativi[0].punti;
+  const primo = puntiPerCalibrazione(tentativi[0]);
   let migliore = 0;
   let completatoAl = null;
   for (let i = 0; i < tentativi.length; i++) {
-    migliore = Math.max(migliore, tentativi[i].punti);
-    if (tentativi[i].punti === 15 && completatoAl === null) completatoAl = i + 1;
+    if (!tentativi[i].aiutoPrecedente) {
+      migliore = Math.max(migliore, puntiPerCalibrazione(tentativi[i]));
+      if (tentativi[i].punti === 15 && completatoAl === null) completatoAl = i + 1;
+    }
   }
   const richiamo = richiamoDellaSerie(giorno.data);
 
@@ -1324,8 +1500,9 @@ function calcolaPrescrizioneGiornaliera() {
   }
 
   const ultima = recenti[recenti.length - 1];
-  const primaProva = ultima.tentativi[0];
-  const ultimaProva = ultima.tentativi[ultima.tentativi.length - 1];
+  const tentativiUltimaSerie = tentativiSeriePrincipale(ultima);
+  const primaProva = tentativiUltimaSerie[0];
+  const ultimaProva = tentativiUltimaSerie[tentativiUltimaSerie.length - 1];
   let livello = primaProva.livello || "media";
   let secondi = ultimaProva.secondi || primaProva.secondi || 180;
   let fasciaParole = fasciaSicura(primaProva.fasciaParole);
@@ -1415,6 +1592,9 @@ function iniziaSessione() {
   preparaImpostazioniAutomatiche();
   stato.modalita = "sessione";
   stato.inizioSessioneTimestamp = Date.now();
+  stato.sessioneId = chiaveData(new Date()) + "-" + stato.inizioSessioneTimestamp + "-" +
+    Math.floor(Math.random() * 100000);
+  stato.aiutoPerProssimoTentativo = null;
   const giornoEsistente = trovaGiorno(chiaveData(new Date()));
   stato.inizioTentativiSessione = giornoEsistente === null ?
     0 : giornoEsistente.tentativi.length;
@@ -1424,8 +1604,21 @@ function iniziaSessione() {
   salvaSessioniLivello();
   stato.tentativo = 0;
   stato.secondiTentativo = stato.secondiScelti;
-  stato.suggerimentoUsato = false;
-  salvaSerie();
+  const aiutiOggi = giornoEsistente !== null && Array.isArray(giornoEsistente.aiuti) ?
+    giornoEsistente.aiuti : [];
+  stato.suggerimentoUsato = aiutiOggi.some(function (aiuto) {
+    return aiuto.tipo === "storia";
+  });
+  stato.strategiaBreveMostrata = aiutiOggi.some(function (aiuto) {
+    return aiuto.tipo === "strategia";
+  });
+  const strategiaSalvata = aiutiOggi.find(function (aiuto) { return aiuto.tipo === "strategia"; });
+  const inizialiSalvate = aiutiOggi.find(function (aiuto) { return aiuto.tipo === "offerta-iniziali"; });
+  stato.esempioOfferto = aiutiOggi.some(function (aiuto) { return aiuto.tipo === "offerta-storia"; });
+  stato.inizialiOfferte = inizialiSalvate !== undefined;
+  stato.tentativoStrategiaMostrata = strategiaSalvata ? (strategiaSalvata.tentativo || 0) : 0;
+  stato.tentativoInizialiOfferte = inizialiSalvate ? (inizialiSalvate.tentativo || 0) : 0;
+  stato.punteggiSessione = [];
   nuovoTentativo();
 }
 
@@ -1495,7 +1688,11 @@ function scopriEMemorizza() {
   const carte = document.querySelectorAll("#griglia-studio .carta");
   for (let i = 0; i < carte.length; i++) {
     carte[i].classList.remove("coperta");
+    const facciaParola = carte[i].querySelector(".faccia-parola");
+    if (facciaParola) facciaParola.setAttribute("aria-hidden", "false");
   }
+
+  if (stato.modalita === "sessione") salvaSerie();
 
   const bottone = document.getElementById("bottone-coprire");
   bottone.disabled = false;
@@ -1676,7 +1873,8 @@ function preparaRipeti() {
 
   if (stato.modalita === "richiamo") {
     etichetta.textContent = "Richiamo di ieri";
-    istruzione.textContent = "Le 15 parole di ieri, quelle che ricordi. Nessuno le rivede.";
+    istruzione.textContent =
+      "Ripercorri mentalmente la storia o il percorso di ieri, poi scrivi le parole che ricordi. Nessuno le rivede.";
   } else if (stato.modalita === "vita") {
     etichetta.textContent = stato.vitaTitolo;
     istruzione.textContent = "Scrivi gli elementi che ricordi. Va bene anche procedere con calma.";
@@ -1848,11 +2046,12 @@ function controlla() {
   stato.mancanti = mancanti;
 
   if (stato.modalita === "richiamo") {
-    registraRichiamo(punti);
+    registraRichiamo(punti, mancanti);
   } else if (stato.modalita === "vita") {
     registraVita(punti);
   } else {
     registraTentativo(punti, indiciMancanti);
+    stato.punteggiSessione.push(punti);
   }
 
   mostraEsito(punti, esiti);
@@ -1886,6 +2085,13 @@ function calcolaTempoSuccessivo(punti, totale) {
   }
 
   return { secondi: prossimo, motivo: motivo };
+}
+
+function puntiAdattiviUltimoTentativo(puntiGrezzi) {
+  if (stato.modalita !== "sessione") return puntiGrezzi;
+  const giorno = trovaGiorno(chiaveData(new Date()));
+  if (giorno === null || giorno.tentativi.length === 0) return puntiGrezzi;
+  return puntiPerCalibrazione(giorno.tentativi[giorno.tentativi.length - 1]);
 }
 
 function datiSessioneCorrente() {
@@ -1957,14 +2163,17 @@ function mostraEsito(punti, esiti) {
   const riquadroStoria = document.getElementById("riquadro-storia");
   const tempoIntelligente = document.getElementById("tempo-intelligente");
   const riepilogoFinale = document.getElementById("riepilogo-finale");
+  const bottoneMostraParole = document.getElementById("bottone-mostra-parole");
+  let supportoAttivo = false;
 
   riquadroAiuto.style.display = "none";
   riquadroStoria.style.display = "none";
   tempoIntelligente.style.display = "none";
   riepilogoFinale.style.display = "none";
+  bottoneMostraParole.style.display = "none";
 
   if (stato.modalita !== "richiamo" && punti < totale) {
-    const adattamento = calcolaTempoSuccessivo(punti, totale);
+    const adattamento = calcolaTempoSuccessivo(puntiAdattiviUltimoTentativo(punti), totale);
     stato.secondiTentativo = adattamento.secondi;
     tempoIntelligente.style.display = "block";
     tempoIntelligente.innerHTML = "<b>Tempo del prossimo tentativo: " +
@@ -2003,15 +2212,7 @@ function mostraEsito(punti, esiti) {
     bottoneAvanti.textContent = "Rifai da capo (tentativo " + (stato.tentativo + 1) + ")";
     bottoneBasta.style.display = "block";
 
-    if (stato.tentativo >= TENTATIVI_PRIMA_DELLA_STORIA &&
-        stato.suggerimentoUsato === false) {
-      riquadroStoria.style.display = "block";
-      document.getElementById("bottone-suggerimento").style.display = "block";
-      document.getElementById("bottone-iniziali").style.display =
-        stato.tentativo >= TENTATIVI_PRIMA_DELL_AIUTO ? "block" : "none";
-      document.getElementById("spiega-suggerimento").style.display = "block";
-      document.getElementById("testo-storia").style.display = "none";
-    }
+    supportoAttivo = configuraSupportoStrategia(punti);
   }
 
   const griglia = document.getElementById("griglia-esito");
@@ -2028,49 +2229,72 @@ function mostraEsito(punti, esiti) {
 
   mostraSchermata("esito");
 
-  setTimeout(function () {
-    for (let i = 0; i < carte.length; i++) {
-      carte[i].classList.remove("coperta");
-    }
-  }, 150);
-}
-
-function commentoRichiamo(punti) {
-  if (punti === 0) {
-    return "Oggi il richiamo è stato difficile. Va bene così: anche provare è allenamento.";
-  } else if (punti <= 4) {
-    return punti + " parole ricordate dopo un giorno. Sono una buona base da cui continuare.";
-  } else if (punti <= 9) {
-    return punti + " su 15 dopo 24 ore. Bene: la strategia sta lasciando una traccia.";
+  if (supportoAttivo) {
+    bottoneMostraParole.style.display = "block";
   } else {
-    return punti + " su 15 dopo un giorno intero. Davvero un ottimo richiamo.";
+    setTimeout(scopriCarteEsito, 150);
   }
 }
 
-function iniziali() {
+function commentoRichiamo(punti) {
+  let commento;
+  if (punti === 0) {
+    commento = "Oggi il richiamo è stato difficile. Va bene così: anche provare è allenamento.";
+  } else if (punti <= 4) {
+    commento = punti + " parole ricordate dopo un giorno. Sono una buona base da cui continuare.";
+  } else if (punti <= 9) {
+    commento = punti + " su 15 dopo 24 ore. Bene: la strategia sta lasciando una traccia.";
+  } else {
+    commento = punti + " su 15 dopo un giorno intero. Davvero un ottimo richiamo.";
+  }
+
+  const quanti = numeroRinforziOggi();
+  if (quanti > 0) {
+    commento += " Nel gioco di oggi torner" + (quanti === 1 ? "à " : "anno ") + quanti +
+      (quanti === 1 ? " parola mancata" : " parole mancate") +
+      ", mescolate alle nuove: così le alleni di nuovo senza anticiparti quali sono.";
+  }
+  return commento;
+}
+
+function iniziali(parole) {
   const lettere = [];
-  for (let i = 0; i < stato.mancanti.length; i++) {
-    lettere.push(stato.mancanti[i].charAt(0).toUpperCase());
+  const elenco = Array.isArray(parole) ? parole.slice(0, 3) : [];
+  for (let i = 0; i < elenco.length; i++) {
+    lettere.push(elenco[i].charAt(0).toUpperCase());
   }
   return lettere.join(" · ");
 }
 
-function parolePerSuggerimento(quante) {
-  const base = [];
+function paroleMancantiPersistenti(quante) {
+  const dati = datiSessioneCorrente();
+  const ultime = dati.tentativi.slice(-3);
+  const conteggi = {};
+  const ultimaProva = ultime.length > 0 ? ultime[ultime.length - 1] : null;
+  const indiciUltimi = ultimaProva && Array.isArray(ultimaProva.mancate) ?
+    ultimaProva.mancate : [];
 
-  for (let i = 0; i < stato.mancanti.length; i++) {
-    base.push(stato.mancanti[i]);
-  }
-  for (let i = 0; i < stato.parole.length; i++) {
-    if (base.length < quante && base.indexOf(stato.parole[i]) === -1) {
-      base.push(stato.parole[i]);
+  for (let i = 0; i < ultime.length; i++) {
+    const indici = Array.isArray(ultime[i].mancate) ? ultime[i].mancate : [];
+    for (let j = 0; j < indici.length; j++) {
+      conteggi[indici[j]] = (conteggi[indici[j]] || 0) + 1;
     }
   }
-  return base.slice(0, quante);
+
+  const ordinati = indiciUltimi.slice().sort(function (a, b) {
+    const differenza = (conteggi[b] || 0) - (conteggi[a] || 0);
+    return differenza !== 0 ? differenza : a - b;
+  });
+  const parole = [];
+  for (let i = 0; i < ordinati.length && parole.length < quante; i++) {
+    const parola = stato.parole[ordinati[i]];
+    if (typeof parola === "string" && parole.indexOf(parola) === -1) parole.push(parola);
+  }
+  return parole;
 }
 
-function costruisciSuggerimento() {
-  const parole = parolePerSuggerimento(5);
+function costruisciSuggerimento(parole) {
+  if (!Array.isArray(parole) || parole.length < 3) return null;
   const a = parole[0].toUpperCase();
   const b = parole[1].toUpperCase();
   const c = parole[2].toUpperCase();
@@ -2081,6 +2305,96 @@ function costruisciSuggerimento() {
       "suoni e movimento. Ora scegli altre tre parole e inventa tu il collegamento: " +
       "dove sono, cosa succede e come finisce? Bastano due frasi."
   };
+}
+
+function supportoStrategiaNecessario(punti) {
+  if (stato.modalita !== "sessione" || stato.tentativo < TENTATIVI_PRIMA_DELLA_STRATEGIA ||
+      punti >= 12) return false;
+  if (punti <= 6) return true;
+
+  const ultimi = stato.punteggiSessione.slice(-3);
+  if (ultimi.length < 3) return false;
+  const miglioramento = ultimi[ultimi.length - 1] - ultimi[0];
+  return miglioramento <= 1;
+}
+
+function registraEventoAiuto(tipo) {
+  const giorno = giornoDiOggi();
+  if (!Array.isArray(giorno.aiuti)) giorno.aiuti = [];
+  const giaRegistrato = giorno.aiuti.some(function (aiuto) { return aiuto.tipo === tipo; });
+  if (!giaRegistrato) {
+    giorno.aiuti.push({ tipo: tipo, tentativo: stato.tentativo, ora: Date.now() });
+    salvaGiorni();
+    disegnaIncoraggiamento();
+  }
+}
+
+function configuraSupportoStrategia(punti) {
+  if (stato.suggerimentoUsato || !supportoStrategiaNecessario(punti)) return false;
+
+  const riquadro = document.getElementById("riquadro-storia");
+  const titolo = document.getElementById("titolo-strategia");
+  const spiegazione = document.getElementById("spiega-suggerimento");
+  const bottoneStoria = document.getElementById("bottone-suggerimento");
+  const bottoneIniziali = document.getElementById("bottone-iniziali");
+  bottoneStoria.style.display = "none";
+  bottoneIniziali.style.display = "none";
+  document.getElementById("testo-storia").style.display = "none";
+  spiegazione.style.display = "block";
+
+  if (!stato.strategiaBreveMostrata) {
+    stato.strategiaBreveMostrata = true;
+    stato.tentativoStrategiaMostrata = stato.tentativo;
+    registraEventoAiuto("strategia");
+    titolo.textContent = "Prima di scoprire le carte, prova da solo.";
+    spiegazione.textContent =
+      "Ripercorri la tua scena dall'inizio e immagina movimento, suoni e colori. Il gioco non mostra ancora nessuna parola.";
+    riquadro.style.display = "block";
+    return true;
+  }
+
+  const tentativoMinimoIniziali = Math.max(TENTATIVI_PRIMA_DELLE_INIZIALI,
+    stato.tentativoStrategiaMostrata + 2);
+  if (!stato.inizialiOfferte && stato.tentativo >= tentativoMinimoIniziali) {
+    stato.inizialiOfferte = true;
+    stato.tentativoInizialiOfferte = stato.tentativo;
+    registraEventoAiuto("offerta-iniziali");
+    titolo.textContent = "Un aiuto leggero, solo se ti serve.";
+    spiegazione.textContent =
+      "Puoi vedere fino a tre iniziali delle parole che resistono di più, oppure scoprire direttamente tutte le carte.";
+    bottoneIniziali.style.display = "block";
+    riquadro.style.display = "block";
+    return true;
+  }
+
+  const tentativoMinimoStoria = Math.max(TENTATIVI_PRIMA_DELLA_STORIA,
+    stato.tentativoInizialiOfferte + 3);
+  if (stato.inizialiOfferte && !stato.esempioOfferto &&
+      stato.tentativo >= tentativoMinimoStoria &&
+      paroleMancantiPersistenti(3).length === 3) {
+    stato.esempioOfferto = true;
+    registraEventoAiuto("offerta-storia");
+    titolo.textContent = "Se sei ancora bloccato, puoi chiedere un solo esempio.";
+    spiegazione.textContent =
+      "L'esempio collegherà soltanto tre parole difficili. Le altre storie resteranno tue.";
+    bottoneStoria.style.display = "block";
+    riquadro.style.display = "block";
+    return true;
+  }
+
+  return false;
+}
+
+function scopriCarteEsito() {
+  const carte = document.querySelectorAll("#griglia-esito .carta");
+  for (let i = 0; i < carte.length; i++) {
+    carte[i].classList.remove("coperta");
+    const facciaParola = carte[i].querySelector(".faccia-parola");
+    if (facciaParola) facciaParola.setAttribute("aria-hidden", "false");
+  }
+  document.getElementById("bottone-mostra-parole").style.display = "none";
+  document.getElementById("riquadro-storia").style.display = "none";
+  document.getElementById("riquadro-aiuto").style.display = "none";
 }
 
 /* ---------- registro ---------- */
@@ -2116,6 +2430,12 @@ function giornoDiOggi() {
 
 function registraTentativo(punti, indiciMancanti) {
   const giorno = giornoDiOggi();
+  const chiaviMancanti = indiciMancanti.map(function (indice) {
+    return normalizza(stato.parole[indice] || "");
+  });
+  const rinforziRicordati = stato.rinforziOggi.filter(function (parola) {
+    return chiaviMancanti.indexOf(normalizza(parola)) === -1;
+  }).length;
 
   const prova = {
     numero: stato.tentativo,
@@ -2129,7 +2449,11 @@ function registraTentativo(punti, indiciMancanti) {
     sfidaAutomatica: stato.sfidaAutomatica,
     livelloBaseSfida: stato.livelloBaseSfida,
     tempoBaseSfida: stato.tempoBaseSfida,
-    mancate: indiciMancanti
+    mancate: indiciMancanti,
+    rinforzi: stato.rinforziOggi.slice(),
+    rinforziRicordati: rinforziRicordati,
+    aiutoPrecedente: stato.aiutoPerProssimoTentativo,
+    sessioneId: stato.sessioneId
   };
 
   if (typeof stato.inizioSessioneTimestamp === "number") {
@@ -2138,22 +2462,47 @@ function registraTentativo(punti, indiciMancanti) {
   }
 
   giorno.tentativi.push(prova);
+  stato.aiutoPerProssimoTentativo = null;
 
   if (punti === 15 && giorno.completatoAl === null) {
     giorno.completatoAl = giorno.tentativi.length;
   }
 
-  if (stato.giorni.length > 90) {
-    stato.giorni = stato.giorni.slice(stato.giorni.length - 90);
+  if (stato.giorni.length > MAX_GIORNI_STORICO) {
+    stato.giorni = stato.giorni.slice(stato.giorni.length - MAX_GIORNI_STORICO);
   }
 
   salvaGiorni();
   disegnaProgressi();
 }
 
-function registraRichiamo(punti) {
+function registraRichiamo(punti, mancate) {
   const giorno = giornoDiOggi();
-  giorno.richiamo = { punti: punti, da: stato.origineRichiamo };
+  const paroleMancate = Array.isArray(mancate) ? mancate.slice() : [];
+  const rinforziSerie = stato.rinforziSerieRichiamata.filter(function (parola) {
+    return typeof parola === "string";
+  });
+  const chiaviRinforzate = rinforziSerie.map(normalizza);
+  const chiaviMancate = paroleMancate.map(normalizza);
+  const prioritarie = paroleMancate.filter(function (parola) {
+    return chiaviRinforzate.indexOf(normalizza(parola)) !== -1 &&
+      cicliRinforzoRecenti(parola) < 3;
+  });
+  giorno.richiamo = {
+    punti: punti,
+    da: stato.origineRichiamo,
+    mancate: paroleMancate,
+    prioritarie: prioritarie,
+    rinforzi: rinforziSerie,
+    rinforziRicordati: rinforziSerie.filter(function (parola) {
+      return chiaviMancate.indexOf(normalizza(parola)) === -1;
+    }).length,
+    rinforziServiti: false
+  };
+
+  if (stato.giorni.length > MAX_GIORNI_STORICO) {
+    stato.giorni = stato.giorni.slice(stato.giorni.length - MAX_GIORNI_STORICO);
+  }
 
   stato.pendente = null;
   salvaPendente();
@@ -2179,13 +2528,38 @@ function registraVita(punti) {
   disegnaProgressi();
 }
 
-async function salvaGiorni() {
-  await scriviDeposito("quindici:giorni", JSON.stringify(stato.giorni));
+function salvaGiorni() {
+  const fotografia = JSON.stringify(stato.giorni);
+  codaSalvataggioGiorni = codaSalvataggioGiorni.catch(function () {
+    // Una scrittura fallita non deve bloccare quelle successive.
+  }).then(function () {
+    return scriviDeposito("quindici:giorni", fotografia);
+  });
+  return codaSalvataggioGiorni;
 }
 
 async function salvaSerie() {
-  stato.serie = { data: chiaveData(new Date()), parole: stato.parole };
+  const oggi = chiaveData(new Date());
+  // La prima lista standard del giorno è quella canonica per il richiamo di domani.
+  // Eventuali seconde partite nello stesso giorno non la sovrascrivono.
+  if (stato.serie !== null && stato.serie.data === oggi) return;
+  stato.serie = {
+    data: oggi,
+    parole: stato.parole.slice(),
+    rinforzi: stato.rinforziOggi.slice(),
+    rinforzoFonteData: stato.rinforzoFonteData,
+    sessioneId: stato.sessioneId
+  };
+  let giornoFonte = null;
+  if (stato.rinforzoFonteData !== null) {
+    giornoFonte = trovaGiorno(stato.rinforzoFonteData);
+    if (giornoFonte && giornoFonte.richiamo) {
+      giornoFonte.richiamo.rinforziServiti = true;
+      giornoFonte.richiamo.rinforziServitiIl = oggi;
+    }
+  }
   await scriviDeposito("quindici:serie", JSON.stringify(stato.serie));
+  if (giornoFonte && giornoFonte.richiamo) await salvaGiorni();
 }
 
 async function salvaPendente() {
@@ -2327,6 +2701,7 @@ function iniziaRichiamo() {
   stato.modalita = "richiamo";
   stato.parole = serie.parole;
   stato.origineRichiamo = serie.data;
+  stato.rinforziSerieRichiamata = Array.isArray(serie.rinforzi) ? serie.rinforzi.slice() : [];
   stato.scritte = [];
   stato.tentativo = 0;
   preparaRipeti();
@@ -2420,6 +2795,9 @@ function disegnaIncoraggiamento() {
   const strategie = [];
   let massimoTentativi = 0;
   let haRichiamo = false;
+  let haStrategia = false;
+  let haStoria = false;
+  let haIniziali = false;
 
   for (let i = 0; i < stato.giorni.length; i++) {
     const giorno = stato.giorni[i];
@@ -2432,6 +2810,12 @@ function disegnaIncoraggiamento() {
     if (giorno.richiamo) {
       haRichiamo = true;
     }
+    const aiuti = Array.isArray(giorno.aiuti) ? giorno.aiuti : [];
+    for (let j = 0; j < aiuti.length; j++) {
+      if (aiuti[j].tipo === "strategia") haStrategia = true;
+      if (aiuti[j].tipo === "storia") haStoria = true;
+      if (aiuti[j].tipo === "iniziali") haIniziali = true;
+    }
   }
 
   for (let i = 0; i < stato.vitaStorico.length; i++) {
@@ -2441,10 +2825,13 @@ function disegnaIncoraggiamento() {
   if (massimoTentativi > 1) {
     strategie.push("ripetizione");
   }
-  if (massimoTentativi >= TENTATIVI_PRIMA_DELLA_STORIA) {
+  if (haStrategia) {
+    strategie.push("collegamento tra parole");
+  }
+  if (haStoria) {
     strategie.push("storia tra parole");
   }
-  if (massimoTentativi >= TENTATIVI_PRIMA_DELL_AIUTO) {
+  if (haIniziali) {
     strategie.push("aiuto delle iniziali");
   }
   if (haRichiamo) {
@@ -2789,8 +3176,16 @@ function aggiornaConsiglioTempo() {
 function aggiornaConsiglioAvanzamento() {
   const pannello = document.getElementById("pannello-avanzamento");
   const testo = document.getElementById("testo-avanzamento");
-  testo.textContent = "Impostazione obbligatoria di oggi: " + nomeLivello(stato.difficolta) +
+  const quantiRinforzi = numeroRinforziOggi();
+  let messaggio = "Impostazione obbligatoria di oggi: " + nomeLivello(stato.difficolta) +
     " con " + formattaTempo(stato.secondiScelti) + ". " + stato.motivoCalibrazioneAutomatica;
+  if (quantiRinforzi > 0) {
+    messaggio += " Per allenare il richiamo dopo 24 ore, oggi torn" +
+      (quantiRinforzi === 1 ? "a " : "ano ") + quantiRinforzi +
+      (quantiRinforzi === 1 ? " parola mancata" : " parole mancate") +
+      " insieme alle parole nuove.";
+  }
+  testo.textContent = messaggio;
   pannello.style.display = "block";
 }
 
@@ -2889,18 +3284,19 @@ function metricheGiornoGrafico(giornoRiassunto, oggiChiave) {
     return { stato: giornoRiassunto.chiave === oggiChiave ? "inAttesa" : "saltato" };
   }
 
-  const richiamoOggi = giorno.richiamo ?
-    punteggioMetricaGrafico(giorno.richiamo.punti) : null;
+  const richiamoOggi = punteggioMetricaGrafico(richiamoGrezzoDellaSerie(giornoRiassunto.chiave));
+  const haSvoltoRichiamoOggi = giorno.richiamo &&
+    punteggioMetricaGrafico(giorno.richiamo.punti) !== null;
   const tentativi = Array.isArray(giorno.tentativi) ? giorno.tentativi : [];
   if (tentativi.length === 0) {
-    if (richiamoOggi === null) {
+    if (!haSvoltoRichiamoOggi) {
       return { stato: giornoRiassunto.chiave === oggiChiave ? "inAttesa" : "saltato" };
     }
     return {
       stato: "soloRichiamo",
-      prima: null, migliore: null, richiamo: richiamoOggi / 15,
+      prima: null, migliore: null, richiamo: richiamoOggi === null ? null : richiamoOggi / 15,
       tentativi: null, tempo: null, sfida: null, livello: "R",
-      sintesi: null
+      sintesi: null, sintesiParziale: null, coperturaSintesi: null
     };
   }
 
@@ -2943,11 +3339,16 @@ function metricheGiornoGrafico(giornoRiassunto, oggiChiave) {
   ];
   let sintesi = 0;
   let sintesiCompleta = true;
+  let pesoDisponibile = 0;
   for (let i = 0; i < componenti.length; i++) {
     if (typeof componenti[i].valore !== "number" ||
         !Number.isFinite(componenti[i].valore)) sintesiCompleta = false;
-    else sintesi = sintesi + limitaMetricaGrafico(componenti[i].valore) * componenti[i].peso;
+    else {
+      sintesi = sintesi + limitaMetricaGrafico(componenti[i].valore) * componenti[i].peso;
+      pesoDisponibile = pesoDisponibile + componenti[i].peso;
+    }
   }
+  const haMinimoSintesi = primoPunteggio !== null && migliore !== null;
 
   return {
     stato: "allenato",
@@ -2958,7 +3359,9 @@ function metricheGiornoGrafico(giornoRiassunto, oggiChiave) {
     tempo: efficienzaTempo,
     sfida: sfidaTempo,
     livello: livello === "difficile" ? "D" : (livello === "mix" ? "X" : "M"),
-    sintesi: sintesiCompleta ? sintesi : null
+    sintesi: sintesiCompleta ? sintesi : null,
+    sintesiParziale: haMinimoSintesi && pesoDisponibile > 0 ? sintesi / pesoDisponibile : null,
+    coperturaSintesi: haMinimoSintesi ? pesoDisponibile : null
   };
 }
 
@@ -3003,7 +3406,225 @@ function graficoTestualeSettimana(giorni, oggiChiave) {
   righe.push("▁ più basso · █ più alto · – saltato · ○ non disponibile");
   righe.push("Tentativi e tempi: una barra più alta indica meno prove o meno tempo.");
   righe.push("M = Media · X = Mix · D = Difficile · R = solo richiamo");
+  righe.push("La riga 24 ore appartiene alle parole studiate nel giorno indicato.");
   righe.push("La sintesi compare quando tutte le metriche della giornata sono disponibili.");
+  return righe;
+}
+
+function ultimoGiornoDelMese(data) {
+  return new Date(data.getFullYear(), data.getMonth() + 1, 0).getDate();
+}
+
+function eChiusuraMese(data) {
+  return data.getDate() === ultimoGiornoDelMese(data);
+}
+
+function intervalloGrafico(inizio, fine, etichetta) {
+  return { inizio: inizio, fine: fine, etichetta: etichetta };
+}
+
+function gruppiSetteGiorniDelMese(data) {
+  const gruppi = [];
+  const ultimo = ultimoGiornoDelMese(data);
+  for (let giorno = 1; giorno <= ultimo; giorno += 7) {
+    gruppi.push(intervalloGrafico(
+      new Date(data.getFullYear(), data.getMonth(), giorno),
+      new Date(data.getFullYear(), data.getMonth(), Math.min(ultimo, giorno + 6)),
+      duecifre(giorno)
+    ));
+  }
+  return gruppi;
+}
+
+function gruppiMesi(anno, meseIniziale, quanti) {
+  const nomi = ["Gen","Feb","Mar","Apr","Mag","Giu","Lug","Ago","Set","Ott","Nov","Dic"];
+  const gruppi = [];
+  for (let i = 0; i < quanti; i++) {
+    const mese = meseIniziale + i;
+    gruppi.push(intervalloGrafico(
+      new Date(anno, mese, 1),
+      new Date(anno, mese + 1, 0),
+      nomi[mese]
+    ));
+  }
+  return gruppi;
+}
+
+function primaDataCopertaDalGioco() {
+  let prima = null;
+  for (let i = 0; i < stato.giorni.length; i++) {
+    const data = stato.giorni[i].data;
+    if (typeof data === "string" && (prima === null || data < prima)) prima = data;
+  }
+  const prescrizione = stato.prescrizioneGiornaliera;
+  if (prescrizione && typeof prescrizione.data === "string" &&
+      (prima === null || prescrizione.data < prima)) prima = prescrizione.data;
+  return prima;
+}
+
+function metricheIntervalloGrafico(intervallo, oggiChiave) {
+  const campi = ["prima","migliore","richiamo","tentativi","tempo","sfida",
+    "sintesiParziale","coperturaSintesi"];
+  const somme = {};
+  const conteggi = {};
+  const livelli = { M: 0, X: 0, D: 0 };
+  const coperturaDal = primaDataCopertaDalGioco();
+  let giorniTotali = 0;
+  let giorniAllenati = 0;
+
+  for (let data = new Date(intervallo.inizio.getFullYear(), intervallo.inizio.getMonth(),
+       intervallo.inizio.getDate()); data <= intervallo.fine;
+       data = new Date(data.getFullYear(), data.getMonth(), data.getDate() + 1)) {
+    const chiave = chiaveData(data);
+    if (coperturaDal === null || chiave < coperturaDal) continue;
+    const riassunto = riassuntoGiorno(trovaGiorno(chiave));
+    riassunto.chiave = chiave;
+    riassunto.data = data;
+    const metriche = metricheGiornoGrafico(riassunto, oggiChiave);
+
+    if (metriche.stato === "futuro" || metriche.stato === "inAttesa") continue;
+    giorniTotali++;
+
+    if (metriche.stato === "allenato" || metriche.stato === "soloRichiamo") {
+      giorniAllenati++;
+    }
+    if (metriche.stato === "allenato" && livelli[metriche.livello] !== undefined) {
+      livelli[metriche.livello]++;
+    }
+    for (let i = 0; i < campi.length; i++) {
+      const nome = campi[i];
+      const valore = metriche[nome];
+      if (typeof valore === "number" && Number.isFinite(valore)) {
+        somme[nome] = (somme[nome] || 0) + valore;
+        conteggi[nome] = (conteggi[nome] || 0) + 1;
+      }
+    }
+  }
+
+  function media(nome) {
+    return conteggi[nome] ? somme[nome] / conteggi[nome] : null;
+  }
+
+  let livello = null;
+  ["M","X","D"].forEach(function (sigla) {
+    if (livelli[sigla] > 0 && (livello === null || livelli[sigla] > livelli[livello] ||
+        (livelli[sigla] === livelli[livello] && ["M","X","D"].indexOf(sigla) >
+          ["M","X","D"].indexOf(livello)))) livello = sigla;
+  });
+
+  return {
+    costanza: giorniTotali > 0 ? giorniAllenati / giorniTotali : null,
+    prima: media("prima"),
+    migliore: media("migliore"),
+    richiamo: media("richiamo"),
+    tentativi: media("tentativi"),
+    tempo: media("tempo"),
+    sfida: media("sfida"),
+    livello: livello,
+    sintesi: media("sintesiParziale"),
+    coperturaSintesi: media("coperturaSintesi")
+  };
+}
+
+function graficoTestualePeriodo(titolo, gruppi, oggiChiave) {
+  const metriche = gruppi.map(function (gruppo) {
+    return metricheIntervalloGrafico(gruppo, oggiChiave);
+  });
+
+  function valore(metrica, nome) {
+    if (nome === "livello") return metrica.livello || "○";
+    return typeof metrica[nome] === "number" ? simboloMetricaGrafico(metrica[nome]) : "○";
+  }
+
+  function riga(nome, campo) {
+    return nome.padEnd(8, " ") + metriche.map(function (metrica) {
+      return valore(metrica, campo).padStart(3, " ");
+    }).join(" ");
+  }
+
+  const righe = [];
+  righe.push("📊 " + titolo);
+  righe.push("```");
+  righe.push("Periodo".padEnd(8, " ") + gruppi.map(function (gruppo) {
+    return gruppo.etichetta.padStart(3, " ");
+  }).join(" "));
+  righe.push(riga("Cost.", "costanza"));
+  righe.push(riga("Prima", "prima"));
+  righe.push(riga("Meglio", "migliore"));
+  righe.push(riga("24 ore", "richiamo"));
+  righe.push(riga("Prove", "tentativi"));
+  righe.push(riga("T. tot.", "tempo"));
+  righe.push(riga("T. iniz.", "sfida"));
+  righe.push(riga("Livello", "livello"));
+  righe.push(riga("Sintesi", "sintesi"));
+  righe.push(riga("Dati", "coperturaSintesi"));
+  righe.push("```");
+  return righe;
+}
+
+function graficiDiFinePeriodo(oggi, oggiChiave) {
+  let riferimento = oggi;
+  if (!eChiusuraMese(riferimento)) {
+    // Se la chiusura non è stata condivisa l'ultimo giorno, resta disponibile
+    // anche il primo giorno del periodo successivo.
+    if (oggi.getDate() !== 1) return [];
+    riferimento = new Date(oggi.getFullYear(), oggi.getMonth(), 0);
+  }
+
+  const mesi = ["GENNAIO","FEBBRAIO","MARZO","APRILE","MAGGIO","GIUGNO",
+    "LUGLIO","AGOSTO","SETTEMBRE","OTTOBRE","NOVEMBRE","DICEMBRE"];
+  const anno = riferimento.getFullYear();
+  const mese = riferimento.getMonth();
+  const righe = ["📈 GRAFICI DI FINE PERIODO"];
+
+  function aggiungi(blocco) {
+    righe.push("");
+    for (let i = 0; i < blocco.length; i++) righe.push(blocco[i]);
+  }
+
+  aggiungi(graficoTestualePeriodo(
+    "MESE · " + mesi[mese] + " " + anno,
+    gruppiSetteGiorniDelMese(riferimento), oggiChiave
+  ));
+
+  if (mese === 2 || mese === 5 || mese === 8 || mese === 11) {
+    const inizioTrimestre = Math.floor(mese / 3) * 3;
+    aggiungi(graficoTestualePeriodo(
+      "TRIMESTRE · " + mesi[inizioTrimestre] + "–" + mesi[mese] + " " + anno,
+      gruppiMesi(anno, inizioTrimestre, 3), oggiChiave
+    ));
+  }
+
+  if (mese === 5 || mese === 11) {
+    const inizioSemestre = mese === 5 ? 0 : 6;
+    aggiungi(graficoTestualePeriodo(
+      "SEMESTRE · " + mesi[inizioSemestre] + "–" + mesi[mese] + " " + anno,
+      gruppiMesi(anno, inizioSemestre, 6), oggiChiave
+    ));
+  }
+
+  if (mese === 11 && riferimento.getDate() === 31) {
+    aggiungi(graficoTestualePeriodo(
+      "ANNO " + anno + " · GEN–GIU", gruppiMesi(anno, 0, 6), oggiChiave
+    ));
+    aggiungi(graficoTestualePeriodo(
+      "ANNO " + anno + " · LUG–DIC", gruppiMesi(anno, 6, 6), oggiChiave
+    ));
+  }
+
+  righe.push("");
+  righe.push("▁ più basso · █ più alto · ○ dato non disponibile");
+  righe.push("Cost. = quota di giorni allenati. Prove e tempi: più alto significa meno prove o meno tempo.");
+  righe.push("Dati = completezza delle metriche usate nella Sintesi. Un dato mancante non diventa zero.");
+  righe.push("Una giornata ancora in corso non abbassa la costanza.");
+  righe.push("Nel mese: 01 = giorni 1–7, 08 = 8–14, 15 = 15–21, 22 = 22–28, 29 = fino a fine mese.");
+  const coperturaDal = primaDataCopertaDalGioco();
+  if (coperturaDal !== null) {
+    righe.push("Copertura storica disponibile dal " + etichettaDataCompleta(coperturaDal) +
+      " " + coperturaDal.slice(0, 4) + ".");
+  }
+  righe.push("La riga 24 ore è attribuita al giorno in cui quelle parole sono state studiate.");
+  righe.push("M = Media · X = Mix · D = Difficile");
   return righe;
 }
 
@@ -3084,6 +3705,12 @@ function testoRiepilogo() {
   righe.push("");
   const righeGrafico = graficoTestualeSettimana(settimane[0], oggiChiave);
   for (let i = 0; i < righeGrafico.length; i++) righe.push(righeGrafico[i]);
+
+  const righePeriodiche = graficiDiFinePeriodo(oggi, oggiChiave);
+  if (righePeriodiche.length > 0) {
+    righe.push("");
+    for (let i = 0; i < righePeriodiche.length; i++) righe.push(righePeriodiche[i]);
+  }
 
   return righe.join("\n");
 }
@@ -3213,8 +3840,11 @@ document.getElementById("bottone-suggerimento").addEventListener("click", functi
     return;
   }
 
+  const suggerimento = costruisciSuggerimento(paroleMancantiPersistenti(3));
+  if (suggerimento === null) return;
   stato.suggerimentoUsato = true;
-  const suggerimento = costruisciSuggerimento();
+  stato.aiutoPerProssimoTentativo = "storia";
+  registraEventoAiuto("storia");
   document.getElementById("titolo-strategia").textContent = suggerimento.titolo;
   document.getElementById("testo-storia").textContent = suggerimento.testo;
   document.getElementById("testo-storia").style.display = "block";
@@ -3228,11 +3858,16 @@ document.getElementById("bottone-iniziali").addEventListener("click", function (
     return;
   }
 
-  stato.suggerimentoUsato = true;
-  document.getElementById("iniziali-mancanti").textContent = iniziali();
+  const parole = paroleMancantiPersistenti(3);
+  if (parole.length === 0) return;
+  stato.aiutoPerProssimoTentativo = "iniziali";
+  registraEventoAiuto("iniziali");
+  document.getElementById("iniziali-mancanti").textContent = iniziali(parole);
   document.getElementById("riquadro-storia").style.display = "none";
   document.getElementById("riquadro-aiuto").style.display = "block";
 });
+
+document.getElementById("bottone-mostra-parole").addEventListener("click", scopriCarteEsito);
 
 document.getElementById("bottone-avanti").addEventListener("click", function () {
   if (stato.modalita === "richiamo") {
