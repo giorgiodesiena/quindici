@@ -298,7 +298,7 @@ body {
 
 /* ---------- progressi ---------- */
 
-.numeroni { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.numeroni { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
 
 .numerone {
   flex: 1; min-width: calc(50% - 8px); background: #FFFDF6; border: 2px solid var(--carta-ombra);
@@ -311,11 +311,29 @@ body {
 }
 
 .numerone span {
-  font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.06em;
+  font-size: 0.75rem; line-height: 1.25; text-transform: uppercase; letter-spacing: 0.045em;
   color: var(--inchiostro-tenue);
 }
 
-#grafico svg, #posizioni svg { width: 100%; height: auto; display: block; }
+#grafico svg, #grafico-richiamo svg { width: 100%; height: auto; display: block; }
+
+.blocco-grafico { margin-top: 22px; }
+
+.titolo-grafico {
+  margin: 0 0 5px; font-size: 1.08rem; line-height: 1.3; font-weight: 600;
+  color: var(--inchiostro);
+}
+
+.descrizione-grafico {
+  margin: 0 0 10px; font-size: 0.88rem; line-height: 1.45;
+  color: var(--inchiostro-tenue);
+}
+
+.grafico-vuoto {
+  min-height: 76px; display: flex; align-items: center; justify-content: center;
+  padding: 14px; border: 2px dashed var(--carta-ombra); border-radius: 12px;
+  color: var(--inchiostro-tenue); font-size: 0.92rem; line-height: 1.4; text-align: center;
+}
 
 .legenda {
   display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
@@ -329,20 +347,63 @@ body {
 
 .pallino.tondo { border-radius: 99px; }
 
+.pallino.prima {
+  border: 2px solid var(--inchiostro-tenue); background: #FFFDF6; border-radius: 99px;
+}
+
+.pallino.migliore { background: var(--verde-ok); }
+.pallino.richiamo { background: var(--tavolo); border-radius: 99px; }
+
+.griglia-posizioni {
+  display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 7px;
+  margin-top: 10px;
+}
+
+.posizione-cella {
+  min-height: 54px; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 2px; border: 2px solid var(--carta-ombra);
+  border-radius: 10px; color: var(--inchiostro);
+}
+
+.posizione-cella b { font-size: 1.02rem; line-height: 1; }
+.posizione-cella span { font-size: 0.75rem; color: var(--inchiostro-tenue); }
+.posizione-cella.supporto-0 { background: #FFFDF6; }
+.posizione-cella.supporto-1 { background: #F5E8C9; }
+.posizione-cella.supporto-2 { background: #ECD18C; border-color: #C5932C; }
+.posizione-cella.supporto-3 { background: #D6A032; border-color: #8A6317; }
+.posizione-cella.supporto-3 span { color: var(--inchiostro); }
+
 .giorno-riga {
   display: block;
-  font-family: 'DM Mono', 'Courier New', monospace; font-size: 0.82rem;
+  font-family: 'DM Mono', 'Courier New', monospace; font-size: 0.86rem;
   color: var(--inchiostro-tenue); padding: 9px 0;
   border-bottom: 1px dashed var(--carta-ombra);
 }
 
-.giorno-intestazione { display: flex; justify-content: space-between; gap: 10px; }
+.giorno-riga summary {
+  min-height: 48px; display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; padding-right: 52px; position: relative; cursor: pointer; line-height: 1.35;
+}
+
+.giorno-riga summary::marker { color: var(--oro); }
+.giorno-riga summary::after {
+  content: "Apri"; position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+  color: var(--inchiostro-tenue); font-family: 'Archivo', sans-serif; font-size: 0.75rem;
+  text-decoration: underline;
+}
+.giorno-riga[open] summary::after { content: "Chiudi"; }
+.giorno-riga[open] summary { color: var(--inchiostro); }
+.giorno-riga summary:focus-visible { outline: 3px solid var(--rosso); outline-offset: 3px; }
+.giorno-riga-semplice { min-height: 48px; display: flex; align-items: center; }
+.giorno-intestazione { display: flex; width: 100%; justify-content: space-between; gap: 10px; }
+.giorno-intestazione span:last-child { text-align: right; }
 .giorno-dettagli { margin-top: 7px; padding-left: 12px; border-left: 3px solid var(--carta-ombra); }
+.giorno-contesto { padding: 4px 0; line-height: 1.4; }
 .tentativo-dettaglio { border-top: none; padding: 3px 0; }
 
 .giorno-riga:last-child { border-bottom: none; }
 .giorno-riga.pieno { color: var(--verde-ok); }
-.giorno-riga.vuoto { opacity: 0.55; }
+.giorno-riga.vuoto { color: var(--inchiostro-tenue); }
 
 /* ---------- ottimizzazione solo smartphone ---------- */
 
@@ -367,7 +428,7 @@ body {
     box-shadow: 0 8px 0 -4px rgba(0,0,0,0.25);
   }
   .pannello + .pannello { margin-top: 12px; }
-  .etichetta { margin-bottom: 9px; font-size: 0.68rem; }
+  .etichetta { margin-bottom: 9px; font-size: 0.75rem; }
   .spiega { font-size: 1rem; line-height: 1.48; }
 
   .bottone { min-height: 60px; font-size: 1.08rem; border-radius: 13px; touch-action: manipulation; }
@@ -400,10 +461,15 @@ body {
   .riquadro { padding: 12px; }
   .numerone { min-width: calc(50% - 4px); padding: 11px 5px; }
   .numerone b { font-size: 1.35rem; }
+  .numerone span { font-size: 0.75rem; }
+  .titolo-grafico { font-size: 1.06rem; }
+  .descrizione-grafico { font-size: 0.9rem; }
   .legenda { justify-content: flex-start; gap: 8px 12px; }
+  .giorno-riga summary { align-items: flex-start; }
   .giorno-intestazione { flex-direction: column; gap: 3px; }
+  .giorno-intestazione span:last-child { text-align: left; }
   .giorno-dettagli { padding-left: 9px; }
-  .tentativo-dettaglio, .riga-tentativo { font-size: 0.8rem; line-height: 1.35; }
+  .tentativo-dettaglio, .riga-tentativo { font-size: 0.84rem; line-height: 1.4; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -487,19 +553,36 @@ body {
       <div class="etichetta">I progressi</div>
       <div class="riquadro" id="incoraggiamento-progressi"></div>
       <div id="strategie-progressi" style="margin:12px 0 18px"></div>
-      <div class="numeroni" id="numeroni"></div>
-      <div id="grafico"></div>
-      <div class="legenda">
-        <span><i class="pallino" style="background:#2E7D4F"></i>tutte e 15</span>
-        <span><i class="pallino" style="background:#E3A72F"></i>allenamento svolto</span>
-        <span><i class="pallino" style="background:#E3D8BE"></i>non fatto</span>
-        <span><i class="pallino tondo" style="background:#14402F"></i>richiamo dopo un giorno</span>
+      <div class="numeroni" id="numeroni" aria-live="polite"></div>
+
+      <div class="blocco-grafico">
+        <h2 class="titolo-grafico">Allenamento di questa settimana</h2>
+        <p class="descrizione-grafico">
+          La barra mostra il miglior risultato senza suggerimenti; il cerchio indica la prima prova.
+          Livello e tempo possono cambiare: apri un giorno per leggere il risultato nel suo contesto.
+        </p>
+        <div id="grafico"></div>
+        <div class="legenda" aria-label="Legenda del grafico dell'allenamento">
+          <span><i class="pallino prima"></i>prima prova</span>
+          <span><i class="pallino migliore"></i>miglior risultato senza suggerimenti</span>
+        </div>
       </div>
 
-      <div class="etichetta" style="margin-top:24px">Quali posizioni allenare</div>
+      <div class="blocco-grafico">
+        <h2 class="titolo-grafico">Richiamo spontaneo dopo 24 ore</h2>
+        <p class="descrizione-grafico">
+          Ogni valore appartiene al giorno in cui le parole sono state studiate.
+          Il recupero guidato resta un aiuto separato e non modifica il risultato spontaneo.
+        </p>
+        <div id="grafico-richiamo"></div>
+      </div>
+
+      <div class="etichetta" style="margin-top:26px">Dove può aiutare un collegamento in più</div>
       <div id="posizioni"></div>
 
-      <div id="elenco-giorni" style="margin-top:18px"></div>
+      <div class="etichetta" style="margin-top:26px">Dettagli della settimana</div>
+      <p class="descrizione-grafico">Tocca un giorno per vedere modalità, tempi e singoli tentativi.</p>
+      <div id="elenco-giorni"></div>
       <button class="bottone" id="bottone-condividi">Manda il riepilogo a tuo figlio</button>
     </div>
   </section>
@@ -3002,6 +3085,7 @@ function disegnaProgressi() {
   disegnaIncoraggiamento();
   disegnaNumeroni();
   disegnaGrafico();
+  disegnaGraficoRichiamo();
   disegnaPosizioni();
   disegnaElencoGiorni();
   aggiornaConsiglioTempo();
@@ -3088,159 +3172,361 @@ function disegnaIncoraggiamento() {
   }
 }
 
-function disegnaNumeroni() {
-  let giorniFatti = 0;
-  let giorniCompletati = 0;
-  let sommaTentativi = 0;
-  let sommaRichiamo = 0;
-  let quantiRichiami = 0;
-  let ultimoTempoTotale = null;
+function dataLocaleDaChiave(chiave) {
+  const pezzi = String(chiave || "").split("-");
+  if (pezzi.length !== 3) return null;
+  const anno = Number(pezzi[0]);
+  const mese = Number(pezzi[1]);
+  const giorno = Number(pezzi[2]);
+  if (!Number.isInteger(anno) || !Number.isInteger(mese) || !Number.isInteger(giorno)) return null;
+  const data = new Date(anno, mese - 1, giorno);
+  if (data.getFullYear() !== anno || data.getMonth() !== mese - 1 || data.getDate() !== giorno) return null;
+  return data;
+}
 
+function chiaveSpostata(chiave, giorni) {
+  const data = dataLocaleDaChiave(chiave);
+  if (data === null) return null;
+  return chiaveData(new Date(data.getFullYear(), data.getMonth(), data.getDate() + giorni));
+}
+
+function puntiValidiProgressi(valore) {
+  if (valore === null || valore === undefined || valore === "") return null;
+  const numero = Number(valore);
+  if (!Number.isFinite(numero)) return null;
+  return Math.max(0, Math.min(15, numero));
+}
+
+function recordRichiamoProgressi(dataSerie) {
+  let ripiegoLegacy = null;
   for (let i = 0; i < stato.giorni.length; i++) {
     const giorno = stato.giorni[i];
-
-    if (giorno.tentativi.length > 0) {
-      giorniFatti = giorniFatti + 1;
+    const richiamo = giorno && giorno.richiamo;
+    if (!richiamo) continue;
+    if (richiamo.da === dataSerie) {
+      return { richiamo: richiamo, dataSvolgimento: giorno.data };
     }
-
-    if (giorno.completatoAl !== null) {
-      giorniCompletati = giorniCompletati + 1;
-      sommaTentativi = sommaTentativi + giorno.completatoAl;
-      ultimoTempoTotale = tempoTotaleCompletamento(giorno);
-    }
-
-    if (giorno.richiamo) {
-      sommaRichiamo = sommaRichiamo + giorno.richiamo.punti;
-      quantiRichiami = quantiRichiami + 1;
+    if (!richiamo.da && chiaveSpostata(giorno.data, -1) === dataSerie) {
+      ripiegoLegacy = { richiamo: richiamo, dataSvolgimento: giorno.data };
     }
   }
+  return ripiegoLegacy;
+}
 
-  let mediaTentativi = "—";
-  if (giorniCompletati > 0) {
-    mediaTentativi = (sommaTentativi / giorniCompletati).toFixed(1);
+function puntiSpontaneiRichiamo(record) {
+  if (record === null || !record.richiamo) return null;
+  const richiamo = record.richiamo;
+  const spontanei = puntiValidiProgressi(richiamo.puntiSpontanei);
+  if (spontanei !== null) return spontanei;
+  return puntiValidiProgressi(richiamo.punti);
+}
+
+function datiProgressiGiorno(chiave, oggiChiave) {
+  const giorno = trovaGiorno(chiave);
+  const tuttiTentativi = giorno && Array.isArray(giorno.tentativi) ? giorno.tentativi : [];
+  const tentativi = tentativiSeriePrincipale(giorno);
+  const primaProva = tentativi.length > 0 ? tentativi[0] : null;
+  const prima = primaProva === null ? null : puntiValidiProgressi(primaProva.punti);
+  let migliore = null;
+  let miglioreTotale = null;
+  let completatoAl = null;
+
+  for (let i = 0; i < tentativi.length; i++) {
+    const punti = puntiValidiProgressi(tentativi[i].punti);
+    if (punti === null) continue;
+    if (miglioreTotale === null || punti > miglioreTotale) miglioreTotale = punti;
+    if (!tentativi[i].aiutoPrecedente && (migliore === null || punti > migliore)) {
+      migliore = punti;
+    }
+    if (punti === 15 && completatoAl === null) completatoAl = i + 1;
+  }
+  if (migliore === null) migliore = miglioreTotale;
+
+  const tempiAssegnati = [];
+  for (let i = 0; i < tentativi.length; i++) {
+    const secondi = Number(tentativi[i].secondi);
+    if (!Number.isFinite(secondi) || secondi <= 0) continue;
+    if (tempiAssegnati.length === 0 || tempiAssegnati[tempiAssegnati.length - 1] !== secondi) {
+      tempiAssegnati.push(secondi);
+    }
   }
 
-  let mediaRichiamo = "—";
-  if (quantiRichiami > 0) {
-    mediaRichiamo = (sommaRichiamo / quantiRichiami).toFixed(1);
-  }
+  const recordRichiamo = recordRichiamoProgressi(chiave);
+  const richiamoSpontaneo = puntiSpontaneiRichiamo(recordRichiamo);
+  let statoGiorno = "allenato";
+  if (chiave > oggiChiave) statoGiorno = "futuro";
+  else if (tentativi.length === 0 && chiave === oggiChiave) statoGiorno = "oggi";
+  else if (tentativi.length === 0) statoGiorno = "saltato";
+  const giornoPerTempo = giorno === null ? null : Object.assign({}, giorno, { tentativi: tuttiTentativi });
 
-  let tempoMostrato = "—";
-  if (ultimoTempoTotale !== null) {
-    tempoMostrato = formattaTempo(ultimoTempoTotale);
-  }
+  return {
+    chiave: chiave,
+    data: dataLocaleDaChiave(chiave),
+    giorno: giorno,
+    stato: statoGiorno,
+    tentativi: tentativi,
+    tuttiTentativi: tuttiTentativi,
+    prima: prima,
+    migliore: migliore,
+    miglioreTotale: miglioreTotale,
+    completatoAl: completatoAl,
+    livello: primaProva && primaProva.livello ? primaProva.livello : "media",
+    secondiIniziali: primaProva && Number.isFinite(Number(primaProva.secondi)) &&
+      Number(primaProva.secondi) > 0 ? Number(primaProva.secondi) : null,
+    tempiAssegnati: tempiAssegnati,
+    tempoGiornaliero: giornoPerTempo === null || tuttiTentativi.length === 0 ?
+      null : tempoGiornaliero(giornoPerTempo),
+    sfidaAutomatica: tentativi.some(function (prova) { return prova.sfidaAutomatica === true; }),
+    recordRichiamo: recordRichiamo,
+    richiamoSpontaneo: richiamoSpontaneo
+  };
+}
 
+function datiProgressiSettimana() {
+  const oggi = new Date();
+  const oggiChiave = chiaveData(oggi);
+  const lunedi = inizioSettimana(oggi);
+  const settimana = [];
+  for (let i = 0; i < 7; i++) {
+    const data = new Date(lunedi.getFullYear(), lunedi.getMonth(), lunedi.getDate() + i);
+    settimana.push(datiProgressiGiorno(chiaveData(data), oggiChiave));
+  }
+  return settimana;
+}
+
+function mediaProgressi(valori) {
+  if (valori.length === 0) return null;
+  const somma = valori.reduce(function (totale, valore) { return totale + valore; }, 0);
+  return somma / valori.length;
+}
+
+function testoMediaProgressi(valore) {
+  if (valore === null) return "—";
+  return valore.toFixed(1).replace(".", ",") + "/15";
+}
+
+function strisciaAllenamenti() {
   let striscia = 0;
   const oggi = new Date();
   let passo = 0;
-  let scorri = true;
-
-  while (scorri === true) {
+  while (passo <= MAX_GIORNI_STORICO) {
     const data = new Date(oggi.getFullYear(), oggi.getMonth(), oggi.getDate() - passo);
     const giorno = trovaGiorno(chiaveData(data));
-    let haFatto = false;
-
-    if (giorno !== null && giorno.tentativi.length > 0) {
-      haFatto = true;
-    }
-
-    if (haFatto === true) {
-      striscia = striscia + 1;
-      passo = passo + 1;
+    const haFatto = giorno !== null && Array.isArray(giorno.tentativi) && giorno.tentativi.length > 0;
+    if (haFatto) {
+      striscia++;
+      passo++;
     } else if (passo === 0) {
-      passo = passo + 1;
+      passo++;
     } else {
-      scorri = false;
+      break;
     }
+  }
+  return striscia;
+}
 
-    if (passo > 400) {
-      scorri = false;
-    }
+function disegnaNumeroni() {
+  const giorni = datiProgressiSettimana();
+  const prime = [];
+  const richiami = [];
+  let allenamenti = 0;
+
+  for (let i = 0; i < giorni.length; i++) {
+    if (giorni[i].tentativi.length > 0) allenamenti++;
+    if (giorni[i].prima !== null) prime.push(giorni[i].prima);
+    if (giorni[i].richiamoSpontaneo !== null) richiami.push(giorni[i].richiamoSpontaneo);
   }
 
   document.getElementById("numeroni").innerHTML =
-    '<div class="numerone"><b>' + striscia + '</b><span>giorni di fila</span></div>' +
-    '<div class="numerone"><b>' + mediaTentativi + '</b><span>prove per il pieno</span></div>' +
-    '<div class="numerone"><b>' + mediaRichiamo + '</b><span>ricordate il giorno dopo</span></div>' +
-    '<div class="numerone"><b>' + tempoMostrato + '</b><span>tempo ultimo 15/15</span></div>';
+    '<div class="numerone"><b>' + allenamenti + '</b><span>allenamenti questa settimana</span></div>' +
+    '<div class="numerone"><b>' + strisciaAllenamenti() + '</b><span>giorni di fila</span></div>' +
+    '<div class="numerone"><b>' + testoMediaProgressi(mediaProgressi(prime)) +
+      '</b><span>media della prima prova</span></div>' +
+    '<div class="numerone"><b>' + testoMediaProgressi(mediaProgressi(richiami)) +
+      '</b><span>richiamo spontaneo medio</span></div>';
+}
+
+function larghezzaDisponibileGrafico(id) {
+  const contenitore = document.getElementById(id);
+  const misurata = contenitore ? Math.round(contenitore.getBoundingClientRect().width) : 0;
+  const ripiego = Math.max(260, Math.min(560, window.innerWidth - 46));
+  return Math.max(260, Math.min(560, misurata || ripiego || 340));
+}
+
+function nomeGiornoBreve(data) {
+  const nomi = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
+  return data === null ? "—" : nomi[data.getDay()];
+}
+
+function descrizioneAllenamentoSettimana(giorni) {
+  return giorni.map(function (g) {
+    const nome = nomeGiornoBreve(g.data);
+    if (g.tentativi.length === 0) {
+      if (g.stato === "futuro") return nome + ": giorno futuro";
+      if (g.stato === "oggi") return nome + ": allenamento non ancora svolto";
+      return nome + ": allenamento non svolto";
+    }
+    if (g.prima === null || g.migliore === null) return nome + ": risultato non disponibile";
+    return nome + ": prima prova " + g.prima + " su 15, miglior risultato senza suggerimenti " +
+      g.migliore + " su 15";
+  }).join(". ");
 }
 
 function disegnaGrafico() {
-  const giorni = ultimiGiorni(GIORNI_NEL_GRAFICO);
-
-  const larghezza = 340;
-  const altezza = 200;
-  const sopra = 16;
-  const sotto = 52;
-  const sinistra = 24;
-  const destra = 8;
+  const giorni = datiProgressiSettimana();
+  const larghezza = larghezzaDisponibileGrafico("grafico");
+  const altezza = 218;
+  const sopra = 30;
+  const sotto = 58;
+  const sinistra = 34;
+  const destra = 6;
   const zona = altezza - sopra - sotto;
   const passo = (larghezza - sinistra - destra) / giorni.length;
-  const larghezzaBarra = passo * 0.56;
+  const larghezzaBarra = Math.max(11, Math.min(19, passo * 0.43));
 
   let svg = '<svg viewBox="0 0 ' + larghezza + ' ' + altezza + '" role="img" ' +
-            'aria-label="Parole indovinate negli ultimi giorni">';
+    'aria-labelledby="titolo-svg-allenamento descrizione-svg-allenamento" focusable="false">' +
+    '<title id="titolo-svg-allenamento">Prima prova e miglior risultato della settimana</title>' +
+    '<desc id="descrizione-svg-allenamento">' + descrizioneAllenamentoSettimana(giorni) + '</desc>';
 
   const tacche = [0, 5, 10, 15];
   for (let i = 0; i < tacche.length; i++) {
     const valore = tacche[i];
     const y = sopra + zona - (valore / 15) * zona;
+    svg += '<line x1="' + sinistra + '" y1="' + y + '" x2="' + (larghezza - destra) +
+      '" y2="' + y + '" stroke="var(--carta-ombra)" stroke-width="1"/>';
+    svg += '<text x="' + (sinistra - 7) + '" y="' + (y + 4) +
+      '" font-size="12" fill="var(--inchiostro-tenue)" text-anchor="end" font-family="monospace">' +
+      valore + '</text>';
+  }
+  svg += '<text x="2" y="14" font-size="12" fill="var(--inchiostro-tenue)">parole</text>';
 
-    svg += '<line x1="' + sinistra + '" y1="' + y + '" x2="' + (larghezza - destra) + '" y2="' + y +
-           '" stroke="#E3D8BE" stroke-width="1" stroke-dasharray="3 3"/>';
-    svg += '<text x="' + (sinistra - 6) + '" y="' + (y + 3.5) +
-           '" font-size="9" fill="#6B5E4A" text-anchor="end" font-family="monospace">' + valore + '</text>';
+  for (let i = 0; i < giorni.length; i++) {
+    const g = giorni[i];
+    const centro = sinistra + passo * i + passo / 2;
+    const base = sopra + zona;
+
+    if (g.tentativi.length === 0) {
+      const opacita = g.stato === "futuro" ? "0.45" : "1";
+      svg += '<line x1="' + (centro - larghezzaBarra / 2) + '" y1="' + base + '" x2="' +
+        (centro + larghezzaBarra / 2) + '" y2="' + base +
+        '" stroke="var(--carta-ombra)" stroke-width="4" stroke-linecap="round" opacity="' + opacita + '"/>';
+    } else if (g.migliore !== null) {
+      const altezzaBarra = (g.migliore / 15) * zona;
+      const yMigliore = base - altezzaBarra;
+      const altezzaVisibile = Math.max(3, altezzaBarra);
+      svg += '<rect x="' + (centro - larghezzaBarra / 2) + '" y="' + (base - altezzaVisibile) +
+        '" width="' + larghezzaBarra + '" height="' + altezzaVisibile +
+        '" rx="4" fill="var(--verde-ok)"/>';
+      svg += '<text x="' + centro + '" y="' + Math.max(17, yMigliore - 7) +
+        '" font-size="12" font-weight="600" fill="var(--inchiostro)" text-anchor="middle" ' +
+        'font-family="monospace">' + g.migliore + '</text>';
+
+      if (g.prima !== null) {
+        const yPrima = base - (g.prima / 15) * zona;
+        svg += '<circle cx="' + centro + '" cy="' + yPrima +
+          '" r="5.5" fill="#FFFDF6" stroke="var(--inchiostro-tenue)" stroke-width="2.5"/>';
+      }
+    } else {
+      svg += '<line x1="' + (centro - larghezzaBarra / 2) + '" y1="' + base + '" x2="' +
+        (centro + larghezzaBarra / 2) + '" y2="' + base +
+        '" stroke="var(--carta-ombra)" stroke-width="4" stroke-linecap="round"/>';
+    }
+
+    svg += '<text x="' + centro + '" y="' + (altezza - 31) +
+      '" font-size="12" fill="var(--inchiostro)" text-anchor="middle" font-family="monospace">' +
+      nomeGiornoBreve(g.data) + '</text>';
+    let testoPrima = "";
+    if (g.prima !== null) testoPrima = "P " + g.prima;
+    else if (g.stato === "oggi") testoPrima = "oggi";
+    else if (g.stato === "saltato") testoPrima = "—";
+    svg += '<text x="' + centro + '" y="' + (altezza - 12) +
+      '" font-size="12" fill="var(--inchiostro-tenue)" text-anchor="middle" font-family="monospace">' +
+      testoPrima + '</text>';
+  }
+
+  svg += '</svg>';
+  document.getElementById("grafico").innerHTML = svg;
+}
+
+function descrizioneRichiamoSettimana(giorni) {
+  const oggi = chiaveData(new Date());
+  return giorni.map(function (g) {
+    const nome = nomeGiornoBreve(g.data);
+    if (g.tentativi.length === 0) return nome + ": nessuna lista studiata";
+    if (g.richiamoSpontaneo !== null) return nome + ": " + g.richiamoSpontaneo + " parole su 15";
+    if (g.chiave === oggi) return nome + ": richiamo previsto domani";
+    return nome + ": richiamo non registrato";
+  }).join(". ");
+}
+
+function disegnaGraficoRichiamo() {
+  const giorni = datiProgressiSettimana();
+  const contenitore = document.getElementById("grafico-richiamo");
+  const haDati = giorni.some(function (g) { return g.richiamoSpontaneo !== null; });
+  const haAllenamenti = giorni.some(function (g) { return g.tentativi.length > 0; });
+
+  if (!haDati) {
+    contenitore.innerHTML = '<div class="grafico-vuoto">' +
+      (haAllenamenti ?
+        'Il primo valore comparirà dopo il richiamo spontaneo del giorno successivo.' :
+        'Il grafico comparirà dopo il primo allenamento e il richiamo del giorno successivo.') +
+      '</div>';
+    return;
+  }
+
+  const larghezza = larghezzaDisponibileGrafico("grafico-richiamo");
+  const altezza = 174;
+  const sopra = 25;
+  const sotto = 42;
+  const sinistra = 34;
+  const destra = 6;
+  const zona = altezza - sopra - sotto;
+  const passo = (larghezza - sinistra - destra) / giorni.length;
+  const larghezzaBarra = Math.max(11, Math.min(19, passo * 0.43));
+
+  let svg = '<svg viewBox="0 0 ' + larghezza + ' ' + altezza + '" role="img" ' +
+    'aria-labelledby="titolo-svg-richiamo descrizione-svg-richiamo" focusable="false">' +
+    '<title id="titolo-svg-richiamo">Richiamo spontaneo delle parole studiate questa settimana</title>' +
+    '<desc id="descrizione-svg-richiamo">' + descrizioneRichiamoSettimana(giorni) + '</desc>';
+
+  const tacche = [0, 5, 10, 15];
+  for (let i = 0; i < tacche.length; i++) {
+    const valore = tacche[i];
+    const y = sopra + zona - (valore / 15) * zona;
+    svg += '<line x1="' + sinistra + '" y1="' + y + '" x2="' + (larghezza - destra) +
+      '" y2="' + y + '" stroke="var(--carta-ombra)" stroke-width="1"/>';
+    svg += '<text x="' + (sinistra - 7) + '" y="' + (y + 4) +
+      '" font-size="12" fill="var(--inchiostro-tenue)" text-anchor="end" font-family="monospace">' +
+      valore + '</text>';
   }
 
   for (let i = 0; i < giorni.length; i++) {
     const g = giorni[i];
     const centro = sinistra + passo * i + passo / 2;
-    const x = centro - larghezzaBarra / 2;
-
-    if (g.fatto === false) {
-      svg += '<rect x="' + x + '" y="' + (sopra + zona - 4) + '" width="' + larghezzaBarra +
-             '" height="4" rx="2" fill="#E3D8BE"/>';
-    } else {
-      const altezzaBarra = (g.migliore / 15) * zona;
-      const y = sopra + zona - altezzaBarra;
-
-      let colore = "#E3A72F";
-      if (g.completatoAl !== null) {
-        colore = "#2E7D4F";
-      }
-
-      svg += '<rect x="' + x + '" y="' + y + '" width="' + larghezzaBarra +
-             '" height="' + altezzaBarra + '" rx="3" fill="' + colore + '"/>';
-      svg += '<text x="' + centro + '" y="' + (y - 4) +
-             '" font-size="10" fill="#241C12" text-anchor="middle" font-family="monospace">' +
-             g.migliore + '</text>';
-
-      let sottotesto = "×" + g.tentativi;
-      if (g.completatoAl !== null) {
-        sottotesto = "×" + g.completatoAl;
-      }
-      svg += '<text x="' + centro + '" y="' + (altezza - 20) +
-             '" font-size="9" fill="#B07C15" text-anchor="middle" font-family="monospace">' +
-             sottotesto + '</text>';
+    const base = sopra + zona;
+    if (g.richiamoSpontaneo !== null) {
+      const altezzaBarra = (g.richiamoSpontaneo / 15) * zona;
+      const altezzaVisibile = Math.max(3, altezzaBarra);
+      const y = base - altezzaBarra;
+      svg += '<rect x="' + (centro - larghezzaBarra / 2) + '" y="' + (base - altezzaVisibile) +
+        '" width="' + larghezzaBarra + '" height="' + altezzaVisibile +
+        '" rx="4" fill="var(--tavolo)"/>';
+      svg += '<circle cx="' + centro + '" cy="' + y + '" r="4.5" fill="var(--tavolo)"/>';
+      svg += '<text x="' + centro + '" y="' + Math.max(16, y - 7) +
+        '" font-size="12" font-weight="600" fill="var(--inchiostro)" text-anchor="middle" ' +
+        'font-family="monospace">' + g.richiamoSpontaneo + '</text>';
+    } else if (g.tentativi.length > 0) {
+      svg += '<line x1="' + (centro - 6) + '" y1="' + base + '" x2="' + (centro + 6) +
+        '" y2="' + base + '" stroke="var(--carta-ombra)" stroke-width="3" stroke-linecap="round"/>';
     }
-
-    if (g.richiamo !== null) {
-      const yRichiamo = sopra + zona - (g.richiamo / 15) * zona;
-      svg += '<circle cx="' + centro + '" cy="' + yRichiamo + '" r="4.5" fill="#14402F"/>';
-    }
-
-    svg += '<text x="' + centro + '" y="' + (altezza - 33) +
-           '" font-size="9" fill="#6B5E4A" text-anchor="middle" font-family="monospace">' +
-           etichettaData(g.chiave) + '</text>';
+    svg += '<text x="' + centro + '" y="' + (altezza - 14) +
+      '" font-size="12" fill="var(--inchiostro)" text-anchor="middle" font-family="monospace">' +
+      nomeGiornoBreve(g.data) + '</text>';
   }
 
-  svg += '<text x="' + (larghezza / 2) + '" y="' + (altezza - 4) +
-         '" font-size="8.5" fill="#6B5E4A" text-anchor="middle">' +
-         'sotto la data: quanti tentativi</text>';
-
   svg += '</svg>';
-
-  document.getElementById("grafico").innerHTML = svg;
+  contenitore.innerHTML = svg;
 }
 
 function disegnaPosizioni() {
@@ -3248,147 +3534,238 @@ function disegnaPosizioni() {
   for (let i = 0; i < 15; i++) {
     perse.push(0);
   }
+  const contenitore = document.getElementById("posizioni");
+  const giornate = stato.giorni.filter(function (giorno) {
+    const tentativi = tentativiSeriePrincipale(giorno);
+    return tentativi.length > 0 && Array.isArray(tentativi[0].mancate);
+  }).sort(function (a, b) {
+    return a.data < b.data ? -1 : 1;
+  }).slice(-28);
 
-  let totaleTentativi = 0;
-
-  for (let i = 0; i < stato.giorni.length; i++) {
-    const tentativi = stato.giorni[i].tentativi;
-
-    for (let j = 0; j < tentativi.length; j++) {
-      const mancate = tentativi[j].mancate;
-
-      if (mancate) {
-        totaleTentativi = totaleTentativi + 1;
-
-        for (let k = 0; k < mancate.length; k++) {
-          const indice = mancate[k];
-          perse[indice] = perse[indice] + 1;
-        }
-      }
+  for (let i = 0; i < giornate.length; i++) {
+    const primaProva = tentativiSeriePrincipale(giornate[i])[0];
+    const giaContati = {};
+    for (let j = 0; j < primaProva.mancate.length; j++) {
+      const indice = Number(primaProva.mancate[j]);
+      if (!Number.isInteger(indice) || indice < 0 || indice > 14 || giaContati[indice]) continue;
+      giaContati[indice] = true;
+      perse[indice]++;
     }
   }
 
-  const contenitore = document.getElementById("posizioni");
-
-  if (totaleTentativi < 3) {
-    contenitore.innerHTML =
-      '<p class="avviso" style="margin:0">Dopo almeno tre tentativi vedrai quali posizioni meritano più allenamento.</p>';
+  const totaleGiornate = giornate.length;
+  const minimoGiornate = 7;
+  if (totaleGiornate < minimoGiornate) {
+    const mancanti = minimoGiornate - totaleGiornate;
+    contenitore.innerHTML = '<p class="avviso" style="margin:0">I dati stanno ancora prendendo forma. ' +
+      'Serv' + (mancanti === 1 ? 'e ancora 1 giornata' : 'ono ancora ' + mancanti + ' giornate') +
+      ' per individuare una tendenza utile.</p>';
     return;
   }
 
-  const larghezza = 340;
-  const altezza = 96;
-  const sopra = 6;
-  const sotto = 20;
-  const zona = altezza - sopra - sotto;
-  const passo = larghezza / 15;
-  const larghezzaBarra = passo * 0.62;
+  const quote = perse.map(function (numero) { return numero / totaleGiornate; });
+  const ordinate = quote.slice().sort(function (a, b) { return a - b; });
+  const mediana = ordinate.length % 2 === 1 ? ordinate[Math.floor(ordinate.length / 2)] :
+    (ordinate[ordinate.length / 2 - 1] + ordinate[ordinate.length / 2]) / 2;
+  const candidate = quote.map(function (quota, indice) {
+    return { indice: indice, quota: quota, perse: perse[indice] };
+  }).filter(function (voce) {
+    return voce.perse >= 3 && voce.quota >= mediana + 0.15;
+  }).sort(function (a, b) {
+    return b.quota - a.quota;
+  }).slice(0, 3);
+  const evidenziate = {};
+  for (let i = 0; i < candidate.length; i++) evidenziate[candidate[i].indice] = true;
 
-  let svg = '<svg viewBox="0 0 ' + larghezza + ' ' + altezza + '" role="img" ' +
-            'aria-label="Quante volte perde ogni posizione">';
-
-  let peggiore = 0;
-  let indicePeggiore = 0;
-
+  let html = '<div class="griglia-posizioni" role="list" ' +
+    'aria-label="Posizioni non ricordate nella prima prova delle ultime giornate">';
   for (let i = 0; i < 15; i++) {
-    const quota = perse[i] / totaleTentativi;
-
-    if (quota > peggiore) {
-      peggiore = quota;
-      indicePeggiore = i;
-    }
+    const classe = evidenziate[i] ? "supporto-2" : "supporto-0";
+    html += '<div class="posizione-cella ' + classe + '" role="listitem" aria-label="Posizione ' +
+      (i + 1) + ', non ricordata in ' + perse[i] + ' prime prove su ' + totaleGiornate + '">' +
+      '<b>' + (i + 1) + '</b><span>' + perse[i] + '/' + totaleGiornate + '</span></div>';
   }
+  html += '</div>';
 
-  for (let i = 0; i < 15; i++) {
-    const quota = perse[i] / totaleTentativi;
-    const altezzaBarra = quota * zona;
-    const centro = passo * i + passo / 2;
-    const x = centro - larghezzaBarra / 2;
-    const y = sopra + zona - altezzaBarra;
-
-    let colore = "#E3D8BE";
-    if (quota >= peggiore * 0.75 && quota > 0) {
-      colore = "#B32B22";
-    } else if (quota > 0) {
-      colore = "#E3A72F";
-    }
-
-    svg += '<rect x="' + x + '" y="' + y + '" width="' + larghezzaBarra +
-           '" height="' + Math.max(altezzaBarra, 2) + '" rx="2" fill="' + colore + '"/>';
-    svg += '<text x="' + centro + '" y="' + (altezza - 7) +
-           '" font-size="8" fill="#6B5E4A" text-anchor="middle" font-family="monospace">' +
-           (i + 1) + '</text>';
+  if (candidate.length === 0) {
+    html += '<p class="avviso">Il ricordo è distribuito in modo abbastanza equilibrato tra le posizioni.</p>';
+  } else {
+    const nomi = candidate.map(function (voce) { return String(voce.indice + 1); });
+    html += '<p class="avviso">Le posizioni ' + nomi.join(", ") +
+      ' possono beneficiare di un’immagine o di un collegamento in più.</p>';
   }
+  html += '<p class="avviso" style="margin-top:5px">Non è un giudizio: considera soltanto la prima prova ' +
+    'di ogni giornata, così una seduta lunga non pesa più delle altre.</p>';
+  contenitore.innerHTML = html;
+}
 
-  svg += '</svg>';
+function etichettaGiornoProgressi(giorno) {
+  return nomeGiornoBreve(giorno.data) + " " + etichettaDataCompleta(giorno.chiave);
+}
 
-  const percentualePeggiore = Math.round(peggiore * 100);
-  svg += '<p class="avviso" style="margin-top:6px">La posizione numero ' + (indicePeggiore + 1) +
-         ' offre più spazio di allenamento (' + percentualePeggiore +
-         '% dei tentativi). La prossima volta puoi dedicarle un collegamento o un’immagine speciale.</p>';
+function aggiungiContestoProgressi(contenitore, testo, classe) {
+  const riga = document.createElement("div");
+  riga.className = classe || "giorno-contesto";
+  riga.textContent = testo;
+  contenitore.appendChild(riga);
+}
 
-  contenitore.innerHTML = svg;
+function numeroParoleRecuperoGuidato(recupero) {
+  if (!recupero) return 0;
+  if (Object.prototype.hasOwnProperty.call(recupero, "allenate")) {
+    const allenate = Number(recupero.allenate);
+    return Number.isFinite(allenate) && allenate > 0 ? allenate : 0;
+  }
+  if (recupero.completato === true && Array.isArray(recupero.parole)) {
+    return recupero.parole.length;
+  }
+  return 0;
+}
+
+function aggiungiRichiamoSvoltoNelGiorno(contenitore, richiamo, eOggi) {
+  if (!richiamo) return;
+  const origine = richiamo.da ? "il " + etichettaDataCompleta(richiamo.da) : "il giorno precedente";
+  const punti = puntiSpontaneiRichiamo({ richiamo: richiamo });
+  let testo = eOggi ? "Richiamo svolto oggi" : "Richiamo svolto in questa giornata";
+  testo += " per le parole studiate " + origine;
+  if (punti !== null) testo += ": " + punti + "/15";
+  testo += ". Il risultato resta associato al giorno delle parole.";
+  aggiungiContestoProgressi(contenitore, testo);
+
+  const allenate = numeroParoleRecuperoGuidato(richiamo.recuperoGuidato);
+  if (allenate > 0) {
+    aggiungiContestoProgressi(contenitore, "Recupero guidato svolto: " + allenate +
+      (allenate === 1 ? " parola allenata" : " parole allenate") + " con piccoli indizi.");
+  }
 }
 
 function disegnaElencoGiorni() {
-  const giorni = ultimiGiorni(GIORNI_NEL_GRAFICO);
+  const giorni = datiProgressiSettimana();
   const contenitore = document.getElementById("elenco-giorni");
   contenitore.innerHTML = "";
 
-  for (let i = giorni.length - 1; i >= 0; i--) {
+  for (let i = 0; i < giorni.length; i++) {
     const g = giorni[i];
-    const riga = document.createElement("div");
-    riga.className = "giorno-riga";
+    const richiamoSvoltoOggi = g.giorno && g.giorno.richiamo ? g.giorno.richiamo : null;
+    const haAllenamento = g.tentativi.length > 0;
+    const haDettagli = haAllenamento || richiamoSvoltoOggi !== null;
+    let riepilogo = "";
 
-    let destra = "";
-
-    if (g.fatto === false && g.richiamo === null) {
-      riga.classList.add("vuoto");
-      destra = "non fatto";
-    } else if (g.fatto === false) {
-      destra = "solo richiamo " + g.richiamo + "/15";
+    if (haAllenamento) {
+      const primaTesto = g.prima === null ? "—" : g.prima + "/15";
+      const miglioreTesto = g.migliore === null ? "—" : g.migliore + "/15";
+      riepilogo = "prima " + primaTesto + " · meglio " + miglioreTesto;
+    } else if (g.stato === "futuro") {
+      riepilogo = "giorno non ancora trascorso";
+    } else if (g.stato === "oggi") {
+      riepilogo = richiamoSvoltoOggi ?
+        "richiamo svolto · allenamento di oggi da fare" : "allenamento non ancora svolto";
     } else {
-      const tempi = g.secondi.join("/") + "s";
-
-      if (g.completatoAl !== null) {
-        riga.classList.add("pieno");
-        destra = "15/15 in " + g.completatoAl + " prove";
-        if (g.tempoTotale !== null) {
-          destra = destra + " · tempo reale " + formattaTempo(g.tempoTotale);
-        }
-      } else {
-        destra = "max " + g.migliore + "/15 · " + g.tentativi + " prove · " + tempi;
-      }
-
-      if (g.richiamo !== null) {
-        destra = destra + " · richiamo " + g.richiamo;
-      }
+      riepilogo = richiamoSvoltoOggi ? "solo richiamo svolto" : "allenamento saltato";
     }
 
-    const intestazione = document.createElement("div");
+    const intestazione = document.createElement("span");
     intestazione.className = "giorno-intestazione";
-    intestazione.innerHTML = "<span>" + etichettaData(g.chiave) +
-      "</span><span>" + destra + "</span>";
-    riga.appendChild(intestazione);
+    const data = document.createElement("span");
+    data.textContent = etichettaGiornoProgressi(g);
+    const statoRiga = document.createElement("span");
+    statoRiga.textContent = riepilogo;
+    intestazione.appendChild(data);
+    intestazione.appendChild(statoRiga);
 
-    const giornoOriginale = trovaGiorno(g.chiave);
-    if (giornoOriginale !== null && giornoOriginale.tentativi.length > 0) {
-      const dettagli = document.createElement("div");
-      dettagli.className = "giorno-dettagli";
+    if (!haDettagli) {
+      const rigaSemplice = document.createElement("div");
+      rigaSemplice.className = "giorno-riga giorno-riga-semplice vuoto";
+      rigaSemplice.appendChild(intestazione);
+      contenitore.appendChild(rigaSemplice);
+      continue;
+    }
 
-      for (let j = 0; j < giornoOriginale.tentativi.length; j++) {
-        const prova = giornoOriginale.tentativi[j];
+    const riga = document.createElement("details");
+    riga.className = "giorno-riga";
+    if (g.completatoAl !== null) riga.classList.add("pieno");
+    const sommario = document.createElement("summary");
+    sommario.appendChild(intestazione);
+    riga.appendChild(sommario);
+    const dettagli = document.createElement("div");
+    dettagli.className = "giorno-dettagli";
+
+    if (haAllenamento) {
+      let impostazione = "Impostazione automatica: " + nomeLivello(g.livello);
+      if (g.secondiIniziali !== null) {
+        impostazione += " · tempo iniziale " + formattaTempo(g.secondiIniziali);
+      }
+      aggiungiContestoProgressi(dettagli, impostazione);
+
+      if (g.tempiAssegnati.length > 0) {
+        aggiungiContestoProgressi(dettagli, "Tempi assegnati: " +
+          g.tempiAssegnati.map(formattaTempo).join(" → "));
+      }
+      if (g.tempoGiornaliero && Number(g.tempoGiornaliero.secondi) > 0) {
+        aggiungiContestoProgressi(dettagli, g.tempoGiornaliero.etichetta + ": " +
+          formattaTempo(Number(g.tempoGiornaliero.secondi)));
+      }
+      aggiungiContestoProgressi(dettagli, g.tuttiTentativi.length +
+        (g.tuttiTentativi.length === 1 ? " tentativo registrato" : " tentativi registrati"));
+      if (g.sfidaAutomatica) {
+        aggiungiContestoProgressi(dettagli,
+          "Il gioco ha regolato automaticamente la sfida in base all'andamento.");
+      }
+      if (g.tuttiTentativi.length !== g.tentativi.length) {
+        aggiungiContestoProgressi(dettagli,
+          "Il grafico usa la prima partita della giornata; qui sotto trovi tutte le prove registrate.");
+      }
+
+      for (let j = 0; j < g.tuttiTentativi.length; j++) {
+        const prova = g.tuttiTentativi[j];
         const dettaglio = document.createElement("div");
         dettaglio.className = "tentativo-dettaglio";
-        const tempoProva = typeof prova.tempoStudio === "number" ?
-          prova.tempoStudio : prova.secondi;
-        const livelloProva = nomeLivello(prova.livello);
-        dettaglio.textContent = "T" + (prova.numero || (j + 1)) + " · " +
-          livelloProva + " · " + prova.punti + "/15 · " + formattaTempo(tempoProva);
+        const numeroProva = prova.numero || (j + 1);
+        const punti = puntiValidiProgressi(prova.punti);
+        let testo = "T" + numeroProva + " · " + nomeLivello(prova.livello) + " · " +
+          (punti === null ? "risultato non disponibile" : punti + "/15");
+        const assegnati = Number(prova.secondi);
+        if (Number.isFinite(assegnati) && assegnati > 0) {
+          testo += " · assegnati " + formattaTempo(assegnati);
+        }
+        const tempoProva = tempoRegistratoTentativo(prova);
+        if (Number.isFinite(Number(tempoProva.secondi)) && Number(tempoProva.secondi) > 0) {
+          testo += " · " + tempoProva.etichetta + " " + formattaTempo(Number(tempoProva.secondi));
+        }
+        if (prova.aiutoPrecedente) testo += " · con strategia";
+        dettaglio.textContent = testo;
         dettagli.appendChild(dettaglio);
       }
-      riga.appendChild(dettagli);
+
+      if (richiamoSvoltoOggi) {
+        aggiungiRichiamoSvoltoNelGiorno(dettagli, richiamoSvoltoOggi,
+          g.chiave === chiaveData(new Date()));
+      }
+
+      if (g.richiamoSpontaneo !== null) {
+        aggiungiContestoProgressi(dettagli, "Richiamo spontaneo dopo 24 ore: " +
+          g.richiamoSpontaneo + "/15");
+        const recupero = g.recordRichiamo && g.recordRichiamo.richiamo ?
+          g.recordRichiamo.richiamo.recuperoGuidato : null;
+        const allenate = numeroParoleRecuperoGuidato(recupero);
+        if (allenate > 0) {
+          aggiungiContestoProgressi(dettagli, "Recupero guidato: " + allenate +
+            (allenate === 1 ? " parola allenata" : " parole allenate") +
+            " con piccoli indizi.");
+        }
+      } else if (g.chiave === chiaveData(new Date())) {
+        aggiungiContestoProgressi(dettagli, "Richiamo spontaneo: previsto domani.");
+      } else if (g.chiave === chiaveSpostata(chiaveData(new Date()), -1)) {
+        aggiungiContestoProgressi(dettagli, "Richiamo spontaneo: previsto oggi.");
+      } else {
+        aggiungiContestoProgressi(dettagli, "Richiamo spontaneo: non registrato.");
+      }
+    } else if (richiamoSvoltoOggi) {
+      aggiungiRichiamoSvoltoNelGiorno(dettagli, richiamoSvoltoOggi,
+        g.chiave === chiaveData(new Date()));
     }
+
+    riga.appendChild(dettagli);
     contenitore.appendChild(riga);
   }
 }
@@ -4132,6 +4509,15 @@ document.getElementById("bottone-avanti").addEventListener("click", function () 
 });
 
 document.getElementById("bottone-condividi").addEventListener("click", condividiRiepilogo);
+
+let timerRidisegnoProgressi = null;
+window.addEventListener("resize", function () {
+  clearTimeout(timerRidisegnoProgressi);
+  timerRidisegnoProgressi = setTimeout(function () {
+    disegnaGrafico();
+    disegnaGraficoRichiamo();
+  }, 140);
+});
 
 document.getElementById("bottone-basta").addEventListener("click", function () {
   mostraSchermata("inizio");
