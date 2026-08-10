@@ -816,6 +816,56 @@ const PAROLE_DIFFICILI = [
 ];
 const BLOCCHI_DIFFICILI_PER_CATEGORIA = [30, 18, 22, 20, 6, 6, 4, 2, 8, 2];
 
+// Espansioni curate: quattro nuove aree semantiche per raccolta.
+// Dentro ogni area i tre blocchi procedono da familiare a meno comune.
+const PAROLE_MEDIE_AGGIUNTIVE = [
+  // Utensili e strumenti
+  "scolapasta","grattugia","cavatappi","schiaccianoci","saliera","zuccheriera","teiera","caffettiera","piattino","zuppiera",
+  "scalpello","pialla","morsetto","incudine","mazzuolo","cazzuola","seghetto","livella","cesoia","saldatore",
+  "tornio","crogiolo","mortaio","pestello","alambicco","matraccio","ampolla","storta","sestante","astrolabio",
+
+  // Casa, tessuti e architettura
+  "molletta","zerbino","pattumiera","strofinaccio","appendiabiti","stendino","cesta","spolverino","accappatoio","presina",
+  "rocchetto","ditale","spoletta","gomitolo","uncinetto","matassa","cerniera","asola","spillo","manichino",
+  "abbaino","loggiato","timpano","colonnato","balaustra","capitello","bugnato","contrafforte","lucernario","chiostro",
+
+  // Scrivania, navigazione e automobile
+  "spillatrice","graffetta","perforatrice","evidenziatore","calcolatrice","raccoglitore","fermacarte","portapenne","pennarello","puntina",
+  "timone","ancora","vela","remo","boa","faro","molo","pontile","darsena","scialuppa",
+  "pistone","biella","carburatore","marmitta","radiatore","parafango","paraurti","cruscotto","tachimetro","portabagagli",
+
+  // Spazi esterni, campagna e natura
+  "parcometro","tornello","segnavia","cartello","banchina","sottovia","cavalcavia","spartitraffico","chiosco","capannone",
+  "spaventapasseri","abbeveratoio","mangiatoia","frutteto","porcile","ovile","siepe","pergola","rastrelliera","torchio",
+  "torbiera","mangrovia","betulla","ontano","ginepro","sambuco","agrifoglio","biancospino","caprifoglio","giunco"
+];
+const PAROLE_MEDIE_COMPLETE = PAROLE_MEDIE.concat(PAROLE_MEDIE_AGGIUNTIVE);
+const BLOCCHI_MEDI_COMPLETI = BLOCCHI_MEDI_PER_CATEGORIA.concat([3, 3, 3, 3]);
+
+const PAROLE_DIFFICILI_AGGIUNTIVE = [
+  // Pensiero, logica e filosofia
+  "discernimento","ponderazione","razionalità","pertinenza","plausibilità","contemplazione","introspezione","focalizzazione","memorizzazione","comprensibilità",
+  "induzione","abduzione","falsificabilità","assioma","postulato","corollario","tautologia","antinomia","aporia","euristica",
+  "ontologia","fenomenologia","teleologia","immanenza","trascendenza","alterità","contingenza","universalità","particolarità","intersoggettività",
+
+  // Relazioni, linguaggio e retorica
+  "mutualità","cordialità","affiatamento","diplomazia","riservatezza","eloquenza","sobrietà","tatto","garbo","ascolto",
+  "polisemia","sinonimia","antonimia","metafora","metonimia","perifrasi","ellissi","allusione","sottinteso","digressione",
+  "isotopia","deissi","anafora","catafora","iperbato","sineddoche","litote","chiasmo","anacoluto","paratassi",
+
+  // Tempo, organizzazione e sistemi
+  "alternanza","ciclicità","transitorietà","persistenza","mutabilità","reversibilità","durevolezza","sincronia","ricorsività","caducità",
+  "sussidiarietà","collegialità","rappresentatività","decentramento","concertazione","municipalità","territorialità","interdipendenza","pluralismo","civismo",
+  "fungibilità","esternalità","complementarità","sostituibilità","scalarità","modularità","interoperabilità","tracciabilità","convertibilità","commensurabilità",
+
+  // Qualità, rappresentazione e relazioni astratte
+  "integrità","equanimità","imparzialità","rettitudine","laboriosità","parsimonia","avvedutezza","solerzia","scrupolosità","pacatezza",
+  "cromatismo","tonalità","plasticità","stilizzazione","figurazione","astrattismo","classicismo","minimalismo","simbolismo","virtuosismo",
+  "diacronia","atemporalità","ubiquità","reticolarità","granularità","capillarità","permeabilità","contiguità","discontinuità","nonlinearità"
+];
+const PAROLE_DIFFICILI_COMPLETE = PAROLE_DIFFICILI.concat(PAROLE_DIFFICILI_AGGIUNTIVE);
+const BLOCCHI_DIFFICILI_COMPLETI = BLOCCHI_DIFFICILI_PER_CATEGORIA.concat([3, 3, 3, 3]);
+
 const VITA_QUOTIDIANA = {
   spesa: {
     titolo: "Piccola lista della spesa",
@@ -851,6 +901,7 @@ const stato = {
   scritte: [],
   mancanti: [],
   difficolta: "media",
+  fasciaParole: 0,
   secondiScelti: 180,
   secondiTentativo: 180,
   secondiUsatiTentativo: 0,
@@ -884,6 +935,7 @@ const stato = {
   inizioTentativiSessione: 0,
   inizioSessioneTimestamp: null,
   inizioTentativoTimestamp: null,
+  paroleRecenti: [],
   sessioniLivello: { media: 0, mix: 0, difficile: 0 }
 };
 
@@ -984,38 +1036,81 @@ function mescola(lista) {
   return lista;
 }
 
-function pescaDaRaccolta(elenco, conteggi, sessioniFatte, quantita) {
-  const progresso = Math.min(sessioniFatte, 40) / 40;
+function fasciaSicura(valore) {
+  const numero = parseInt(valore, 10);
+  if (numero === 1 || numero === 2) return numero;
+  return 0;
+}
+
+function intervalloFascia(numeroBlocchi, fascia) {
+  const inizio = Math.floor(numeroBlocchi * fascia / 3);
+  const fine = fascia === 2 ? numeroBlocchi :
+    Math.floor(numeroBlocchi * (fascia + 1) / 3);
+  if (fine > inizio) return { inizio: inizio, fine: fine };
+
+  const posizione = Math.min(inizio, Math.max(0, numeroBlocchi - 1));
+  return { inizio: posizione, fine: Math.min(numeroBlocchi, posizione + 1) };
+}
+
+function pescaDaRaccolta(elenco, conteggi, fascia, quantita, escluse) {
+  const fasciaCorrente = fasciaSicura(fascia);
+  const paroleEscluse = Array.isArray(escluse) ? escluse : [];
   const categorie = [];
   let posizione = 0;
 
   // Ogni blocco contiene dieci parole della stessa area semantica.
-  // All'inizio si pesca più spesso nella parte familiare della raccolta;
-  // in 40 sessioni la finestra scorre con gradualità verso parole meno frequenti.
+  // In ogni area i blocchi sono ordinati dal più familiare al meno comune.
+  // Le tre fasce restano interne: il giocatore vede soltanto Media, Mix o Difficile.
   for (let i = 0; i < conteggi.length; i++) {
-    const area = [];
-    const ampiezza = Math.min(conteggi[i], Math.max(2, Math.ceil(conteggi[i] * 0.65)));
-    const spazioScorrimento = conteggi[i] - ampiezza;
-    const inizio = Math.round(spazioScorrimento * progresso);
+    const blocchiArea = [];
 
     for (let j = 0; j < conteggi[i]; j++) {
       const blocco = elenco.slice(posizione, posizione + 10);
       posizione = posizione + 10;
-      if (j >= inizio && j < inizio + ampiezza) {
-        area.push(blocco);
-      }
+      if (blocco.length > 0) blocchiArea.push(blocco);
     }
+
+    const intervallo = intervalloFascia(blocchiArea.length, fasciaCorrente);
+    const area = blocchiArea.slice(intervallo.inizio, intervallo.fine);
+    const confinanti = [];
+    if (fasciaCorrente > 0) {
+      const precedente = intervalloFascia(blocchiArea.length, fasciaCorrente - 1);
+      confinanti.push.apply(confinanti,
+        blocchiArea.slice(precedente.inizio, precedente.fine));
+    }
+    if (fasciaCorrente < 2) {
+      const successiva = intervalloFascia(blocchiArea.length, fasciaCorrente + 1);
+      confinanti.push.apply(confinanti,
+        blocchiArea.slice(successiva.inizio, successiva.fine));
+    }
+
+    // Un piccolo 20% circa proviene dalla fascia confinante: il passaggio resta
+    // progressivo e non cambia bruscamente tutto il vocabolario da un giorno all'altro.
+    mescola(confinanti);
+    const quantiConfinanti = Math.min(confinanti.length,
+      Math.max(1, Math.round(area.length * 0.25)));
+    area.push.apply(area, confinanti.slice(0, quantiConfinanti));
     mescola(area);
-    categorie.push(area);
+    if (area.length > 0) categorie.push(area);
   }
   mescola(categorie);
 
   const scelte = [];
-  while (scelte.length < quantita) {
+  while (scelte.length < quantita && categorie.some(function (area) { return area.length > 0; })) {
     for (let i = 0; i < categorie.length && scelte.length < quantita; i++) {
       if (categorie[i].length > 0) {
         const blocco = categorie[i].pop();
-        scelte.push(blocco[Math.floor(Math.random() * blocco.length)]);
+        let disponibili = blocco.filter(function (parola) {
+          return paroleEscluse.indexOf(parola) === -1 && scelte.indexOf(parola) === -1;
+        });
+        if (disponibili.length === 0) {
+          disponibili = blocco.filter(function (parola) {
+            return scelte.indexOf(parola) === -1;
+          });
+        }
+        if (disponibili.length === 0) continue;
+        const parola = disponibili[Math.floor(Math.random() * disponibili.length)];
+        if (scelte.indexOf(parola) === -1) scelte.push(parola);
       }
     }
   }
@@ -1024,30 +1119,40 @@ function pescaDaRaccolta(elenco, conteggi, sessioniFatte, quantita) {
 }
 
 function pescaParole() {
-  const sessioniFatte = stato.sessioniLivello[stato.difficolta] || 0;
+  const fascia = fasciaSicura(stato.fasciaParole);
+  const recenti = stato.paroleRecenti.slice(-120);
+  let scelte;
 
   if (stato.difficolta === "mix") {
-    // Il rapporto cambia casualmente tra 8+7 e 7+8, così nessuna raccolta prevale.
-    const quantitaMedie = Math.random() < 0.5 ? 8 : 7;
+    // Mix ha una progressione propria: cresce gradualmente il peso delle parole
+    // difficili, senza mostrare questa regolazione tecnica al giocatore.
+    const rapporti = [
+      { medie: 10, difficili: 5 },
+      { medie: 8, difficili: 7 },
+      { medie: 6, difficili: 9 }
+    ];
+    const rapporto = rapporti[fascia];
     const medie = pescaDaRaccolta(
-      PAROLE_MEDIE, BLOCCHI_MEDI_PER_CATEGORIA, sessioniFatte, quantitaMedie
+      PAROLE_MEDIE_COMPLETE, BLOCCHI_MEDI_COMPLETI, fascia, rapporto.medie, recenti
     );
     const difficili = pescaDaRaccolta(
-      PAROLE_DIFFICILI, BLOCCHI_DIFFICILI_PER_CATEGORIA,
-      sessioniFatte, 15 - quantitaMedie
+      PAROLE_DIFFICILI_COMPLETE, BLOCCHI_DIFFICILI_COMPLETI,
+      fascia, rapporto.difficili, recenti.concat(medie)
     );
-    return mescola(medie.concat(difficili));
+    scelte = mescola(medie.concat(difficili));
+  } else if (stato.difficolta === "difficile") {
+    scelte = pescaDaRaccolta(
+      PAROLE_DIFFICILI_COMPLETE, BLOCCHI_DIFFICILI_COMPLETI, fascia, 15, recenti
+    );
+  } else {
+    scelte = pescaDaRaccolta(
+      PAROLE_MEDIE_COMPLETE, BLOCCHI_MEDI_COMPLETI, fascia, 15, recenti
+    );
   }
 
-  if (stato.difficolta === "difficile") {
-    return pescaDaRaccolta(
-      PAROLE_DIFFICILI, BLOCCHI_DIFFICILI_PER_CATEGORIA, sessioniFatte, 15
-    );
-  }
-
-  return pescaDaRaccolta(
-    PAROLE_MEDIE, BLOCCHI_MEDI_PER_CATEGORIA, sessioniFatte, 15
-  );
+  stato.paroleRecenti = stato.paroleRecenti.concat(scelte).slice(-120);
+  salvaParoleRecenti();
+  return scelte;
 }
 
 function pescaVita(tipo) {
@@ -1111,14 +1216,16 @@ function disegnaGriglia(contenitore, parole, coperte) {
 /* ---------- sessione ---------- */
 
 function numeroGiornateLivello(livello) {
+  const giornate = stato.giorni.filter(function (giorno) {
+    return giorno.tentativi.length > 0;
+  }).slice();
+  giornate.sort(function (a, b) { return a.data < b.data ? 1 : -1; });
+
   let totale = 0;
-  for (let i = 0; i < stato.giorni.length; i++) {
-    for (let j = 0; j < stato.giorni[i].tentativi.length; j++) {
-      if ((stato.giorni[i].tentativi[j].livello || "media") === livello) {
-        totale++;
-        break;
-      }
-    }
+  for (let i = 0; i < giornate.length; i++) {
+    const livelloGiorno = giornate[i].tentativi[0].livello || "media";
+    if (livelloGiorno !== livello) break;
+    totale++;
   }
   return totale;
 }
@@ -1174,6 +1281,7 @@ function applicaPrescrizione(prescrizione) {
   stato.prescrizioneGiornaliera = prescrizione;
   stato.dataCalibrazioneAutomatica = prescrizione.data;
   stato.motivoCalibrazioneAutomatica = prescrizione.motivo;
+  stato.fasciaParole = fasciaSicura(prescrizione.fasciaParole);
   stato.sfidaAutomatica = prescrizione.sfida === true;
   stato.livelloBaseSfida = prescrizione.livelloPrecedente || null;
   stato.tempoBaseSfida = prescrizione.tempoPrecedente || null;
@@ -1187,6 +1295,8 @@ function calcolaPrescrizioneGiornaliera() {
   const livelliValidi = ["media", "mix", "difficile"];
   if (salvata && salvata.data === oggi && livelliValidi.indexOf(salvata.livello) !== -1 &&
       typeof salvata.secondi === "number" && salvata.secondi >= 30 && salvata.secondi <= 300) {
+    // Compatibilità con le prescrizioni create prima delle fasce interne.
+    salvata.fasciaParole = fasciaSicura(salvata.fasciaParole);
     return stato.prescrizioneGiornaliera;
   }
 
@@ -1197,6 +1307,7 @@ function calcolaPrescrizioneGiornaliera() {
       data: oggi,
       livello: prima.livello || "media",
       secondi: prima.secondi || 180,
+      fasciaParole: fasciaSicura(prima.fasciaParole),
       motivo: "Mantengo per tutta la giornata l'impostazione già assegnata al primo esercizio.",
       sfida: prima.sfidaAutomatica === true,
       livelloPrecedente: prima.livelloBaseSfida || null,
@@ -1207,7 +1318,7 @@ function calcolaPrescrizioneGiornaliera() {
   const recenti = ultimeGiornateAllenate(3);
   if (recenti.length === 0) {
     return {
-      data: oggi, livello: "media", secondi: 180,
+      data: oggi, livello: "media", secondi: 180, fasciaParole: 0,
       motivo: "È il primo allenamento registrato: parto da Media con 3 minuti.", sfida: false
     };
   }
@@ -1217,9 +1328,14 @@ function calcolaPrescrizioneGiornaliera() {
   const ultimaProva = ultima.tentativi[ultima.tentativi.length - 1];
   let livello = primaProva.livello || "media";
   let secondi = ultimaProva.secondi || primaProva.secondi || 180;
+  let fasciaParole = fasciaSicura(primaProva.fasciaParole);
   let facili = 0;
   let difficili = 0;
+  let giornateValutate = 0;
   for (let i = 0; i < recenti.length; i++) {
+    const livelloGiorno = recenti[i].tentativi[0].livello || "media";
+    if (livelloGiorno !== livello) continue;
+    giornateValutate++;
     const esito = valutaDifficoltaGiorno(recenti[i]);
     if (esito === "facile") facili++;
     if (esito === "difficile") difficili++;
@@ -1229,13 +1345,17 @@ function calcolaPrescrizioneGiornaliera() {
   let sfida = false;
   const prossimo = livelloSuccessivo(livello);
 
-  if (recenti.length >= 2 && facili >= 2) {
-    if (secondi > 30) {
+  if (giornateValutate >= 2 && facili >= 2 && difficili === 0) {
+    if (fasciaParole < 2) {
+      fasciaParole++;
+      motivo = "Gli ultimi allenamenti risultano gestibili: oggi scelgo parole un po' meno comuni.";
+    } else if (secondi > 30) {
       secondi = Math.max(30, secondi - 30);
       motivo = "Gli ultimi allenamenti risultano gestibili: oggi concedo 30 secondi in meno.";
     } else if (prossimo !== null) {
       const precedente = livello;
       livello = prossimo;
+      fasciaParole = 0;
       secondi = 60;
       sfida = true;
       motivo = "Il tempo minimo è ormai gestibile: oggi il livello sale automaticamente da " +
@@ -1243,16 +1363,25 @@ function calcolaPrescrizioneGiornaliera() {
     } else {
       motivo = "Sei già al livello e al tempo più impegnativi: oggi userò parole progressivamente meno comuni.";
     }
-  } else if (recenti.length >= 2 && difficili >= 2) {
-    secondi = Math.min(300, secondi + 30);
-    motivo = "Gli ultimi allenamenti sono stati impegnativi: oggi aggiungo 30 secondi senza abbassare il livello.";
+  } else if (giornateValutate >= 2 && difficili >= 2) {
+    if (fasciaParole > 0) {
+      fasciaParole--;
+      motivo = "Gli ultimi allenamenti sono stati impegnativi: oggi uso parole più familiari senza abbassare il livello.";
+    } else {
+      secondi = Math.min(300, secondi + 30);
+      motivo = "Gli ultimi allenamenti sono stati impegnativi: oggi aggiungo 30 secondi senza abbassare il livello.";
+    }
   } else if (numeroGiornateLivello(livello) >= 5 && difficili < 2) {
-    if (secondi > 30) {
+    if (fasciaParole < 2) {
+      fasciaParole++;
+      motivo = "Dopo diversi giorni allo stesso livello introduco parole leggermente meno comuni.";
+    } else if (secondi > 30) {
       secondi = Math.max(30, secondi - 15);
       motivo = "Dopo diversi giorni allo stesso livello introduco una piccola sfida: 15 secondi in meno.";
     } else if (prossimo !== null) {
       const precedente = livello;
       livello = prossimo;
+      fasciaParole = 0;
       secondi = 60;
       sfida = true;
       motivo = "Dopo diversi giorni allo stesso livello, oggi passo automaticamente da " +
@@ -1262,7 +1391,8 @@ function calcolaPrescrizioneGiornaliera() {
 
   secondi = Math.max(30, Math.min(300, Math.round(secondi / 15) * 15));
   return {
-    data: oggi, livello: livello, secondi: secondi, motivo: motivo, sfida: sfida,
+    data: oggi, livello: livello, secondi: secondi, fasciaParole: fasciaParole,
+    motivo: motivo, sfida: sfida,
     livelloPrecedente: sfida ? (primaProva.livello || "media") : null,
     tempoPrecedente: sfida ? (primaProva.secondi || 180) : null
   };
@@ -1995,6 +2125,7 @@ function registraTentativo(punti, indiciMancanti) {
     durataTotaleTentativo: typeof stato.inizioTentativoTimestamp === "number" ?
       Math.max(1, Math.round((Date.now() - stato.inizioTentativoTimestamp) / 1000)) : null,
     livello: stato.difficolta,
+    fasciaParole: stato.fasciaParole,
     sfidaAutomatica: stato.sfidaAutomatica,
     livelloBaseSfida: stato.livelloBaseSfida,
     tempoBaseSfida: stato.tempoBaseSfida,
@@ -2069,6 +2200,10 @@ async function salvaSessioniLivello() {
   await scriviDeposito("quindici:sessioni-livello", JSON.stringify(stato.sessioniLivello));
 }
 
+async function salvaParoleRecenti() {
+  await scriviDeposito("quindici:parole-recenti", JSON.stringify(stato.paroleRecenti));
+}
+
 async function salvaPrescrizione() {
   await scriviDeposito("quindici:prescrizione-giornaliera", JSON.stringify(stato.prescrizioneGiornaliera));
 }
@@ -2119,6 +2254,16 @@ async function caricaTutto() {
       stato.sessioniLivello.difficile = Math.max(0, parseInt(sessioniSalvate.difficile, 10) || 0);
     } catch (errore) {
       stato.sessioniLivello = { media: 0, mix: 0, difficile: 0 };
+    }
+  }
+
+  const testoParoleRecenti = await leggiDeposito("quindici:parole-recenti");
+  if (testoParoleRecenti !== null) {
+    try {
+      const paroleSalvate = JSON.parse(testoParoleRecenti);
+      stato.paroleRecenti = Array.isArray(paroleSalvate) ? paroleSalvate.slice(-120) : [];
+    } catch (errore) {
+      stato.paroleRecenti = [];
     }
   }
 
