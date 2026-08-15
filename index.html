@@ -4790,6 +4790,15 @@ function formattaDurataReport(secondi) {
   return parti.join(" ");
 }
 
+function formattaDurataCompattaReport(secondi) {
+  const totale = Math.max(0, Math.round(Number(secondi) || 0));
+  const ore = Math.floor(totale / 3600);
+  const minuti = Math.floor((totale % 3600) / 60);
+  const restanti = totale % 60;
+  if (ore > 0) return ore + ":" + duecifre(minuti) + ":" + duecifre(restanti);
+  return minuti + ":" + duecifre(restanti);
+}
+
 function tempoGiornaliero(giorno) {
   if (giorno === null || giorno.tentativi.length === 0) return null;
 
@@ -4831,6 +4840,35 @@ function tempoGiornaliero(giorno) {
   };
 }
 
+function livelliDellaSessione(tentativi) {
+  const livelli = [];
+  for (let i = 0; i < tentativi.length; i++) {
+    const livello = nomeLivello(tentativi[i].livello);
+    if (livelli.indexOf(livello) === -1) livelli.push(livello);
+  }
+  return livelli.length > 0 ? livelli.join("/") : "Media";
+}
+
+function righeTentativiCompatti(tentativi) {
+  const righe = [];
+  const quantiPerRiga = 5;
+  for (let inizio = 0; inizio < tentativi.length; inizio += quantiPerRiga) {
+    const fine = Math.min(tentativi.length, inizio + quantiPerRiga);
+    const valori = [];
+    for (let i = inizio; i < fine; i++) {
+      const punti = puntiValidiProgressi(tentativi[i].punti);
+      const tempo = tempoRegistratoTentativo(tentativi[i]);
+      const puntiTesto = punti === null ? "?" : String(punti);
+      const indicatoreStorico = tempo.etichetta === "tempo complessivo" ? "" : "*";
+      valori.push(puntiTesto + "/" + formattaDurataCompattaReport(tempo.secondi) + indicatoreStorico);
+    }
+    const intervallo = fine - inizio === 1 ?
+      "T" + (inizio + 1) : "T" + (inizio + 1) + "-T" + fine;
+    righe.push(intervallo + ": " + valori.join(" · "));
+  }
+  return righe;
+}
+
 function punteggioMetricaGrafico(valore) {
   if (valore === null || valore === undefined || valore === "") return null;
   const numero = Number(valore);
@@ -4849,7 +4887,8 @@ function metricheGiornoGrafico(giornoRiassunto, oggiChiave) {
   const richiamoOggi = punteggioMetricaGrafico(richiamoGrezzoDellaSerie(giornoRiassunto.chiave));
   const haSvoltoRichiamoOggi = giorno.richiamo &&
     punteggioMetricaGrafico(giorno.richiamo.punti) !== null;
-  const tentativi = tentativiSeriePrincipale(giorno);
+  const sessioni = sessioniDelGiorno(giorno);
+  const tentativi = sessioni.length > 0 ? sessioni[0].tentativi : [];
   if (tentativi.length === 0) {
     if (!haSvoltoRichiamoOggi) {
       return { stato: giornoRiassunto.chiave === oggiChiave ? "inAttesa" : "saltato" };
@@ -4864,15 +4903,25 @@ function metricheGiornoGrafico(giornoRiassunto, oggiChiave) {
   const primaProva = tentativi[0];
   const primoPunteggio = punteggioMetricaGrafico(primaProva.punti);
   let migliore = null;
-  for (let i = 0; i < tentativi.length; i++) {
-    const punti = punteggioMetricaGrafico(tentativi[i].punti);
-    if (!tentativi[i].aiutoPrecedente && punti !== null &&
-        (migliore === null || punti > migliore)) migliore = punti;
+  let numeroTentativi = 0;
+  let durataTotale = 0;
+  let haDurata = false;
+  for (let i = 0; i < sessioni.length; i++) {
+    const proveSessione = sessioni[i].tentativi;
+    numeroTentativi = numeroTentativi + proveSessione.length;
+    const durata = durataSessione(sessioni[i]);
+    if (durata !== null) {
+      durataTotale = durataTotale + durata;
+      haDurata = true;
+    }
+    for (let j = 0; j < proveSessione.length; j++) {
+      const punti = punteggioMetricaGrafico(proveSessione[j].punti);
+      if (!proveSessione[j].aiutoPrecedente && punti !== null &&
+          (migliore === null || punti > migliore)) migliore = punti;
+    }
   }
   if (migliore === null) migliore = primoPunteggio;
 
-  const sessioni = sessioniDelGiorno(giorno);
-  const durataPrincipale = sessioni.length > 0 ? durataSessione(sessioni[0]) : null;
   const secondiIniziali = primaProva.secondi !== null && primaProva.secondi !== undefined &&
     primaProva.secondi !== "" && Number.isFinite(Number(primaProva.secondi)) &&
     Number(primaProva.secondi) >= 30 && Number(primaProva.secondi) <= 300 ?
@@ -4886,8 +4935,8 @@ function metricheGiornoGrafico(giornoRiassunto, oggiChiave) {
     prima: primoPunteggio === null ? null : primoPunteggio / 15,
     migliore: migliore === null ? null : migliore / 15,
     richiamo: richiamoOggi === null ? null : richiamoOggi / 15,
-    numeroTentativi: tentativi.length,
-    durata: durataPrincipale,
+    numeroTentativi: numeroTentativi,
+    durata: haDurata ? durataTotale : null,
     tempoIniziale: secondiIniziali,
     livello: livello === "difficile" ? "D" : (livello === "mix" ? "X" : "M")
   };
@@ -4919,10 +4968,13 @@ function graficoTestualeSettimana(giorni, oggiChiave) {
     const tentativi = sessioni[0].tentativi;
     const prima = puntiValidiProgressi(tentativi[0].punti);
     let migliore = null;
-    for (let j = 0; j < tentativi.length; j++) {
-      const punti = puntiValidiProgressi(tentativi[j].punti);
-      if (!tentativi[j].aiutoPrecedente &&
-          (migliore === null || punti > migliore)) migliore = punti;
+    for (let j = 0; j < sessioni.length; j++) {
+      const proveSessione = sessioni[j].tentativi;
+      for (let k = 0; k < proveSessione.length; k++) {
+        const punti = puntiValidiProgressi(proveSessione[k].punti);
+        if (!proveSessione[k].aiutoPrecedente && punti !== null &&
+            (migliore === null || punti > migliore)) migliore = punti;
+      }
     }
     const richiamo = puntiSpontaneiRichiamo(recordRichiamoProgressi(g.chiave));
     allenamenti.push({
@@ -4969,35 +5021,54 @@ function graficoTestualeSettimana(giorni, oggiChiave) {
 
   righe.push("");
   righe.push("CARICO DELLE GIORNATE");
+  righe.push("P = partite · T = tentativi");
   for (let i = 0; i < allenamenti.length; i++) {
     const record = allenamenti[i];
     let totaleTentativi = 0;
     let durataTotale = 0;
     let haDurata = false;
+    let tipoDurata = "reale";
     const tempiIniziali = [];
     for (let j = 0; j < record.sessioni.length; j++) {
       const tentativi = record.sessioni[j].tentativi;
       totaleTentativi = totaleTentativi + tentativi.length;
-      const durata = durataSessione(record.sessioni[j]);
-      if (durata !== null) {
-        durataTotale = durataTotale + durata;
+      const dettaglioDurata = dettaglioDurataSessione(record.sessioni[j]);
+      if (dettaglioDurata !== null) {
+        durataTotale = durataTotale + dettaglioDurata.secondi;
         haDurata = true;
+        if (dettaglioDurata.tipo === "registrato") tipoDurata = "registrato";
+        else if (dettaglioDurata.tipo === "complessivo" && tipoDurata === "reale") {
+          tipoDurata = "complessivo";
+        }
       }
       const iniziale = Number(tentativi[0].secondi);
       if (Number.isFinite(iniziale) && iniziale > 0) tempiIniziali.push(formattaTempo(iniziale));
     }
     const data = record.chiave.slice(8, 10) + "/" + record.chiave.slice(5, 7);
-    righe.push(data + " · " + record.livello + " · " + record.sessioni.length +
-      (record.sessioni.length === 1 ? " partita" : " partite"));
-    righe.push(totaleTentativi + " tentativi" +
-      (haDurata ? " · totale " + formattaDurataReport(durataTotale) : ""));
-    if (tempiIniziali.length > 0) righe.push("Tempi iniziali: " + tempiIniziali.join(" · "));
+    const tempiUnici = [];
+    for (let j = 0; j < tempiIniziali.length; j++) {
+      if (tempiUnici.indexOf(tempiIniziali[j]) === -1) tempiUnici.push(tempiIniziali[j]);
+    }
+    let tempoIniziale = "";
+    if (tempiUnici.length === 1) {
+      tempoIniziale = " · iniz. " + tempiUnici[0] +
+        (tempiIniziali.length > 1 ? " x" + tempiIniziali.length : "");
+    } else if (tempiUnici.length > 1) {
+      tempoIniziale = " · iniz. " + tempiIniziali.join("/");
+    }
+    let etichettaDurata = "dur.";
+    if (tipoDurata === "complessivo") etichettaDurata = "compl.";
+    if (tipoDurata === "registrato") etichettaDurata = "reg.";
+    righe.push(data + " · " + record.livello + " · " + record.sessioni.length + "P/" +
+      totaleTentativi + "T" +
+      (haDurata ? " · " + etichettaDurata + " " + formattaDurataCompattaReport(durataTotale) : "") +
+      tempoIniziale);
   }
 
   if (haGiornateConPiuPartite) {
     righe.push("");
-    righe.push("Per confrontare giornate diverse, i punteggi usano la prima partita; " +
-      "il carico comprende tutte le partite.");
+    righe.push("Prima prova: prima partita.");
+    righe.push("Migliore e carico: tutte le partite.");
   }
   return righe;
 }
@@ -5259,8 +5330,17 @@ function testoRiepilogo() {
   for (let s = 0; s < settimane.length; s++) {
     const giorni = settimane[s];
     let giorniAllenati = 0;
+    let haTempiStorici = false;
     for (let i = 0; i < giorni.length; i++) {
       if (giorni[i].fatto === true || giorni[i].richiamo !== null) giorniAllenati++;
+      const giornoRegistrato = trovaGiorno(giorni[i].chiave);
+      const tentativiRegistrati = giornoRegistrato && Array.isArray(giornoRegistrato.tentativi) ?
+        giornoRegistrato.tentativi : [];
+      for (let j = 0; j < tentativiRegistrati.length; j++) {
+        if (tempoRegistratoTentativo(tentativiRegistrati[j]).etichetta !== "tempo complessivo") {
+          haTempiStorici = true;
+        }
+      }
     }
 
     righe.push("");
@@ -5268,6 +5348,22 @@ function testoRiepilogo() {
       " – " + etichettaDataCompleta(giorni[6].chiave));
     righe.push("🌱 Allenamenti: " + giorniAllenati + " " +
       (giorniAllenati === 1 ? "giorno" : "giorni") + " su 7");
+
+    righe.push("");
+    const righeGrafico = graficoTestualeSettimana(giorni, oggiChiave);
+    for (let i = 0; i < righeGrafico.length; i++) righe.push(righeGrafico[i]);
+
+    const righePeriodiche = graficiDiFinePeriodo(oggi, oggiChiave);
+    if (righePeriodiche.length > 0) {
+      righe.push("");
+      for (let i = 0; i < righePeriodiche.length; i++) righe.push(righePeriodiche[i]);
+    }
+
+    righe.push("");
+    righe.push("🗓 DETTAGLIO DELLE GIORNATE");
+    righe.push("Nei blocchi T ogni valore è punteggio/tempo.");
+    righe.push("Esempio: 6/2:22 = 6 su 15 in 2:22.");
+    if (haTempiStorici) righe.push("* tempo disponibile nei dati precedenti.");
 
     for (let i = 0; i < giorni.length; i++) {
       const g = giorni[i];
@@ -5305,100 +5401,116 @@ function testoRiepilogo() {
         }
       }
 
+      const tempoDelGiorno = tempoGiornaliero(giornoOriginale);
       if (sessioni.length > 1) {
-        righe.push("🎮 " + sessioni.length + " partite · " + totaleTentativi + " tentativi totali");
+        let etichettaTotale = "totale";
+        if (tempoDelGiorno && tempoDelGiorno.tipo === "complessivo") etichettaTotale = "complessivo";
+        if (tempoDelGiorno && tempoDelGiorno.tipo === "registrato") etichettaTotale = "registrato";
+        righe.push("🎮 " + sessioni.length + " partite · " + totaleTentativi + "T" +
+          (tempoDelGiorno === null ? "" :
+            " · " + etichettaTotale + " " + formattaDurataCompattaReport(tempoDelGiorno.secondi)));
       }
       if (partitaCompletata !== null) {
         if (sessioni.length === 1) {
-          righe.push("✅ Completato: 15/15 in " + tentativoCompletamento + " tentativi");
+          righe.push("✅ 15/15 al T" + tentativoCompletamento);
         } else {
-          righe.push("✅ Completato nella partita " + partitaCompletata +
-            " in " + tentativoCompletamento + " tentativi");
+          righe.push("✅ 15/15 nella P" + partitaCompletata + " al T" + tentativoCompletamento);
         }
       } else if (g.fatto === true && miglioreGiorno !== null) {
-        righe.push("🎯 Risultato migliore: " + miglioreGiorno + "/15");
-      }
-
-      const tempoDelGiorno = tempoGiornaliero(giornoOriginale);
-      if (tempoDelGiorno !== null) {
-        let etichettaTempo = tempoDelGiorno.etichetta;
-        if (tempoDelGiorno.tipo === "reale") {
-          etichettaTempo = sessioni.length > 1 ?
-            "Tempo totale delle " + sessioni.length + " partite" : "Tempo reale della partita";
-        }
-        righe.push("⏱ " + etichettaTempo + ": " + formattaDurataReport(tempoDelGiorno.secondi));
+        righe.push("🎯 Migliore: " + miglioreGiorno + "/15");
       }
 
       for (let j = 0; j < sessioni.length; j++) {
         const proveSessione = sessioni[j].tentativi;
-        if (sessioni.length > 1) {
-          const durata = durataSessione(sessioni[j]);
-          righe.push("🎮 Partita " + (j + 1) + " · " + proveSessione.length +
-            (proveSessione.length === 1 ? " tentativo" : " tentativi") +
-            (durata === null ? "" : " · " + formattaDurataReport(durata)));
-        }
+        const dettaglioDurata = dettaglioDurataSessione(sessioni[j]);
+        let intestazione = sessioni.length > 1 ? "🎮 P" + (j + 1) + " · " : "🎮 ";
+        intestazione = intestazione + livelliDellaSessione(proveSessione) +
+          " · " + proveSessione.length + "T";
         const secondiIniziali = Number(proveSessione[0].secondi);
         if (Number.isFinite(secondiIniziali) && secondiIniziali > 0) {
-          righe.push("👀 Tempo iniziale: " + formattaDurataReport(secondiIniziali));
+          intestazione = intestazione + " · iniz. " + formattaDurataCompattaReport(secondiIniziali);
         }
-        for (let k = 0; k < proveSessione.length; k++) {
-          const prova = proveSessione[k];
-          const livelloProva = nomeLivello(prova.livello);
-          const tempoTentativo = tempoRegistratoTentativo(prova);
-          const prefisso = sessioni.length > 1 ? "P" + (j + 1) + "-" : "";
-          righe.push("• " + prefisso + "T" + (prova.numero || (k + 1)) + " · " + livelloProva +
-            " · " + prova.punti + "/15 · " + tempoTentativo.etichetta + " " +
-            formattaTempo(tempoTentativo.secondi));
+        if (dettaglioDurata !== null) {
+          let etichettaTempo = "tempo";
+          if (dettaglioDurata.tipo === "complessivo") etichettaTempo = "complessivo";
+          if (dettaglioDurata.tipo === "registrato") etichettaTempo = "registrato";
+          intestazione = intestazione + " · " + etichettaTempo + " " +
+            formattaDurataCompattaReport(dettaglioDurata.secondi);
         }
+        righe.push(intestazione);
+        const righeCompatte = righeTentativiCompatti(proveSessione);
+        for (let k = 0; k < righeCompatte.length; k++) righe.push(righeCompatte[k]);
       }
 
       const recordRichiamo = recordRichiamoProgressi(g.chiave);
       const puntiRichiamo = puntiSpontaneiRichiamo(recordRichiamo);
       if (puntiRichiamo !== null) {
-        righe.push("🌙 Richiamo spontaneo dopo 24 ore: " + puntiRichiamo + "/15");
+        let rigaRichiamo = "🌙 24 ore: " + puntiRichiamo + "/15";
         const recupero = recordRichiamo && recordRichiamo.richiamo &&
           recordRichiamo.richiamo.recuperoGuidato;
         if (recupero && Array.isArray(recupero.parole)) {
           if (recupero.completato === true) {
-            righe.push("🌿 Recupero guidato: " + recupero.parole.length +
-              (recupero.parole.length === 1 ? " parola allenata con piccoli indizi" :
-                " parole allenate con piccoli indizi"));
+            rigaRichiamo = rigaRichiamo + " · 🌿 guidato: " + recupero.parole.length +
+              (recupero.parole.length === 1 ? " parola" : " parole");
           } else if (recupero.parole.length > 0) {
-            righe.push("🌿 Recupero guidato: da completare");
+            rigaRichiamo = rigaRichiamo + " · 🌿 guidato da completare";
           }
         }
+        righe.push(rigaRichiamo);
       } else if (g.fatto === true && g.chiave === oggiChiave) {
-        righe.push("🌙 Richiamo dopo 24 ore: previsto domani");
+        righe.push("🌙 24 ore: previsto domani");
       } else if (g.fatto === true && chiaveSpostata(g.chiave, 1) === oggiChiave) {
-        righe.push("🌙 Richiamo dopo 24 ore: da fare oggi");
+        righe.push("🌙 24 ore: da fare oggi");
       } else if (g.fatto === true) {
-        righe.push("🌙 Richiamo dopo 24 ore: non registrato");
+        righe.push("🌙 24 ore: non registrato");
       }
 
       const richiamoSvoltoOggi = giornoOriginale && giornoOriginale.richiamo;
-      if (richiamoSvoltoOggi && richiamoSvoltoOggi.da && richiamoSvoltoOggi.da !== g.chiave) {
+      if (sessioni.length === 0 && richiamoSvoltoOggi && richiamoSvoltoOggi.da &&
+          richiamoSvoltoOggi.da !== g.chiave) {
         const puntiSvolti = puntiValidiProgressi(richiamoSvoltoOggi.puntiSpontanei);
         const puntiDaMostrare = puntiSvolti === null ?
           puntiValidiProgressi(richiamoSvoltoOggi.punti) : puntiSvolti;
         if (puntiDaMostrare !== null) {
-          righe.push("↪ Richiamo svolto oggi per le parole del " +
+          righe.push("🌙 Richiamo svolto per le parole del " +
             etichettaDataCompleta(richiamoSvoltoOggi.da) + ": " + puntiDaMostrare + "/15");
         }
       }
     }
   }
 
-  righe.push("");
-  const righeGrafico = graficoTestualeSettimana(settimane[0], oggiChiave);
-  for (let i = 0; i < righeGrafico.length; i++) righe.push(righeGrafico[i]);
-
-  const righePeriodiche = graficiDiFinePeriodo(oggi, oggiChiave);
-  if (righePeriodiche.length > 0) {
-    righe.push("");
-    for (let i = 0; i < righePeriodiche.length; i++) righe.push(righePeriodiche[i]);
-  }
-
   return righe.join("\n");
+}
+
+function copiaRiepilogoConTextarea(testo) {
+  const area = document.createElement("textarea");
+  area.value = testo;
+  area.setAttribute("readonly", "");
+  area.style.position = "fixed";
+  area.style.left = "-9999px";
+  area.style.top = "0";
+  document.body.appendChild(area);
+  area.select();
+  let copiato = false;
+  try {
+    copiato = document.execCommand("copy");
+  } catch (errore) {
+    copiato = false;
+  }
+  document.body.removeChild(area);
+  return copiato;
+}
+
+async function copiaRiepilogoNegliAppunti(testo) {
+  if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+    try {
+      await navigator.clipboard.writeText(testo);
+      return true;
+    } catch (errore) {
+      // Su alcuni browser serve il metodo compatibile qui sotto.
+    }
+  }
+  return copiaRiepilogoConTextarea(testo);
 }
 
 async function condividiRiepilogo() {
@@ -5409,11 +5521,17 @@ async function condividiRiepilogo() {
       await navigator.share({ text: testo });
       return;
     } catch (errore) {
-      // ha annullato: non faccio altro
-      return;
+      if (errore && errore.name === "AbortError") return;
     }
   }
 
+  const copiato = await copiaRiepilogoNegliAppunti(testo);
+  if (copiato) {
+    window.alert("Riepilogo copiato per intero. Ora apri WhatsApp e incollalo nel messaggio.");
+    return;
+  }
+
+  // Ultimo ripiego per browser molto vecchi. Il report compatto riduce il rischio di taglio.
   window.open("https://wa.me/?text=" + encodeURIComponent(testo), "_blank");
 }
 
