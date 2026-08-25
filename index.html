@@ -545,12 +545,18 @@ body {
   <section class="schermata attiva" id="schermata-inizio">
 
     <div class="pannello acceso" id="pannello-richiamo" style="display:none">
-      <div class="etichetta">Prima di tutto</div>
+      <div class="etichetta">Memoria di ieri</div>
       <p class="spiega" id="testo-richiamo">
-        Prima di iniziare, prova con calma a ritrovare le parole di ieri.
+        Prova con calma a ritrovare le parole di ieri, senza riguardarle.
+      </p>
+      <p class="avviso" id="valore-richiamo">
+        È un breve riscaldamento importante: allena il ricordo a distanza. Non è un esame.
       </p>
       <span class="solo-lettori" id="data-richiamo">ieri</span>
-      <button class="bottone" id="bottone-richiamo">Inizia il ricordo con calma</button>
+      <button class="bottone" id="bottone-richiamo">Prova a ricordare ieri</button>
+      <button class="bottone secondario" id="bottone-salta-richiamo">
+        Vai direttamente al gioco di oggi
+      </button>
     </div>
 
     <div class="pannello acceso" id="pannello-avanzamento" style="display:none">
@@ -736,6 +742,9 @@ body {
         <button class="bottone" id="bottone-parola-ritrovata">Mi è tornata in mente</button>
         <button class="bottone secondario" id="bottone-altro-aiuto-recupero">
           Un altro piccolo aiuto
+        </button>
+        <button class="bottone secondario" id="bottone-salta-recupero">
+          Vai al gioco di oggi
         </button>
       </div>
 
@@ -2256,14 +2265,15 @@ function preparaImpostazioniAutomatiche() {
   salvaPrescrizione();
 }
 
-function iniziaSessione() {
-  if (recuperoGuidatoDaCompletare() !== null) {
+function iniziaSessione(saltaRichiamo) {
+  const vaiDirettamenteAlGioco = saltaRichiamo === true;
+  if (!vaiDirettamenteAlGioco && recuperoGuidatoDaCompletare() !== null) {
     apriRecuperoGuidato();
     return;
   }
 
-  const richiamoObbligatorio = serieDaRichiamare();
-  if (richiamoObbligatorio !== null) {
+  const richiamoDisponibile = serieDaRichiamare();
+  if (!vaiDirettamenteAlGioco && richiamoDisponibile !== null) {
     aggiornaPannelloRichiamo();
     document.getElementById("pannello-richiamo").scrollIntoView({ behavior: "smooth", block: "start" });
     return;
@@ -3162,25 +3172,26 @@ function mostraEsito(punti, esiti) {
 
 function commentoRichiamo(punti) {
   if (punti === 0) {
-    return "Oggi nessuna parola è tornata da sola. Va bene: adesso ne recuperiamo insieme soltanto alcune.";
+    return "Hai comunque allenato il recupero a distanza provando senza guardare. Ora possiamo riprendere insieme soltanto alcune parole.";
   }
   if (punti === 1) {
-    return "È tornata una parola dopo un giorno intero. Ora facciamo un recupero breve e accompagnato.";
+    return "È tornata una parola dopo un giorno intero: questo ricordo spontaneo ha valore. Ora facciamo un recupero breve e accompagnato.";
   }
   if (punti <= 4) {
-    return "Sono tornate " + punti + " parole dopo un giorno intero. Ora facciamo un recupero breve e accompagnato.";
+    return "Sono tornate " + punti + " parole dopo un giorno intero. Recuperarle senza riguardarle è già un allenamento importante.";
   }
   if (punti <= 9) {
-    return "Sono tornate " + punti + " parole dopo 24 ore. Bene: ora rinforziamo con calma soltanto qualche parola.";
+    return "Sono tornate " + punti + " parole dopo 24 ore. È un buon lavoro di memoria a distanza; ora rinforziamo con calma soltanto qualche parola.";
   }
-  return "Sono tornate " + punti + " parole dopo un giorno intero. Un richiamo davvero solido.";
+  return "Sono tornate " + punti + " parole dopo un giorno intero. Un ricordo a distanza davvero solido.";
 }
 
 function recuperoGuidatoDaCompletare() {
   const giorno = trovaGiorno(chiaveData(new Date()));
   if (giorno === null || !giorno.richiamo) return null;
   const recupero = giorno.richiamo.recuperoGuidato;
-  if (!recupero || recupero.completato === true || !Array.isArray(recupero.parole) ||
+  if (!recupero || recupero.completato === true || recupero.saltato === true ||
+      !Array.isArray(recupero.parole) ||
       recupero.parole.length === 0) return null;
   return { giorno: giorno, richiamo: giorno.richiamo, recupero: recupero };
 }
@@ -3240,6 +3251,7 @@ function disegnaRecuperoGuidato(portaFocus) {
   const indizio = document.getElementById("indizio-recupero-guidato");
   const bottoneRitrovata = document.getElementById("bottone-parola-ritrovata");
   const bottoneAiuto = document.getElementById("bottone-altro-aiuto-recupero");
+  const bottoneSalta = document.getElementById("bottone-salta-recupero");
 
   titolo.textContent = "Piccolo recupero " + (indice + 1) + " di " + recupero.parole.length;
   indizio.textContent = formaIndizioRecupero(parola, fase);
@@ -3259,6 +3271,7 @@ function disegnaRecuperoGuidato(portaFocus) {
   bottoneRitrovata.disabled = false;
   bottoneAiuto.disabled = false;
   bottoneRitrovata.style.display = "block";
+  bottoneSalta.style.display = "block";
   riquadro.style.display = "block";
   document.getElementById("bottone-avanti").style.display = "none";
 
@@ -3278,6 +3291,7 @@ function mostraRecuperoGuidatoCompletato(recupero, portaFocus) {
     "Le 15 parole di oggi saranno nuove";
   document.getElementById("bottone-parola-ritrovata").style.display = "none";
   document.getElementById("bottone-altro-aiuto-recupero").style.display = "none";
+  document.getElementById("bottone-salta-recupero").style.display = "none";
   riquadro.style.display = "block";
   const avanti = document.getElementById("bottone-avanti");
   avanti.textContent = "Ora l'esercizio di oggi";
@@ -3366,6 +3380,23 @@ async function altroAiutoRecupero() {
   await salvaGiorni();
   stato.recuperoInSalvataggio = false;
   disegnaRecuperoGuidato(true);
+}
+
+function avviaGiocoDiOggi() {
+  stato.modalita = "sessione";
+  iniziaSessione(true);
+}
+
+async function saltaRecuperoGuidato() {
+  const dati = recuperoGuidatoDaCompletare();
+  if (dati !== null) {
+    dati.recupero.saltato = true;
+    dati.richiamo.flussoCompletato = true;
+    await salvaGiorni();
+    aggiornaPannelloRichiamo();
+    disegnaProgressi();
+  }
+  avviaGiocoDiOggi();
 }
 
 function iniziali(parole) {
@@ -3874,7 +3905,7 @@ function aggiornaPannelloRichiamo() {
       recupero.recupero.parole.length +
       (recupero.recupero.parole.length === 1 ? " parola con piccoli indizi." :
         " parole con piccoli indizi, una alla volta.") +
-      " Poi le 15 parole di oggi saranno nuove.";
+      " È un rinforzo utile, ma puoi anche passare al gioco di oggi.";
     bottone.textContent = "Continua il piccolo recupero";
     return;
   }
@@ -3884,9 +3915,9 @@ function aggiornaPannelloRichiamo() {
     pannello.style.display = "block";
     document.getElementById("data-richiamo").textContent = etichettaData(serie.data);
     testo.textContent = "Prima di cominciare, prova a ritrovare le parole del " +
-      etichettaData(serie.data) + ". Scrivi quelle che tornano in mente, anche se sono poche. " +
-      "Quando non te ne vengono altre, puoi continuare.";
-    bottone.textContent = "Inizia il ricordo con calma";
+      etichettaData(serie.data) + " senza riguardarle. Anche una sola parola conta: " +
+      "questo breve passaggio allena il ricordo a distanza.";
+    bottone.textContent = "Prova a ricordare ieri";
   } else {
     pannello.style.display = "none";
   }
@@ -5279,21 +5310,30 @@ function configurazioneRiepilogo(oggi) {
     };
   }
 
-  if (giornoDellaSettimana === 1) {
+  if (giornoDellaSettimana >= 1 && giornoDellaSettimana <= 6) {
     const lunediPrecedente = new Date(
       lunediCorrente.getFullYear(),
       lunediCorrente.getMonth(),
       lunediCorrente.getDate() - 7
     );
     const settimanaPrecedente = giorniDellaSettimana(lunediPrecedente);
+    const settimanaCorrente = giorniDellaSettimana(lunediCorrente);
     let settimanaIniziata = false;
     for (let i = 0; i < settimanaPrecedente.length; i++) {
       if (settimanaPrecedente[i].fatto === true || settimanaPrecedente[i].richiamo !== null) {
         settimanaIniziata = true;
       }
     }
+    let primoAllenamentoDellaSettimana = null;
+    for (let i = 0; i < settimanaCorrente.length; i++) {
+      if (settimanaCorrente[i].fatto === true) {
+        primoAllenamentoDellaSettimana = settimanaCorrente[i].chiave;
+        break;
+      }
+    }
     const domenicaSaltata = settimanaPrecedente[6].fatto === false;
-    if (settimanaIniziata && domenicaSaltata) {
+    const oggiPrimoAllenamento = primoAllenamentoDellaSettimana === oggiChiave;
+    if (settimanaIniziata && domenicaSaltata && oggiPrimoAllenamento) {
       return {
         settimanale: true,
         giorni: settimanaPrecedente
@@ -5423,36 +5463,54 @@ function testoRiepilogo() {
         for (let k = 0; k < righeTentativi.length; k++) righe.push(righeTentativi[k]);
       }
 
+      const richiamoSvoltoOggi = giornoOriginale && giornoOriginale.richiamo;
+      if (!configurazione.settimanale && richiamoSvoltoOggi && richiamoSvoltoOggi.da &&
+          richiamoSvoltoOggi.da !== g.chiave) {
+        const puntiSpontaneiOggi = puntiValidiProgressi(richiamoSvoltoOggi.puntiSpontanei);
+        const puntiMemoriaIeri = puntiSpontaneiOggi === null ?
+          puntiValidiProgressi(richiamoSvoltoOggi.punti) : puntiSpontaneiOggi;
+        if (puntiMemoriaIeri !== null) {
+          righe.push("🧠 Memoria di ieri (" + etichettaDataCompleta(richiamoSvoltoOggi.da) +
+            "): " + formattaPunteggioReport(puntiMemoriaIeri));
+        }
+        const recuperoSvoltoOggi = richiamoSvoltoOggi.recuperoGuidato;
+        if (recuperoSvoltoOggi && recuperoSvoltoOggi.completato === true &&
+            Array.isArray(recuperoSvoltoOggi.parole)) {
+          righe.push("🌿 Piccolo recupero: " + recuperoSvoltoOggi.parole.length +
+            (recuperoSvoltoOggi.parole.length === 1 ? " parola allenata" : " parole allenate"));
+        }
+      }
+
       const recordRichiamo = recordRichiamoProgressi(g.chiave);
       const puntiRichiamo = puntiSpontaneiRichiamo(recordRichiamo);
       if (puntiRichiamo !== null) {
-        righe.push("🌙 Richiamo dopo 24 ore: " + formattaPunteggioReport(puntiRichiamo));
+        righe.push("🧠 Ricordo dopo 24 ore: " + formattaPunteggioReport(puntiRichiamo));
         const recupero = recordRichiamo && recordRichiamo.richiamo &&
           recordRichiamo.richiamo.recuperoGuidato;
         if (recupero && Array.isArray(recupero.parole)) {
           if (recupero.completato === true) {
-            righe.push("🌿 Recupero guidato: " + recupero.parole.length +
+            righe.push("🌿 Piccolo recupero: " + recupero.parole.length +
               (recupero.parole.length === 1 ? " parola allenata" : " parole allenate"));
-          } else if (recupero.parole.length > 0) {
-            righe.push("🌿 Recupero guidato: da completare");
+          } else if (recupero.saltato !== true && recupero.parole.length > 0) {
+            righe.push("🌿 Piccolo recupero: da completare");
           }
         }
       } else if (g.fatto === true && g.chiave === oggiChiave) {
-        righe.push("🌙 Richiamo dopo 24 ore: previsto domani");
+        righe.push("🌙 Parole di oggi: richiamo previsto domani");
       } else if (g.fatto === true && chiaveSpostata(g.chiave, 1) === oggiChiave) {
-        righe.push("🌙 Richiamo dopo 24 ore: da fare oggi");
+        righe.push("🧠 Ricordo dopo 24 ore: da fare oggi");
       } else if (g.fatto === true) {
-        righe.push("🌙 Richiamo dopo 24 ore: non registrato");
+        righe.push("🧠 Ricordo dopo 24 ore: non registrato");
       }
 
-      const richiamoSvoltoOggi = giornoOriginale && giornoOriginale.richiamo;
-      if (sessioni.length === 0 && richiamoSvoltoOggi && richiamoSvoltoOggi.da &&
+      if (configurazione.settimanale && sessioni.length === 0 && richiamoSvoltoOggi &&
+          richiamoSvoltoOggi.da &&
           richiamoSvoltoOggi.da !== g.chiave) {
         const puntiSvolti = puntiValidiProgressi(richiamoSvoltoOggi.puntiSpontanei);
         const puntiDaMostrare = puntiSvolti === null ?
           puntiValidiProgressi(richiamoSvoltoOggi.punti) : puntiSvolti;
         if (puntiDaMostrare !== null) {
-          righe.push("🌙 Richiamo svolto per le parole del " +
+          righe.push("🧠 Memoria del giorno precedente, parole del " +
             etichettaDataCompleta(richiamoSvoltoOggi.da) + ": " +
             formattaPunteggioReport(puntiDaMostrare));
         }
@@ -5574,6 +5632,7 @@ document.getElementById("scelte-tempo").addEventListener("click", function (even
 document.getElementById("bottone-inizia").addEventListener("click", iniziaSessione);
 document.getElementById("bottone-coprire").addEventListener("click", fermaStudio);
 document.getElementById("bottone-richiamo").addEventListener("click", iniziaRichiamo);
+document.getElementById("bottone-salta-richiamo").addEventListener("click", avviaGiocoDiOggi);
 
 document.getElementById("scelte-vita").addEventListener("click", function (evento) {
   const bottone = evento.target.closest("[data-vita]");
@@ -5658,11 +5717,11 @@ document.getElementById("bottone-mostra-parole").addEventListener("click", funct
 });
 document.getElementById("bottone-parola-ritrovata").addEventListener("click", completaParolaRecupero);
 document.getElementById("bottone-altro-aiuto-recupero").addEventListener("click", altroAiutoRecupero);
+document.getElementById("bottone-salta-recupero").addEventListener("click", saltaRecuperoGuidato);
 
 document.getElementById("bottone-avanti").addEventListener("click", function () {
   if (stato.modalita === "richiamo") {
-    stato.modalita = "sessione";
-    mostraSchermata("inizio");
+    avviaGiocoDiOggi();
     return;
   }
 
