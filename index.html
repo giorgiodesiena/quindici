@@ -4835,6 +4835,13 @@ function formattaNumeroParoleReport(valore) {
   return String(valore) + (numero === 1 ? " parola" : " parole");
 }
 
+function etichettaDataConGiorno(chiave) {
+  const nomi = ["Domenica", "Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato"];
+  const data = dataLocaleDaChiave(chiave);
+  if (data === null) return etichettaDataCompleta(chiave);
+  return nomi[data.getDay()] + " " + etichettaDataCompleta(chiave);
+}
+
 function tempoGiornaliero(giorno) {
   if (giorno === null || giorno.tentativi.length === 0) return null;
 
@@ -5367,8 +5374,8 @@ function testoRiepilogo() {
         if (giorni[i].fatto === true || giorni[i].richiamo !== null) giorniAllenati++;
       }
 
-      righe.push("📆 Settimana " + etichettaDataCompleta(giorni[0].chiave) +
-        " – " + etichettaDataCompleta(giorni[6].chiave));
+      righe.push("📆 Settimana: " + etichettaDataConGiorno(giorni[0].chiave) +
+        " – " + etichettaDataConGiorno(giorni[6].chiave));
       righe.push("🌱 Allenamenti: " + giorniAllenati + " " +
         (giorniAllenati === 1 ? "giorno" : "giorni") + " su 7");
     }
@@ -5378,19 +5385,19 @@ function testoRiepilogo() {
 
       if (g.chiave > oggiChiave) {
         righe.push("");
-        righe.push("📅 " + etichettaDataCompleta(g.chiave) + " · Giorno non ancora trascorso");
+        righe.push("📅 " + etichettaDataConGiorno(g.chiave) + " · Giorno non ancora trascorso");
         continue;
       }
       if (g.fatto === false && g.richiamo === null) {
         const statoGiorno = g.chiave === oggiChiave ?
           "Allenamento non ancora fatto oggi" : "Allenamento saltato";
         righe.push("");
-        righe.push("📅 " + etichettaDataCompleta(g.chiave) + " · " + statoGiorno);
+        righe.push("📅 " + etichettaDataConGiorno(g.chiave) + " · " + statoGiorno);
         continue;
       }
 
       righe.push("");
-      righe.push("📅 " + etichettaDataCompleta(g.chiave));
+      righe.push("📅 " + etichettaDataConGiorno(g.chiave));
 
       const giornoOriginale = trovaGiorno(g.chiave);
       const sessioni = sessioniDelGiorno(giornoOriginale);
@@ -5470,7 +5477,7 @@ function testoRiepilogo() {
         const puntiMemoriaIeri = puntiSpontaneiOggi === null ?
           puntiValidiProgressi(richiamoSvoltoOggi.punti) : puntiSpontaneiOggi;
         if (puntiMemoriaIeri !== null) {
-          righe.push("🧠 Memoria di ieri (" + etichettaDataCompleta(richiamoSvoltoOggi.da) +
+          righe.push("🧠 Memoria di ieri (" + etichettaDataConGiorno(richiamoSvoltoOggi.da) +
             "): " + formattaPunteggioReport(puntiMemoriaIeri));
         }
         const recuperoSvoltoOggi = richiamoSvoltoOggi.recuperoGuidato;
@@ -5511,7 +5518,7 @@ function testoRiepilogo() {
           puntiValidiProgressi(richiamoSvoltoOggi.punti) : puntiSvolti;
         if (puntiDaMostrare !== null) {
           righe.push("🧠 Memoria del giorno precedente, parole del " +
-            etichettaDataCompleta(richiamoSvoltoOggi.da) + ": " +
+            etichettaDataConGiorno(richiamoSvoltoOggi.da) + ": " +
             formattaPunteggioReport(puntiDaMostrare));
         }
       }
