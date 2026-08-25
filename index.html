@@ -5267,26 +5267,71 @@ function graficiDiFinePeriodo(oggi, oggiChiave) {
   return righe;
 }
 
+function configurazioneRiepilogo(oggi) {
+  const oggiChiave = chiaveData(oggi);
+  const lunediCorrente = inizioSettimana(oggi);
+  const giornoDellaSettimana = oggi.getDay();
+
+  if (giornoDellaSettimana === 0) {
+    return {
+      settimanale: true,
+      giorni: giorniDellaSettimana(lunediCorrente)
+    };
+  }
+
+  if (giornoDellaSettimana === 1) {
+    const lunediPrecedente = new Date(
+      lunediCorrente.getFullYear(),
+      lunediCorrente.getMonth(),
+      lunediCorrente.getDate() - 7
+    );
+    const settimanaPrecedente = giorniDellaSettimana(lunediPrecedente);
+    let settimanaIniziata = false;
+    for (let i = 0; i < settimanaPrecedente.length; i++) {
+      if (settimanaPrecedente[i].fatto === true || settimanaPrecedente[i].richiamo !== null) {
+        settimanaIniziata = true;
+      }
+    }
+    const domenicaSaltata = settimanaPrecedente[6].fatto === false;
+    if (settimanaIniziata && domenicaSaltata) {
+      return {
+        settimanale: true,
+        giorni: settimanaPrecedente
+      };
+    }
+  }
+
+  const oggiRiassunto = riassuntoGiorno(trovaGiorno(oggiChiave));
+  oggiRiassunto.chiave = oggiChiave;
+  oggiRiassunto.data = oggi;
+  return {
+    settimanale: false,
+    giorni: [oggiRiassunto]
+  };
+}
+
 function testoRiepilogo() {
   const righe = [];
   const oggi = new Date();
   const oggiChiave = chiaveData(oggi);
-  const lunediCorrente = inizioSettimana(oggi);
-  const settimane = [giorniDellaSettimana(lunediCorrente)];
+  const configurazione = configurazioneRiepilogo(oggi);
+  const gruppiDiGiorni = [configurazione.giorni];
 
   righe.push("🧠 QUINDICI PAROLE");
 
-  for (let s = 0; s < settimane.length; s++) {
-    const giorni = settimane[s];
-    let giorniAllenati = 0;
-    for (let i = 0; i < giorni.length; i++) {
-      if (giorni[i].fatto === true || giorni[i].richiamo !== null) giorniAllenati++;
-    }
+  for (let s = 0; s < gruppiDiGiorni.length; s++) {
+    const giorni = gruppiDiGiorni[s];
+    if (configurazione.settimanale) {
+      let giorniAllenati = 0;
+      for (let i = 0; i < giorni.length; i++) {
+        if (giorni[i].fatto === true || giorni[i].richiamo !== null) giorniAllenati++;
+      }
 
-    righe.push("📆 Settimana " + etichettaDataCompleta(giorni[0].chiave) +
-      " – " + etichettaDataCompleta(giorni[6].chiave));
-    righe.push("🌱 Allenamenti: " + giorniAllenati + " " +
-      (giorniAllenati === 1 ? "giorno" : "giorni") + " su 7");
+      righe.push("📆 Settimana " + etichettaDataCompleta(giorni[0].chiave) +
+        " – " + etichettaDataCompleta(giorni[6].chiave));
+      righe.push("🌱 Allenamenti: " + giorniAllenati + " " +
+        (giorniAllenati === 1 ? "giorno" : "giorni") + " su 7");
+    }
 
     for (let i = 0; i < giorni.length; i++) {
       const g = giorni[i];
