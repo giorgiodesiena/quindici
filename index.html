@@ -721,6 +721,7 @@ body {
       <div class="contatore" id="contatore">0 parole scritte</div>
       <div class="gettoni" id="gettoni"></div>
       <p class="avviso">Tocca una parola per cancellarla.</p>
+      <p class="avviso" id="stato-tempo-recupero" style="display:none"></p>
       <button class="bottone" id="bottone-controlla">Vediamo quante ne ho prese</button>
     </div>
   </section>
@@ -1315,6 +1316,10 @@ const stato = {
   idTimer: null,
   idTimerDisturbo: null,
   idTimeoutSaltaDisturbo: null,
+  idTimerRecupero: null,
+  inizioRecuperoTimestamp: null,
+  secondiMinimiRecupero: 0,
+  secondiUsatiRecupero: 0,
   numeriDisturbo: [],
   prossimoNumero: 1,
   sequenzaDisturboCompletata: false,
@@ -2811,6 +2816,7 @@ function preparaRipeti() {
   const etichettaCasella = document.getElementById("etichetta-casella");
   const casella = document.getElementById("casella");
   const bottoneVoce = document.getElementById("bottone-voce");
+  fermaTimerRecupero(false);
   bottoneControlla.disabled = false;
 
   if (stato.modalita === "richiamo") {
@@ -2841,9 +2847,140 @@ function preparaRipeti() {
   bottoneVoce.setAttribute("aria-pressed", "false");
   bottoneVoce.title = etichettaVoce;
   casella.value = "";
-  aggiornaGettoni();
   mostraSchermata("ripeti");
+  if (stato.modalita === "sessione") {
+    avviaTimerRecuperoAdattivo();
+  } else {
+    document.getElementById("stato-tempo-recupero").style.display = "none";
+  }
+  aggiornaGettoni();
   casella.focus();
+}
+
+function calcolaMinimoRecuperoAdattivo() {
+  const punteggi = stato.punteggiSessione;
+  const ultimo = punteggi.length > 0 ? punteggi[punteggi.length - 1] : null;
+  const penultimo = punteggi.length > 1 ? punteggi[punteggi.length - 2] : null;
+  let secondi = 75;
+  let motivo = "È il primo recupero di oggi: concedo il tempo per ripercorrere la storiella con calma.";
+
+  if (ultimo !== null) {
+    if (ultimo <= 4) {
+      secondi = 100;
+      motivo = "Nell'ultimo tentativo sono tornate poche parole: aggiungo tempo per cercarle senza guardare.";
+    } else if (ultimo <= 7) {
+      secondi = 90;
+      motivo = "Il recupero richiede ancora calma: lascio un po' più di tempo.";
+    } else if (ultimo <= 10) {
+      secondi = 75;
+      motivo = "Il recupero sta procedendo: mantengo un tempo equilibrato.";
+    } else if (ultimo <= 12) {
+      secondi = 60;
+      motivo = "Molte parole stanno tornando: posso ridurre con prudenza il tempo minimo.";
+    } else {
+      secondi = 45;
+      motivo = "Il recupero è fluido: il tempo minimo può essere più breve, ma non scompare.";
+    }
+  }
+
+  if (penultimo !== null && ultimo !== null) {
+    const andamento = ultimo - penultimo;
+    if (andamento <= -3) {
+      secondi = secondi + 15;
+      motivo = "C'è stato un calo: aggiungo tempo per ripercorrere la storiella senza fretta.";
+    } else if (andamento >= 3 && ultimo >= 8) {
+      secondi = secondi - 10;
+      motivo = "Il ricordo sta crescendo bene: riduco leggermente il tempo, senza renderlo troppo breve.";
+    }
+  }
+
+  if (stato.difficolta === "mix") {
+    secondi = secondi + 10;
+  } else if (stato.difficolta === "difficile") {
+    secondi = secondi + 20;
+  }
+  secondi = secondi + fasciaSicura(stato.fasciaParole) * 5;
+
+  const trascorsiSessione = typeof stato.inizioSessioneTimestamp === "number" ?
+    Math.max(0, Math.round((Date.now() - stato.inizioSessioneTimestamp) / 1000)) : 0;
+  if (trascorsiSessione >= 30 * 60) {
+    secondi = secondi - 30;
+    motivo = "La sessione è già lunga: alleggerisco il tempo minimo per non affaticare l'attenzione.";
+  } else if (trascorsiSessione >= 25 * 60) {
+    secondi = secondi - 20;
+    motivo = "Dopo 25 minuti alleggerisco il tempo minimo per proteggere l'attenzione.";
+  } else if (trascorsiSessione >= 20 * 60 || stato.tentativo >= 8) {
+    secondi = secondi - 10;
+    motivo = "La sessione sta diventando lunga: riduco un poco l'attesa per evitare affaticamento.";
+  }
+
+  secondi = Math.max(35, Math.min(120, Math.round(secondi / 5) * 5));
+  return { secondi: secondi, motivo: motivo };
+}
+
+function testoBottoneControllaNormale() {
+  if (stato.modalita === "richiamo" || stato.modalita === "vita") {
+    return "Non me ne vengono altre: continua";
+  }
+  return "Vediamo quante ne ho prese";
+}
+
+function secondiRecuperoTrascorsi() {
+  if (typeof stato.inizioRecuperoTimestamp !== "number") return 0;
+  return Math.max(0, Math.floor((Date.now() - stato.inizioRecuperoTimestamp) / 1000));
+}
+
+function aggiornaBloccoRecupero() {
+  if (stato.modalita !== "sessione" ||
+      typeof stato.inizioRecuperoTimestamp !== "number") return;
+
+  const bottone = document.getElementById("bottone-controlla");
+  const messaggio = document.getElementById("stato-tempo-recupero");
+  const trascorsi = secondiRecuperoTrascorsi();
+  const rimasti = Math.max(0, stato.secondiMinimiRecupero - trascorsi);
+  const tutteInserite = stato.scritte.length >= stato.parole.length;
+
+  messaggio.style.display = "block";
+  if (tutteInserite) {
+    bottone.disabled = false;
+    bottone.textContent = testoBottoneControllaNormale();
+    messaggio.textContent = "Hai inserito 15 parole: puoi controllare subito.";
+  } else if (rimasti > 0) {
+    bottone.disabled = true;
+    bottone.textContent = "Continua a cercare: " + formattaTempo(rimasti);
+    messaggio.textContent = "Senza guardare le carte, ripercorri la storiella ancora per " +
+      formattaTempo(rimasti) + ". Il gioco adatta questo tempo a ogni tentativo.";
+  } else {
+    bottone.disabled = false;
+    bottone.textContent = testoBottoneControllaNormale();
+    messaggio.textContent = "Ora puoi controllare. Se arriva un'altra parola, aggiungila pure.";
+    if (stato.idTimerRecupero !== null) {
+      clearInterval(stato.idTimerRecupero);
+      stato.idTimerRecupero = null;
+    }
+  }
+}
+
+function avviaTimerRecuperoAdattivo() {
+  const prescrizione = calcolaMinimoRecuperoAdattivo();
+  stato.secondiMinimiRecupero = prescrizione.secondi;
+  stato.secondiUsatiRecupero = 0;
+  stato.inizioRecuperoTimestamp = Date.now();
+  const messaggio = document.getElementById("stato-tempo-recupero");
+  messaggio.dataset.motivo = prescrizione.motivo;
+  aggiornaBloccoRecupero();
+  stato.idTimerRecupero = setInterval(aggiornaBloccoRecupero, 1000);
+}
+
+function fermaTimerRecupero(registraTempo) {
+  if (registraTempo === true) {
+    stato.secondiUsatiRecupero = secondiRecuperoTrascorsi();
+  }
+  if (stato.idTimerRecupero !== null) {
+    clearInterval(stato.idTimerRecupero);
+    stato.idTimerRecupero = null;
+  }
+  stato.inizioRecuperoTimestamp = null;
 }
 
 function aggiungiTesto(testo) {
@@ -2892,6 +3029,7 @@ function aggiornaGettoni() {
     testo = stato.modalita === "vita" ? "1 risposta inserita" : "1 parola scritta";
   }
   document.getElementById("contatore").textContent = testo;
+  aggiornaBloccoRecupero();
 }
 
 /* ---------- dettatura ---------- */
@@ -2988,6 +3126,7 @@ function controlla() {
   if (bottoneControlla.disabled) return;
   bottoneControlla.disabled = true;
   aggiungiScritta();
+  fermaTimerRecupero(true);
   spegniVoce();
 
   const scritteNormali = [];
@@ -3871,6 +4010,8 @@ function registraTentativo(punti, indiciMancanti) {
     punti: punti,
     secondi: stato.secondiTentativo,
     tempoStudio: stato.secondiUsatiTentativo,
+    tempoMinimoRecupero: stato.secondiMinimiRecupero,
+    tempoRecuperoEffettivo: stato.secondiUsatiRecupero,
     durataTotaleTentativo: typeof stato.inizioTentativoTimestamp === "number" ?
       Math.max(1, Math.round((Date.now() - stato.inizioTentativoTimestamp) / 1000)) : null,
     livello: stato.difficolta,
