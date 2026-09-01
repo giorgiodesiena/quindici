@@ -1665,7 +1665,8 @@ function registraListaGenerata(parole) {
     parole: parole.slice(),
     livello: stato.difficolta,
     fasciaParole: stato.fasciaParole,
-    listaId: creaIdLista(parole)
+    listaId: creaIdLista(parole),
+    sessioneId: stato.sessioneId
   };
   stato.storicoListe.push(voce);
   stato.storicoListe = stato.storicoListe.filter(function (elemento) {
@@ -5093,6 +5094,46 @@ function sessioniDelGiorno(giorno) {
   return sessioni;
 }
 
+function paroleDellaSessionePerReport(sessione, dataGiorno) {
+  const tentativi = sessione && Array.isArray(sessione.tentativi) ?
+    sessione.tentativi : [];
+  if (tentativi.length === 0) return [];
+  const listaId = typeof tentativi[0].listaId === "string" ? tentativi[0].listaId : null;
+
+  if (listaId !== null) {
+    for (let i = stato.storicoListe.length - 1; i >= 0; i--) {
+      const voce = stato.storicoListe[i];
+      if (voce && voce.listaId === listaId && Array.isArray(voce.parole)) {
+        return voce.parole.slice(0, 15);
+      }
+    }
+  }
+
+  const candidateDelGiorno = stato.storicoListe.filter(function (voce) {
+    return voce && voce.data === dataGiorno && Array.isArray(voce.parole) &&
+      voce.parole.length > 0;
+  });
+  if (candidateDelGiorno.length === 1) return candidateDelGiorno[0].parole.slice(0, 15);
+
+  if (stato.serie && stato.serie.data === dataGiorno && Array.isArray(stato.serie.parole) &&
+      (sessione.sessioneId === null || stato.serie.sessioneId === sessione.sessioneId)) {
+    return stato.serie.parole.slice(0, 15);
+  }
+  if (stato.pendente && stato.pendente.data === dataGiorno &&
+      Array.isArray(stato.pendente.parole)) return stato.pendente.parole.slice(0, 15);
+  return [];
+}
+
+function aggiungiParolePartitaAlReport(righe, parole, numeroPartita, totalePartite) {
+  if (!Array.isArray(parole) || parole.length === 0) return;
+  const titolo = totalePartite > 1 ?
+    "📝 Parole della partita " + numeroPartita + ":" : "📝 Parole della partita:";
+  righe.push(titolo);
+  for (let i = 0; i < parole.length; i = i + 5) {
+    righe.push(parole.slice(i, i + 5).join(" · "));
+  }
+}
+
 function dettaglioDurataSessione(sessione) {
   let massimo = null;
   const tentativi = sessione && Array.isArray(sessione.tentativi) ? sessione.tentativi : [];
@@ -5749,6 +5790,7 @@ function testoRiepilogo() {
 
       const giornoOriginale = trovaGiorno(g.chiave);
       const sessioni = sessioniDelGiorno(giornoOriginale);
+      const parolePartiteReport = [];
       let totaleTentativi = 0;
       let miglioreGiorno = null;
       let partitaCompletata = null;
@@ -5803,6 +5845,7 @@ function testoRiepilogo() {
 
       for (let j = 0; j < sessioni.length; j++) {
         const proveSessione = sessioni[j].tentativi;
+        parolePartiteReport.push(paroleDellaSessionePerReport(sessioni[j], g.chiave));
         const dettaglioDurata = dettaglioDurataSessione(sessioni[j]);
         let intestazione = sessioni.length > 1 ? "🎮 Partita " + (j + 1) + " · " : "🎮 ";
         intestazione = intestazione + "Modalità: " + livelliDellaSessione(proveSessione) +
@@ -5878,6 +5921,14 @@ function testoRiepilogo() {
             etichettaDataConGiorno(richiamoSvoltoOggi.da) + ": " +
             formattaPunteggioReport(puntiDaMostrare));
         }
+      }
+
+      for (let j = 0; j < parolePartiteReport.length; j++) {
+        if (parolePartiteReport[j].length === 0) continue;
+        righe.push("");
+        aggiungiParolePartitaAlReport(
+          righe, parolePartiteReport[j], j + 1, parolePartiteReport.length
+        );
       }
     }
   }
