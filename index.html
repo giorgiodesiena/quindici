@@ -5446,7 +5446,6 @@ function righeTentativiDiretti(tentativi) {
   }
 
   const etichettaTempo = tuttiTempiEffettivi ? "tempo effettivo di gioco" : "tempo registrato";
-  righe.push("Tentativi · parole ricordate · " + etichettaTempo + " (minuti:secondi)");
   for (let i = 0; i < tentativi.length; i++) {
     const punti = puntiValidiProgressi(tentativi[i].punti);
     const tempo = tempoRegistratoTentativo(tentativi[i]);
@@ -5999,13 +5998,6 @@ function testoRiepilogo() {
         }
       }
 
-      if (sessioni.length > 0 && sessioni[0].tentativi.length > 0) {
-        const primaProvaGiorno = puntiValidiProgressi(sessioni[0].tentativi[0].punti);
-        if (primaProvaGiorno !== null) {
-          righe.push("🧩 Prima prova: " + formattaPunteggioReport(primaProvaGiorno));
-        }
-      }
-
       const tempoDelGiorno = tempoGiornaliero(giornoOriginale);
       const tempoAttivoDelGiorno = tempoAttivoGiornaliero(giornoOriginale);
       if (sessioni.length > 1) {
@@ -6100,11 +6092,10 @@ function testoRiepilogo() {
             righe.push("🌿 Piccolo recupero: da completare");
           }
         }
-      } else if (g.fatto === true && g.chiave === oggiChiave) {
-        righe.push("🌙 Parole di oggi: richiamo previsto domani");
-      } else if (g.fatto === true && chiaveSpostata(g.chiave, 1) === oggiChiave) {
+      } else if (g.fatto === true && g.chiave !== oggiChiave &&
+          chiaveSpostata(g.chiave, 1) === oggiChiave) {
         righe.push("🧠 Ricordo dopo 24 ore: da fare oggi");
-      } else if (g.fatto === true) {
+      } else if (g.fatto === true && g.chiave !== oggiChiave) {
         righe.push("🧠 Ricordo dopo 24 ore: non registrato");
       }
 
