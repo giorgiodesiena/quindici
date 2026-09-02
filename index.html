@@ -2253,13 +2253,7 @@ function valutaDifficoltaGiorno(giorno) {
     }
   }
   const richiamo = richiamoDellaSerie(giorno.data);
-  let durata = null;
-  for (let i = tentativi.length - 1; i >= 0; i--) {
-    if (Number.isFinite(Number(tentativi[i].durataTotaleSessione))) {
-      durata = Number(tentativi[i].durataTotaleSessione);
-      break;
-    }
-  }
+  const durata = durataAttivaSessioneDaTentativi(tentativi);
 
   // Una giornata è davvero pronta per una sfida soltanto quando migliorano
   // insieme primo tentativo, apprendimento e ricordo a distanza.
@@ -2358,13 +2352,7 @@ function calcolaPrescrizioneGiornaliera() {
     if (esito === "facile") facili++;
     if (esito === "difficile") difficili++;
     const prove = tentativiSeriePrincipale(recenti[i]);
-    let durata = null;
-    for (let j = prove.length - 1; j >= 0; j--) {
-      if (Number.isFinite(Number(prove[j].durataTotaleSessione))) {
-        durata = Number(prove[j].durataTotaleSessione);
-        break;
-      }
-    }
+    const durata = durataAttivaSessioneDaTentativi(prove);
     if (prove.length >= MAX_TENTATIVI_CONSECUTIVI ||
         (durata !== null && durata >= SECONDI_LIMITE_SESSIONE)) giornateFaticose++;
   }
@@ -3187,14 +3175,39 @@ function controlla() {
   mostraEsito(punti, esiti);
 }
 
+function durataAttivaSessioneDaTentativi(tentativi) {
+  if (!Array.isArray(tentativi) || tentativi.length === 0) return 0;
+
+  for (let i = tentativi.length - 1; i >= 0; i--) {
+    const cumulativo = Number(tentativi[i].durataAttivaSessione);
+    if (Number.isFinite(cumulativo) && cumulativo >= 0) return cumulativo;
+  }
+
+  let totale = 0;
+  for (let i = 0; i < tentativi.length; i++) {
+    const studio = Number(tentativi[i].tempoStudio);
+    const recupero = Number(tentativi[i].tempoRecuperoEffettivo);
+    if (!Number.isFinite(studio) || !Number.isFinite(recupero)) return null;
+    totale = totale + Math.max(0, studio) + Math.max(0, recupero);
+  }
+  return totale;
+}
+
+function tempoAttivoSessioneCorrente() {
+  const giorno = trovaGiorno(chiaveData(new Date()));
+  if (giorno === null) return 0;
+  const tentativi = giorno.tentativi.slice(stato.inizioTentativiSessione);
+  const durata = durataAttivaSessioneDaTentativi(tentativi);
+  return durata === null ? 0 : durata;
+}
+
 function calcolaTempoSuccessivo(punti, totale) {
   let variazione = 0;
   let motivo = "Il risultato è nella zona giusta: mantengo lo stesso tempo.";
   const punteggi = stato.punteggiSessione;
   const precedente = punteggi.length >= 2 ? punteggi[punteggi.length - 2] : null;
   const andamento = precedente === null ? 0 : punti - precedente;
-  const trascorsi = typeof stato.inizioSessioneTimestamp === "number" ?
-    Math.max(0, Math.round((Date.now() - stato.inizioSessioneTimestamp) / 1000)) : 0;
+  const trascorsi = tempoAttivoSessioneCorrente();
 
   if (punti >= 13 && andamento >= 0 && trascorsi < SECONDI_AVVISO_FATICA) {
     variazione = -15;
@@ -3231,8 +3244,7 @@ function calcolaTempoSuccessivo(punti, totale) {
 }
 
 function statoFaticaSessione() {
-  const trascorsi = typeof stato.inizioSessioneTimestamp === "number" ?
-    Math.max(0, Math.round((Date.now() - stato.inizioSessioneTimestamp) / 1000)) : 0;
+  const trascorsi = tempoAttivoSessioneCorrente();
   return {
     secondi: trascorsi,
     avviso: trascorsi >= SECONDI_AVVISO_FATICA || stato.tentativo >= 8,
@@ -3334,7 +3346,8 @@ function datiSessioneCorrente() {
   return {
     livello: stato.difficolta,
     tentativi: tentativi,
-    tempoTotale: tempoTotale
+    tempoTotale: tempoTotale,
+    tempoAttivo: durataAttivaSessioneDaTentativi(tentativi) || 0
   };
 }
 
@@ -3367,15 +3380,20 @@ function disegnaRiepilogoFinale() {
     const prova = dati.tentativi[i];
     const riga = document.createElement("div");
     riga.className = "riga-tentativo";
-    const tempo = typeof prova.tempoStudio === "number" ? prova.tempoStudio : prova.secondi;
+    const tempo = tempoRegistratoTentativo(prova);
     riga.textContent = "Tentativo " + (prova.numero || (i + 1)) +
-      " · " + prova.punti + "/15 · studio " + formattaTempo(tempo);
+      " · " + prova.punti + "/15 · gioco effettivo " + formattaTempo(tempo.secondi);
     contenitore.appendChild(riga);
   }
 
+  const attivo = document.createElement("p");
+  attivo.className = "riepilogo-totale";
+  attivo.textContent = "Tempo effettivo di gioco: " + formattaTempo(dati.tempoAttivo);
+  contenitore.appendChild(attivo);
+
   const totale = document.createElement("p");
-  totale.className = "riepilogo-totale";
-  totale.textContent = "Tempo reale dall'inizio alla fine: " +
+  totale.className = "riepilogo-livello";
+  totale.textContent = "Tempo trascorso dall'inizio alla fine: " +
     formattaTempo(dati.tempoTotale || 0);
   contenitore.appendChild(totale);
   contenitore.style.display = "block";
@@ -3465,9 +3483,9 @@ function mostraEsito(punti, esiti) {
     }
   } else if (punti === 15) {
     const datiFinali = datiSessioneCorrente();
-    const tempoComplessivo = datiFinali.tempoTotale;
+    const tempoComplessivo = datiFinali.tempoAttivo;
     commento.textContent = "Tutte e 15, in " + stato.tentativo + " tentativi e " +
-      formattaTempo(tempoComplessivo) + " complessivi. Ottimo allenamento per oggi.";
+      formattaTempo(datiFinali.tempoAttivo) + " di gioco effettivo. Ottimo allenamento per oggi.";
     if (oggiConsigliaVitaQuotidiana() && tempoComplessivo < SECONDI_AVVISO_FATICA) {
       commento.textContent += " Se hai ancora energia, oggi puoi aggiungere una sola prova breve di Vita quotidiana.";
     }
@@ -4012,6 +4030,10 @@ function registraTentativo(punti, indiciMancanti) {
   const rinforziRicordati = stato.rinforziOggi.filter(function (parola) {
     return chiaviMancanti.indexOf(normalizza(parola)) === -1;
   }).length;
+  const tentativiSessione = giorno.tentativi.slice(stato.inizioTentativiSessione);
+  const attivoPrecedente = durataAttivaSessioneDaTentativi(tentativiSessione) || 0;
+  const attivoCorrente = Math.max(0, Number(stato.secondiUsatiTentativo) || 0) +
+    Math.max(0, Number(stato.secondiUsatiRecupero) || 0);
 
   const prova = {
     numero: stato.tentativo,
@@ -4020,6 +4042,7 @@ function registraTentativo(punti, indiciMancanti) {
     tempoStudio: stato.secondiUsatiTentativo,
     tempoMinimoRecupero: stato.secondiMinimiRecupero,
     tempoRecuperoEffettivo: stato.secondiUsatiRecupero,
+    durataAttivaSessione: attivoPrecedente + attivoCorrente,
     durataTotaleTentativo: typeof stato.inizioTentativoTimestamp === "number" ?
       Math.max(1, Math.round((Date.now() - stato.inizioTentativoTimestamp) / 1000)) : null,
     livello: stato.difficolta,
@@ -4388,13 +4411,7 @@ function tempoTotaleCompletamento(giorno) {
   if (giorno === null || giorno.completatoAl === null) {
     return null;
   }
-
-  for (let i = giorno.tentativi.length - 1; i >= 0; i--) {
-    if (typeof giorno.tentativi[i].durataTotaleSessione === "number") {
-      return giorno.tentativi[i].durataTotaleSessione;
-    }
-  }
-  return null;
+  return tempoAttivoGiornaliero(giorno);
 }
 
 function riassuntoGiorno(giorno) {
@@ -5173,7 +5190,7 @@ function disegnaElencoGiorni() {
 function aggiornaConsiglioTempo() {
   document.getElementById("consiglio-tempo").textContent =
     "Tempo iniziale automatico di oggi: " + formattaTempo(stato.secondiScelti) +
-    ". Dopo ogni tentativo il gioco assegna da solo più o meno tempo. Dopo 25 minuti propone una pausa e ferma la serie entro 35 minuti o 10 tentativi.";
+    ". Dopo ogni tentativo il gioco assegna da solo più o meno tempo. Dopo 25 minuti effettivi tra studio e recupero propone una pausa e ferma la serie entro 35 minuti effettivi o 10 tentativi.";
 }
 
 function aggiornaConsiglioAvanzamento() {
@@ -5205,6 +5222,14 @@ function giorniDellaSettimana(lunedi) {
 }
 
 function tempoRegistratoTentativo(prova) {
+  const studio = Number(prova.tempoStudio);
+  const recupero = Number(prova.tempoRecuperoEffettivo);
+  if (Number.isFinite(studio) && Number.isFinite(recupero)) {
+    return {
+      etichetta: "tempo effettivo di gioco",
+      secondi: Math.max(0, studio) + Math.max(0, recupero)
+    };
+  }
   if (typeof prova.durataTotaleTentativo === "number") {
     return { etichetta: "tempo complessivo", secondi: prova.durataTotaleTentativo };
   }
@@ -5304,9 +5329,29 @@ function dettaglioDurataSessione(sessione) {
   return { secondi: totale, tipo: tuttiCompleti ? "complessivo" : "registrato" };
 }
 
+function durataAttivaSessione(sessione) {
+  const tentativi = sessione && Array.isArray(sessione.tentativi) ? sessione.tentativi : [];
+  if (tentativi.length === 0) return null;
+  return durataAttivaSessioneDaTentativi(tentativi);
+}
+
+function tempoAttivoGiornaliero(giorno) {
+  if (giorno === null) return null;
+  const sessioni = sessioniDelGiorno(giorno);
+  let totale = 0;
+  let disponibili = 0;
+  for (let i = 0; i < sessioni.length; i++) {
+    const durata = durataAttivaSessione(sessioni[i]);
+    if (durata !== null) {
+      totale = totale + durata;
+      disponibili++;
+    }
+  }
+  return disponibili === sessioni.length && disponibili > 0 ? totale : null;
+}
+
 function durataSessione(sessione) {
-  const dettaglio = dettaglioDurataSessione(sessione);
-  return dettaglio === null ? null : dettaglio.secondi;
+  return durataAttivaSessione(sessione);
 }
 
 function formattaDurataReport(secondi) {
@@ -5394,13 +5439,13 @@ function livelliDellaSessione(tentativi) {
 
 function righeTentativiDiretti(tentativi) {
   const righe = [];
-  let tuttiTempiComplessivi = true;
+  let tuttiTempiEffettivi = true;
   for (let i = 0; i < tentativi.length; i++) {
     const tempo = tempoRegistratoTentativo(tentativi[i]);
-    if (tempo.etichetta !== "tempo complessivo") tuttiTempiComplessivi = false;
+    if (tempo.etichetta !== "tempo effettivo di gioco") tuttiTempiEffettivi = false;
   }
 
-  const etichettaTempo = tuttiTempiComplessivi ? "tempo" : "tempo registrato";
+  const etichettaTempo = tuttiTempiEffettivi ? "tempo effettivo di gioco" : "tempo registrato";
   righe.push("Tentativi · parole ricordate · " + etichettaTempo + " (minuti:secondi)");
   for (let i = 0; i < tentativi.length; i++) {
     const punti = puntiValidiProgressi(tentativi[i].punti);
@@ -5872,13 +5917,10 @@ function consiglioPersonalizzatoRiepilogo(giorni) {
   if (prove.length === 0) return null;
   const prima = puntiPerCalibrazione(prove[0]);
   let completatoAl = null;
-  let durata = null;
   for (let i = 0; i < prove.length; i++) {
     if (prove[i].punti === 15 && completatoAl === null) completatoAl = i + 1;
-    if (Number.isFinite(Number(prove[i].durataTotaleSessione))) {
-      durata = Number(prove[i].durataTotaleSessione);
-    }
   }
+  const durata = durataAttivaSessioneDaTentativi(prove);
   const richiamo = richiamoDellaSerie(giornoScelto.data);
 
   if (prove.length >= MAX_TENTATIVI_CONSECUTIVI ||
@@ -5967,6 +6009,7 @@ function testoRiepilogo() {
       }
 
       const tempoDelGiorno = tempoGiornaliero(giornoOriginale);
+      const tempoAttivoDelGiorno = tempoAttivoGiornaliero(giornoOriginale);
       if (sessioni.length > 1) {
         righe.push("🎮 " + sessioni.length + " partite · " + totaleTentativi +
           (totaleTentativi === 1 ? " tentativo in totale" : " tentativi in totale"));
@@ -5978,7 +6021,11 @@ function testoRiepilogo() {
           if (tempoDelGiorno.tipo === "registrato") {
             etichettaTotale = "Tempo registrato nelle " + sessioni.length + " partite";
           }
-          righe.push("⏱ " + etichettaTotale + ": " + formattaDurataReport(tempoDelGiorno.secondi));
+          righe.push("🕒 " + etichettaTotale + ": " + formattaDurataReport(tempoDelGiorno.secondi));
+        }
+        if (tempoAttivoDelGiorno !== null) {
+          righe.push("⏱ Tempo effettivo di gioco nelle " + sessioni.length + " partite: " +
+            formattaDurataReport(tempoAttivoDelGiorno));
         }
       }
       if (partitaCompletata !== null) {
@@ -5996,6 +6043,7 @@ function testoRiepilogo() {
         const proveSessione = sessioni[j].tentativi;
         parolePartiteReport.push(paroleDellaSessionePerReport(sessioni[j], g.chiave));
         const dettaglioDurata = dettaglioDurataSessione(sessioni[j]);
+        const durataAttiva = durataAttivaSessione(sessioni[j]);
         let intestazione = sessioni.length > 1 ? "🎮 Partita " + (j + 1) + " · " : "🎮 ";
         intestazione = intestazione + "Modalità: " + livelliDellaSessione(proveSessione) +
           " · " + proveSessione.length +
@@ -6010,13 +6058,16 @@ function testoRiepilogo() {
           righe.push("🆕 Parole nuove rispetto agli ultimi 30 giorni: " +
             Math.max(0, Math.min(15, paroleNuove)) + " su 15");
         }
+        if (durataAttiva !== null) {
+          righe.push("⏱ Tempo effettivo di gioco: " + formattaDurataReport(durataAttiva));
+        }
         if (dettaglioDurata !== null) {
-          let etichettaTempo = "Tempo totale";
+          let etichettaTempo = "Tempo trascorso dall'inizio alla fine";
           if (dettaglioDurata.tipo === "complessivo") {
             etichettaTempo = "Tempo complessivo dei tentativi";
           }
           if (dettaglioDurata.tipo === "registrato") etichettaTempo = "Tempo registrato";
-          righe.push("⏱ " + etichettaTempo + ": " + formattaDurataReport(dettaglioDurata.secondi));
+          righe.push("🕒 " + etichettaTempo + ": " + formattaDurataReport(dettaglioDurata.secondi));
         }
         const righeTentativi = righeTentativiDiretti(proveSessione);
         for (let k = 0; k < righeTentativi.length; k++) righe.push(righeTentativi[k]);
