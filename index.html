@@ -793,6 +793,7 @@ const GIORNI_ADATTAMENTO = 5;
 const SECONDI_AVVISO_FATICA = 25 * 60;
 const SECONDI_LIMITE_SESSIONE = 35 * 60;
 const MAX_TENTATIVI_CONSECUTIVI = 10;
+const SECONDI_CALMA_DOPO_PAROLA = 20;
 const TENTATIVI_PRIMA_DELLA_STRATEGIA = 3;
 const TENTATIVI_PRIMA_DELLE_INIZIALI = 5;
 const TENTATIVI_PRIMA_DELLA_STORIA = 8;
@@ -1318,6 +1319,7 @@ const stato = {
   idTimeoutSaltaDisturbo: null,
   idTimerRecupero: null,
   inizioRecuperoTimestamp: null,
+  ultimoInserimentoRecuperoTimestamp: null,
   secondiMinimiRecupero: 0,
   secondiUsatiRecupero: 0,
   numeriDisturbo: [],
@@ -2861,24 +2863,24 @@ function calcolaMinimoRecuperoAdattivo() {
   const punteggi = stato.punteggiSessione;
   const ultimo = punteggi.length > 0 ? punteggi[punteggi.length - 1] : null;
   const penultimo = punteggi.length > 1 ? punteggi[punteggi.length - 2] : null;
-  let secondi = 75;
+  let secondi = 90;
   let motivo = "È il primo recupero di oggi: concedo il tempo per ripercorrere la storiella con calma.";
 
   if (ultimo !== null) {
     if (ultimo <= 4) {
-      secondi = 100;
+      secondi = 120;
       motivo = "Nell'ultimo tentativo sono tornate poche parole: aggiungo tempo per cercarle senza guardare.";
     } else if (ultimo <= 7) {
-      secondi = 90;
+      secondi = 105;
       motivo = "Il recupero richiede ancora calma: lascio un po' più di tempo.";
     } else if (ultimo <= 10) {
-      secondi = 75;
+      secondi = 90;
       motivo = "Il recupero sta procedendo: mantengo un tempo equilibrato.";
     } else if (ultimo <= 12) {
-      secondi = 60;
+      secondi = 75;
       motivo = "Molte parole stanno tornando: posso ridurre con prudenza il tempo minimo.";
     } else {
-      secondi = 45;
+      secondi = 60;
       motivo = "Il recupero è fluido: il tempo minimo può essere più breve, ma non scompare.";
     }
   }
@@ -2901,20 +2903,7 @@ function calcolaMinimoRecuperoAdattivo() {
   }
   secondi = secondi + fasciaSicura(stato.fasciaParole) * 5;
 
-  const trascorsiSessione = typeof stato.inizioSessioneTimestamp === "number" ?
-    Math.max(0, Math.round((Date.now() - stato.inizioSessioneTimestamp) / 1000)) : 0;
-  if (trascorsiSessione >= 30 * 60) {
-    secondi = secondi - 30;
-    motivo = "La sessione è già lunga: alleggerisco il tempo minimo per non affaticare l'attenzione.";
-  } else if (trascorsiSessione >= 25 * 60) {
-    secondi = secondi - 20;
-    motivo = "Dopo 25 minuti alleggerisco il tempo minimo per proteggere l'attenzione.";
-  } else if (trascorsiSessione >= 20 * 60 || stato.tentativo >= 8) {
-    secondi = secondi - 10;
-    motivo = "La sessione sta diventando lunga: riduco un poco l'attesa per evitare affaticamento.";
-  }
-
-  secondi = Math.max(35, Math.min(120, Math.round(secondi / 5) * 5));
+  secondi = Math.max(60, Math.min(150, Math.round(secondi / 5) * 5));
   return { secondi: secondi, motivo: motivo };
 }
 
@@ -2938,6 +2927,12 @@ function aggiornaBloccoRecupero() {
   const messaggio = document.getElementById("stato-tempo-recupero");
   const trascorsi = secondiRecuperoTrascorsi();
   const rimasti = Math.max(0, stato.secondiMinimiRecupero - trascorsi);
+  let calmaRimasta = 0;
+  if (typeof stato.ultimoInserimentoRecuperoTimestamp === "number") {
+    const secondiDallUltimaParola = Math.floor(
+      (Date.now() - stato.ultimoInserimentoRecuperoTimestamp) / 1000);
+    calmaRimasta = Math.max(0, SECONDI_CALMA_DOPO_PAROLA - secondiDallUltimaParola);
+  }
   const tutteInserite = stato.scritte.length >= stato.parole.length;
 
   messaggio.style.display = "block";
@@ -2950,6 +2945,11 @@ function aggiornaBloccoRecupero() {
     bottone.textContent = "Continua a cercare: " + formattaTempo(rimasti);
     messaggio.textContent = "Senza guardare le carte, ripercorri la storiella ancora per " +
       formattaTempo(rimasti) + ". Il gioco adatta questo tempo a ogni tentativo.";
+  } else if (calmaRimasta > 0) {
+    bottone.disabled = true;
+    bottone.textContent = "Cerca ancora: " + formattaTempo(calmaRimasta);
+    messaggio.textContent = "Hai appena trovato una parola. Prenditi ancora " +
+      formattaTempo(calmaRimasta) + " per vedere se ne arriva un'altra.";
   } else {
     bottone.disabled = false;
     bottone.textContent = testoBottoneControllaNormale();
@@ -2966,6 +2966,7 @@ function avviaTimerRecuperoAdattivo() {
   stato.secondiMinimiRecupero = prescrizione.secondi;
   stato.secondiUsatiRecupero = 0;
   stato.inizioRecuperoTimestamp = Date.now();
+  stato.ultimoInserimentoRecuperoTimestamp = null;
   const messaggio = document.getElementById("stato-tempo-recupero");
   messaggio.dataset.motivo = prescrizione.motivo;
   aggiornaBloccoRecupero();
@@ -3001,6 +3002,13 @@ function aggiungiTesto(testo) {
 
   if (giaPresente === false) {
     stato.scritte.push(testo.trim().toLowerCase());
+    if (stato.modalita === "sessione" &&
+        typeof stato.inizioRecuperoTimestamp === "number") {
+      stato.ultimoInserimentoRecuperoTimestamp = Date.now();
+      if (stato.idTimerRecupero === null) {
+        stato.idTimerRecupero = setInterval(aggiornaBloccoRecupero, 1000);
+      }
+    }
   }
 }
 
