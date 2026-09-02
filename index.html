@@ -2903,7 +2903,7 @@ function calcolaMinimoRecuperoAdattivo() {
   }
   secondi = secondi + fasciaSicura(stato.fasciaParole) * 5;
 
-  secondi = Math.max(60, Math.min(150, Math.round(secondi / 5) * 5));
+  secondi = Math.max(60, Math.round(secondi / 5) * 5);
   return { secondi: secondi, motivo: motivo };
 }
 
