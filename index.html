@@ -1346,6 +1346,7 @@ const stato = {
   vitaStorico: [],
   suggerimentoUsato: false,
   strategiaBreveMostrata: false,
+  supportoStrategiaMostratoSessione: false,
   esempioOfferto: false,
   inizialiOfferte: false,
   tentativoStrategiaMostrata: 0,
@@ -2442,6 +2443,7 @@ function iniziaSessione(saltaRichiamo) {
   stato.sessioneId = chiaveData(new Date()) + "-" + stato.inizioSessioneTimestamp + "-" +
     Math.floor(Math.random() * 100000);
   stato.aiutoPerProssimoTentativo = null;
+  stato.supportoStrategiaMostratoSessione = false;
   stato.sessioneDaConcludere = false;
   const giornoEsistente = trovaGiorno(chiaveData(new Date()));
   stato.inizioTentativiSessione = giornoEsistente === null ?
@@ -3438,11 +3440,15 @@ function mostraEsito(punti, esiti) {
   bottoneBasta.textContent = "Lascia stare per oggi";
 
   if (stato.modalita === "sessione" && punti < totale) {
+    const tempoPrecedente = stato.secondiTentativo;
     const adattamento = calcolaTempoSuccessivo(puntiAdattiviUltimoTentativo(punti), totale);
     stato.secondiTentativo = adattamento.secondi;
     tempoIntelligente.style.display = "block";
     tempoIntelligente.innerHTML = "<b>Tempo del prossimo tentativo: " +
-      formattaTempo(adattamento.secondi) + "</b><br>" + adattamento.motivo;
+      formattaTempo(adattamento.secondi) + "</b>";
+    if (adattamento.secondi !== tempoPrecedente) {
+      tempoIntelligente.innerHTML += "<br>" + adattamento.motivo;
+    }
   }
 
   if (stato.modalita === "richiamo") {
@@ -3898,7 +3904,8 @@ function registraEventoAiuto(tipo) {
 }
 
 function configuraSupportoStrategia(punti) {
-  if (stato.suggerimentoUsato || !supportoStrategiaNecessario(punti)) return false;
+  if (stato.supportoStrategiaMostratoSessione || stato.suggerimentoUsato ||
+      !supportoStrategiaNecessario(punti)) return false;
 
   const riquadro = document.getElementById("riquadro-storia");
   const titolo = document.getElementById("titolo-strategia");
@@ -3918,6 +3925,7 @@ function configuraSupportoStrategia(punti) {
     spiegazione.textContent =
       "Ripercorri la tua scena dall'inizio e immagina movimento, suoni e colori. Il gioco non mostra ancora nessuna parola.";
     riquadro.style.display = "block";
+    stato.supportoStrategiaMostratoSessione = true;
     return true;
   }
 
@@ -3932,6 +3940,7 @@ function configuraSupportoStrategia(punti) {
       "Puoi vedere fino a tre iniziali delle parole che resistono di più, oppure scoprire direttamente tutte le carte.";
     bottoneIniziali.style.display = "block";
     riquadro.style.display = "block";
+    stato.supportoStrategiaMostratoSessione = true;
     return true;
   }
 
@@ -3947,6 +3956,7 @@ function configuraSupportoStrategia(punti) {
       "L'esempio collegherà soltanto tre parole difficili. Le altre storie resteranno tue.";
     bottoneStoria.style.display = "block";
     riquadro.style.display = "block";
+    stato.supportoStrategiaMostratoSessione = true;
     return true;
   }
 
