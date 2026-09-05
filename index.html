@@ -110,7 +110,7 @@ body {
 .bottone:disabled:active { transform: none; }
 
 .bottone:focus-visible, .scelta:focus-visible,
-#casella:focus-visible, .numero-disturbo:focus-visible {
+#casella:focus-visible, #risposta-recupero:focus-visible, .numero-disturbo:focus-visible {
   outline: 3px solid var(--rosso); outline-offset: 3px;
 }
 
@@ -263,7 +263,7 @@ body {
 
 .riga-scrittura { display: flex; gap: 8px; }
 
-#casella {
+#casella, #risposta-recupero {
   flex: 1; min-height: 58px; border-radius: 14px;
   border: 2px solid var(--carta-ombra); background: #FFFDF6;
   padding: 0 16px; font-family: 'Archivo', sans-serif; font-size: 1.2rem;
@@ -498,7 +498,7 @@ body {
   .numero-disturbo { min-height: 64px; aspect-ratio: auto; font-size: 1.45rem; touch-action: manipulation; }
 
   .riga-scrittura { gap: 6px; }
-  #casella { min-height: 60px; padding: 0 12px; font-size: 1.05rem; }
+  #casella, #risposta-recupero { min-height: 60px; padding: 0 12px; font-size: 1.05rem; }
   #bottone-voce { width: 58px; min-height: 60px; }
   .gettone { padding: 10px 14px; }
 
@@ -567,7 +567,7 @@ body {
     <div class="pannello">
       <div class="etichetta">Come funziona</div>
       <p class="spiega">
-        Escono <b>15 parole a caso</b>. Le guardi, si coprono, fai una pausa forzata
+        Escono <b>15 parole a caso</b>. Le guardi, si coprono, puoi fare una breve pausa
         con dei numeri, poi le riscrivi a memoria. Puoi riprovare con le stesse parole:
         ogni giro aiuta a trovare la strategia che funziona meglio per te.
       </p>
@@ -602,7 +602,7 @@ body {
       <div class="etichetta">Vita quotidiana</div>
       <p class="spiega">
         Piccoli esercizi per ricordare cose utili nella giornata. Il gioco sceglie da solo
-        da 3 a 5 elementi e un tempo adatto. Si fanno al massimo due prove e non cambiano
+        da 3 a 5 elementi e un tempo adatto. Puoi scegliere quante prove fare; non cambiano
         il risultato delle 15 parole.
       </p>
       <div class="riquadro vita-stato" id="vita-stato" aria-live="polite"></div>
@@ -687,7 +687,7 @@ body {
   <!-- ============ DISTURBO ============ -->
   <section class="schermata" id="schermata-disturbo">
     <div class="pannello">
-      <div class="etichetta" id="etichetta-disturbo" style="text-align:center">Pausa obbligata</div>
+      <div class="etichetta" id="etichetta-disturbo" style="text-align:center">Breve pausa facoltativa</div>
       <div class="orologio" id="orologio-disturbo">0:20</div>
       <div class="barra-tempo"><span id="barra-disturbo"></span></div>
       <p class="spiega" id="istruzione-disturbo" style="text-align:center; margin-top:14px">
@@ -695,10 +695,10 @@ body {
       </p>
       <div class="griglia-numeri" id="griglia-numeri"></div>
       <p class="avviso" id="stato-numeri" style="text-align:center">
-        Completa almeno una sequenza. Serve a spostare davvero l'attenzione dalle parole.
+        Puoi completare la sequenza oppure passare subito alle parole.
       </p>
       <button class="bottone secondario" id="bottone-salta-numeri" style="display:none">
-        Non riesco, continua comunque
+        Passa subito alle parole
       </button>
     </div>
   </section>
@@ -734,13 +734,23 @@ body {
       <div class="riquadro riepilogo-sessione" id="riepilogo-finale" style="display:none"></div>
       <div class="riquadro" id="tempo-intelligente" style="display:none"></div>
       <div class="griglia" id="griglia-esito"></div>
+      <div class="riquadro" id="risposte-richiamo" style="display:none" aria-live="polite"></div>
 
       <div class="riquadro recupero-guidato" id="riquadro-recupero-guidato"
            style="display:none" aria-live="polite" tabindex="-1">
         <b id="titolo-recupero-guidato">Recuperiamo una parola con calma.</b>
         <p class="avviso" id="testo-recupero-guidato"></p>
         <div class="indizio-recupero" id="indizio-recupero-guidato"></div>
-        <button class="bottone" id="bottone-parola-ritrovata">Mi è tornata in mente</button>
+        <div id="inserimento-recupero">
+          <label for="risposta-recupero">Quale parola ti è tornata in mente?</label>
+          <div class="riga-scrittura">
+            <input id="risposta-recupero" type="text" autocomplete="off" autocorrect="off"
+                   autocapitalize="off" spellcheck="false" enterkeyhint="done"
+                   aria-describedby="esito-risposta-recupero" placeholder="Scrivi la parola">
+          </div>
+        </div>
+        <p id="esito-risposta-recupero" role="status"></p>
+        <button class="bottone" id="bottone-parola-ritrovata">Controlla la parola</button>
         <button class="bottone secondario" id="bottone-altro-aiuto-recupero">
           Un altro piccolo aiuto
         </button>
@@ -1338,7 +1348,6 @@ const stato = {
   vitaQuanti: 3,
   vitaLivello: 1,
   vitaSecondiIniziali: 45,
-  vitaMaxTentativi: 2,
   vitaSessioneId: null,
   vitaInizioSessioneTimestamp: null,
   vitaPrescrizione: null,
@@ -1373,7 +1382,7 @@ const stato = {
   storicoListe: [],
   listaId: null,
   paroleNuoveLista: 15,
-  sessioneDaConcludere: false,
+  rispostaRecuperoConfermata: false,
   sessioniLivello: { media: 0, mix: 0, difficile: 0 }
 };
 let codaSalvataggioGiorni = Promise.resolve();
@@ -2424,19 +2433,6 @@ function preparaImpostazioniAutomatiche() {
 }
 
 function iniziaSessione(saltaRichiamo) {
-  const vaiDirettamenteAlGioco = saltaRichiamo === true;
-  if (!vaiDirettamenteAlGioco && recuperoGuidatoDaCompletare() !== null) {
-    apriRecuperoGuidato();
-    return;
-  }
-
-  const richiamoDisponibile = serieDaRichiamare();
-  if (!vaiDirettamenteAlGioco && richiamoDisponibile !== null) {
-    aggiornaPannelloRichiamo();
-    document.getElementById("pannello-richiamo").scrollIntoView({ behavior: "smooth", block: "start" });
-    return;
-  }
-
   preparaImpostazioniAutomatiche();
   stato.modalita = "sessione";
   stato.inizioSessioneTimestamp = Date.now();
@@ -2444,7 +2440,6 @@ function iniziaSessione(saltaRichiamo) {
     Math.floor(Math.random() * 100000);
   stato.aiutoPerProssimoTentativo = null;
   stato.supportoStrategiaMostratoSessione = false;
-  stato.sessioneDaConcludere = false;
   const giornoEsistente = trovaGiorno(chiaveData(new Date()));
   stato.inizioTentativiSessione = giornoEsistente === null ?
     0 : giornoEsistente.tentativi.length;
@@ -2473,15 +2468,6 @@ function iniziaSessione(saltaRichiamo) {
 }
 
 function iniziaVita(tipo) {
-  if (recuperoGuidatoDaCompletare() !== null) {
-    apriRecuperoGuidato();
-    return;
-  }
-  if (serieDaRichiamare() !== null) {
-    aggiornaPannelloRichiamo();
-    document.getElementById("pannello-richiamo").scrollIntoView({ behavior: "smooth", block: "start" });
-    return;
-  }
   const esercizio = VITA_QUOTIDIANA[tipo];
   if (!esercizio) {
     return;
@@ -2523,12 +2509,12 @@ function partiTimer() {
   mostraSchermata("studio");
 
   const bottone = document.getElementById("bottone-coprire");
-  bottone.disabled = true;
-  bottone.textContent = "Carte ancora coperte";
+  bottone.disabled = false;
+  bottone.textContent = "Mostra subito le parole";
 
   if (stato.modalita === "vita") {
     document.getElementById("fase-studio").textContent = stato.vitaTitolo +
-      " — prova " + stato.tentativo + " di " + stato.vitaMaxTentativi;
+      " — prova " + stato.tentativo;
     aggiornaContestoVitaStudio();
   } else if (stato.sfidaAutomatica === true) {
     document.getElementById("contesto-vita-studio").style.display = "none";
@@ -2586,7 +2572,7 @@ function aggiornaContestoVitaStudio() {
       testo.textContent = esercizio.strategia;
     }
   } else {
-    titolo.textContent = "Seconda e ultima prova.";
+    titolo.textContent = "Un altro giro, se ti va.";
     testo.textContent = "Riprendi lo stesso percorso mentale che hai già creato, senza aggiungere altre tecniche.";
   }
   contenitore.appendChild(titolo);
@@ -2595,6 +2581,7 @@ function aggiornaContestoVitaStudio() {
 }
 
 function scopriEMemorizza() {
+  if (stato.idTimer !== null) clearInterval(stato.idTimer);
   const carte = document.querySelectorAll("#griglia-studio .carta");
   for (let i = 0; i < carte.length; i++) {
     carte[i].classList.remove("coperta");
@@ -2691,14 +2678,14 @@ function partiDisturbo() {
   document.getElementById("orologio-disturbo").textContent = formattaTempo(rimasti);
   document.getElementById("barra-disturbo").style.width = "100%";
   document.getElementById("etichetta-disturbo").textContent = stato.modalita === "vita" ?
-    "Breve cambio di attenzione" : "Pausa obbligata";
+    "Breve cambio di attenzione" : "Breve pausa facoltativa";
   document.getElementById("istruzione-disturbo").innerHTML =
     "Tocca i numeri <b>in ordine</b>, dall'1 al " + ultimoNumero + ".";
   document.getElementById("stato-numeri").textContent =
     stato.modalita === "vita" ?
       "Una piccola pausa aiuta a verificare ciò che è rimasto in mente, senza fretta." :
-      "Completa almeno una sequenza. Serve a spostare davvero l'attenzione dalle parole.";
-  document.getElementById("bottone-salta-numeri").style.display = "none";
+      "Puoi completare la sequenza oppure passare subito alle parole.";
+  document.getElementById("bottone-salta-numeri").style.display = "block";
 
   if (stato.idTimerDisturbo !== null) {
     clearInterval(stato.idTimerDisturbo);
@@ -2719,16 +2706,7 @@ function partiDisturbo() {
       stato.idTimerDisturbo = null;
       stato.tempoDisturboScaduto = true;
 
-      if (stato.sequenzaDisturboCompletata === true) {
-        concludiDisturbo();
-      } else {
-        document.getElementById("stato-numeri").textContent =
-          "La pausa è finita. Completa la sequenza da 1 a " + ultimoNumero + " per continuare.";
-        stato.idTimeoutSaltaDisturbo = setTimeout(function () {
-          document.getElementById("bottone-salta-numeri").style.display = "block";
-          stato.idTimeoutSaltaDisturbo = null;
-        }, stato.modalita === "vita" ? 6000 : 10000);
-      }
+      concludiDisturbo();
     }
   }, 1000);
 }
@@ -2785,7 +2763,7 @@ function toccaNumero(bottone) {
       stato.sequenzaDisturboCompletata = true;
       document.getElementById("stato-numeri").textContent =
         stato.tempoDisturboScaduto === true ?
-          "Sequenza completata." : "Sequenza completata. Aspetta che finisca la breve pausa.";
+          "Sequenza completata." : "Sequenza completata. Puoi passare subito alle parole.";
 
       if (stato.tempoDisturboScaduto === true) {
         concludiDisturbo();
@@ -2818,8 +2796,7 @@ function preparaRipeti() {
     bottoneControlla.textContent = "Non me ne vengono altre: continua";
     etichettaCasella.textContent = "Scrivi una parola di ieri che ti è tornata in mente";
   } else if (stato.modalita === "vita") {
-    etichetta.textContent = stato.vitaTitolo + " — prova " + stato.tentativo +
-      " di " + stato.vitaMaxTentativi;
+    etichetta.textContent = stato.vitaTitolo + " — prova " + stato.tentativo;
     istruzione.textContent = "Scrivi gli elementi che sono rimasti in mente. Quando non ne vengono altri, puoi continuare: non serve ricordarli tutti.";
     bottoneControlla.textContent = "Non me ne vengono altri: continua";
     etichettaCasella.textContent = "Scrivi un elemento che ti è tornato in mente";
@@ -2926,20 +2903,17 @@ function aggiornaBloccoRecupero() {
   const tutteInserite = stato.scritte.length >= stato.parole.length;
 
   messaggio.style.display = "block";
+  bottone.disabled = false;
+  bottone.textContent = testoBottoneControllaNormale();
   if (tutteInserite) {
     bottone.disabled = false;
     bottone.textContent = testoBottoneControllaNormale();
     messaggio.textContent = "Hai inserito 15 parole: puoi controllare subito.";
   } else if (rimasti > 0) {
-    bottone.disabled = true;
-    bottone.textContent = "Continua a cercare: " + formattaTempo(rimasti);
-    messaggio.textContent = "Senza guardare le carte, ripercorri la storiella ancora per " +
-      formattaTempo(rimasti) + ". Il gioco adatta questo tempo a ogni tentativo.";
+    messaggio.textContent = "Se ti va, cerca ancora per " + formattaTempo(rimasti) +
+      ". Puoi controllare le risposte in qualsiasi momento.";
   } else if (calmaRimasta > 0) {
-    bottone.disabled = true;
-    bottone.textContent = "Cerca ancora: " + formattaTempo(calmaRimasta);
-    messaggio.textContent = "Hai appena trovato una parola. Prenditi ancora " +
-      formattaTempo(calmaRimasta) + " per vedere se ne arriva un'altra.";
+    messaggio.textContent = "Hai appena trovato una parola. Se vuoi, cerca ancora; puoi anche controllare subito.";
   } else {
     bottone.disabled = false;
     bottone.textContent = testoBottoneControllaNormale();
@@ -3249,9 +3223,7 @@ function statoFaticaSessione() {
   const trascorsi = tempoAttivoSessioneCorrente();
   return {
     secondi: trascorsi,
-    avviso: trascorsi >= SECONDI_AVVISO_FATICA || stato.tentativo >= 8,
-    limite: trascorsi >= SECONDI_LIMITE_SESSIONE ||
-      stato.tentativo >= MAX_TENTATIVI_CONSECUTIVI
+    avviso: trascorsi >= SECONDI_AVVISO_FATICA || stato.tentativo >= 8
   };
 }
 
@@ -3425,7 +3397,7 @@ function mostraEsito(punti, esiti) {
   const bottoneMostraParole = document.getElementById("bottone-mostra-parole");
   const riquadroRecupero = document.getElementById("riquadro-recupero-guidato");
   const fatica = stato.modalita === "sessione" ? statoFaticaSessione() :
-    { secondi: 0, avviso: false, limite: false };
+    { secondi: 0, avviso: false };
   let supportoAttivo = false;
   let recuperoDaMostrare = false;
 
@@ -3468,25 +3440,19 @@ function mostraEsito(punti, esiti) {
     bottoneMostraParole.textContent = mancano === 1 ?
       "Rivedi l'elemento che mancava" : "Rivedi insieme i " + mancano + " elementi mancanti";
     bottoneMostraParole.style.display = "block";
-    if (stato.tentativo < stato.vitaMaxTentativi) {
-      const adattamentoVita = tempoSecondaProvaVita(punti, totale);
-      stato.secondiTentativo = adattamentoVita.secondi;
-      commento.textContent = "Hai recuperato " + punti + " elementi da solo. Puoi fare un ultimo giro; non è necessario arrivare al risultato pieno.";
-      tempoIntelligente.style.display = "block";
-      tempoIntelligente.innerHTML = "<b>Seconda e ultima prova: " +
-        formattaTempo(adattamentoVita.secondi) + "</b><br>" + adattamentoVita.motivo;
-      bottoneAvanti.textContent = "Fai un ultimo giro";
-      bottoneBasta.textContent = "Va bene così per oggi";
-      bottoneBasta.style.display = "block";
-    } else {
-      const elementiMancanti = mancano === 1 ? "l'altro elemento" :
-        "gli altri " + mancano + " elementi";
-      commento.textContent = "Hai recuperato " + punti + " elementi da solo. Se vuoi, rivediamo insieme " +
-        elementiMancanti + "; poi abbiamo finito.";
-      disegnaRiepilogoVita();
-      bottoneAvanti.textContent = "Concludi l'allenamento";
-      bottoneBasta.style.display = "none";
+    const tempoPrecedenteVita = stato.secondiTentativo;
+    const adattamentoVita = tempoSecondaProvaVita(punti, totale);
+    stato.secondiTentativo = adattamentoVita.secondi;
+    commento.textContent = "Hai recuperato " + punti + " elementi da solo. Puoi continuare oppure concludere e salvare.";
+    tempoIntelligente.style.display = "block";
+    tempoIntelligente.innerHTML = "<b>Tempo del prossimo tentativo: " +
+      formattaTempo(adattamentoVita.secondi) + "</b>";
+    if (adattamentoVita.secondi !== tempoPrecedenteVita) {
+      tempoIntelligente.innerHTML += "<br>" + adattamentoVita.motivo;
     }
+    bottoneAvanti.textContent = "Continua con un altro tentativo";
+    bottoneBasta.textContent = "Concludi e salva";
+    bottoneBasta.style.display = "block";
   } else if (punti === 15) {
     const datiFinali = datiSessioneCorrente();
     const tempoComplessivo = datiFinali.tempoAttivo;
@@ -3504,34 +3470,25 @@ function mostraEsito(punti, esiti) {
     if (mancano === 1) {
       parolaMancano = " parola";
     }
-    if (fatica.limite) {
-      stato.sessioneDaConcludere = true;
-      commento.textContent = "Per oggi basta così: hai allenato la memoria per " +
-        formattaTempo(fatica.secondi) + ". I risultati restano salvati e potrai riprendere più tardi o domani con energie nuove.";
-      disegnaRiepilogoFinale();
-      tempoIntelligente.style.display = "block";
-      tempoIntelligente.innerHTML = "<b>Pausa consigliata</b><br>Il gioco ferma qui i tentativi consecutivi per non trasformare la stanchezza in difficoltà.";
-      bottoneAvanti.textContent = "Concludi e salva";
-      bottoneBasta.style.display = "none";
-    } else {
-      commento.textContent = "Hai ricordato " + punti + " parole. Ne manca ancora " + mancano + parolaMancano +
-                             ": ogni nuovo giro rafforza la strategia.";
-      if (fatica.avviso) {
-        commento.textContent += " Hai già lavorato molto: puoi fermarti senza perdere i risultati.";
-      }
-      bottoneAvanti.textContent = "Rifai da capo (tentativo " + (stato.tentativo + 1) + ")";
-      bottoneBasta.textContent = fatica.avviso ? "Fai una pausa e salva" : "Lascia stare per oggi";
-      bottoneBasta.style.display = "block";
-
-      supportoAttivo = configuraSupportoStrategia(punti);
+    commento.textContent = "Hai ricordato " + punti + " parole. " +
+      (mancano === 1 ? "Manca ancora " : "Mancano ancora ") + mancano + parolaMancano + ".";
+    if (fatica.avviso) {
+      commento.textContent += " Se sei stanco, puoi fare una pausa. Puoi anche continuare: i risultati restano salvati.";
     }
+    bottoneAvanti.textContent = "Continua con il tentativo " + (stato.tentativo + 1);
+    bottoneBasta.textContent = fatica.avviso ? "Fai una pausa e salva" : "Concludi e salva";
+    bottoneBasta.style.display = "block";
+
+    supportoAttivo = configuraSupportoStrategia(punti);
   }
 
   const griglia = document.getElementById("griglia-esito");
   if (richiamoGentile) {
     griglia.innerHTML = "";
     griglia.style.display = "none";
+    disegnaRisposteRichiamo(stato.parole, stato.scritte);
   } else {
+    document.getElementById("risposte-richiamo").style.display = "none";
     griglia.style.display = "grid";
     griglia.classList.toggle("vita-griglia", stato.modalita === "vita");
     griglia.classList.toggle("vita-frasi", stato.modalita === "vita" &&
@@ -3565,6 +3522,35 @@ function mostraEsito(punti, esiti) {
   } else if (!richiamoGentile) {
     setTimeout(scopriCarteEsito, 150);
   }
+}
+
+function disegnaRisposteRichiamo(parole, risposte) {
+  const contenitore = document.getElementById("risposte-richiamo");
+  contenitore.innerHTML = "";
+  contenitore.style.display = "block";
+  const titolo = document.createElement("b");
+  titolo.textContent = "Le risposte al ricordo di ieri";
+  contenitore.appendChild(titolo);
+  if (!Array.isArray(risposte)) {
+    const nota = document.createElement("p");
+    nota.textContent = "Il dettaglio delle risposte non è stato salvato in questa partita precedente.";
+    contenitore.appendChild(nota);
+    return;
+  }
+  const corrette = new Set(parole.map(normalizza));
+  for (const risposta of risposte) {
+    const riga = document.createElement("p");
+    riga.textContent = corrette.has(normalizza(risposta)) ?
+      "✓ " + risposta + " — corretta" :
+      "• " + risposta + " — non presente nella lista di ieri";
+    contenitore.appendChild(riga);
+  }
+  const nota = document.createElement("p");
+  nota.className = "avviso";
+  nota.textContent = risposte.length === 0 ?
+    "Non hai inserito parole. Puoi provare con gli indizi o andare al gioco di oggi." :
+    "Il controllo usa le parole scritte o trascritte dal microfono. Le parole mancanti restano nascoste per il recupero con indizi.";
+  contenitore.appendChild(nota);
 }
 
 function commentoRichiamo(punti) {
@@ -3672,6 +3658,12 @@ function disegnaRecuperoGuidato(portaFocus) {
   const parola = recupero.parole[indice];
   const fase = Math.max(0, Math.min(2, parseInt(recupero.fasi[indice], 10) || 0));
   const riquadro = document.getElementById("riquadro-recupero-guidato");
+  stato.rispostaRecuperoConfermata = false;
+  const risposta = document.getElementById("risposta-recupero");
+  risposta.value = "";
+  risposta.readOnly = false;
+  document.getElementById("inserimento-recupero").style.display = fase < 2 ? "block" : "none";
+  document.getElementById("esito-risposta-recupero").textContent = "";
   const titolo = document.getElementById("titolo-recupero-guidato");
   const testo = document.getElementById("testo-recupero-guidato");
   const indizio = document.getElementById("indizio-recupero-guidato");
@@ -3683,11 +3675,11 @@ function disegnaRecuperoGuidato(portaFocus) {
   indizio.textContent = formaIndizioRecupero(parola, fase);
   if (fase === 0) {
     testo.textContent = "Partiamo soltanto dalla categoria. Ripercorri la storia di ieri senza fretta.";
-    bottoneRitrovata.textContent = "Mi è tornata in mente";
+    bottoneRitrovata.textContent = "Controlla la parola";
     bottoneAiuto.style.display = "block";
   } else if (fase === 1) {
     testo.textContent = "Ora hai anche l'iniziale e la lunghezza. Immagina dove si trovava nella scena di ieri.";
-    bottoneRitrovata.textContent = "Mi è tornata in mente";
+    bottoneRitrovata.textContent = "Controlla la parola";
     bottoneAiuto.style.display = "block";
   } else {
     testo.textContent = "Eccola. Immaginala grande, colorata e in movimento, poi riagganciala alla storia di ieri.";
@@ -3707,6 +3699,8 @@ function disegnaRecuperoGuidato(portaFocus) {
 }
 
 function mostraRecuperoGuidatoCompletato(recupero, portaFocus) {
+  document.getElementById("inserimento-recupero").style.display = "none";
+  document.getElementById("esito-risposta-recupero").textContent = "";
   const riquadro = document.getElementById("riquadro-recupero-guidato");
   document.getElementById("titolo-recupero-guidato").textContent = "Piccolo recupero completato";
   document.getElementById("testo-recupero-guidato").textContent =
@@ -3743,6 +3737,7 @@ function apriRecuperoGuidato() {
     (punti === 1 ? "parola tornata in mente spontaneamente" :
       "parole tornate in mente spontaneamente") + "</small>";
   document.getElementById("commento").textContent = commentoRichiamo(punti);
+  disegnaRisposteRichiamo(dati.richiamo.paroleOrigine || [], dati.richiamo.risposteInserite);
   document.getElementById("griglia-esito").innerHTML = "";
   document.getElementById("griglia-esito").style.display = "none";
   document.getElementById("riepilogo-finale").style.display = "none";
@@ -3762,16 +3757,42 @@ async function completaParolaRecupero() {
   stato.ultimoToccoRecupero = adesso;
   const dati = recuperoGuidatoDaCompletare();
   if (dati === null) return;
+  const recupero = sistemaRecuperoGuidato(dati.recupero);
+  const indice = recupero.indice;
+  const fase = Math.max(0, Math.min(2, parseInt(recupero.fasi[indice], 10) || 0));
+  if (fase < 2 && !stato.rispostaRecuperoConfermata) {
+    const campo = document.getElementById("risposta-recupero");
+    const risposta = normalizza(campo.value);
+    const esito = document.getElementById("esito-risposta-recupero");
+    if (!risposta) {
+      esito.textContent = "Scrivi una parola, chiedi un altro indizio oppure vai al gioco di oggi.";
+      campo.focus();
+      return;
+    }
+    if (risposta !== normalizza(recupero.parole[indice])) {
+      esito.textContent = (dati.richiamo.paroleOrigine || []).some(function (parola) {
+        return normalizza(parola) === risposta;
+      }) ? "Questa parola era nella lista di ieri, ma l'indizio riguarda un'altra parola." :
+        "Questa parola non era nella lista di ieri. Puoi riprovare o chiedere un altro indizio.";
+      campo.focus();
+      return;
+    }
+    stato.rispostaRecuperoConfermata = true;
+    campo.readOnly = true;
+    esito.textContent = "✓ Corretto: " + recupero.parole[indice] + ". L'hai recuperata con l'indizio.";
+    document.getElementById("bottone-parola-ritrovata").textContent = "Continua";
+    document.getElementById("bottone-altro-aiuto-recupero").style.display = "none";
+    return;
+  }
   stato.recuperoInSalvataggio = true;
   const bottoneRitrovata = document.getElementById("bottone-parola-ritrovata");
   const bottoneAiuto = document.getElementById("bottone-altro-aiuto-recupero");
   bottoneRitrovata.disabled = true;
   bottoneAiuto.disabled = true;
 
-  const recupero = sistemaRecuperoGuidato(dati.recupero);
-  const indice = recupero.indice;
-  const fase = Math.max(0, Math.min(2, parseInt(recupero.fasi[indice], 10) || 0));
   recupero.esiti[indice] = fase < 2 ? "ritrovata" : "rivista";
+  if (!Array.isArray(recupero.verificate)) recupero.verificate = [];
+  recupero.verificate[indice] = fase < 2;
   if (fase < 2) {
     recupero.ritrovateConIndizio++;
     if (fase === 0) recupero.ritrovateCategoria++;
@@ -4102,6 +4123,7 @@ function registraRichiamo(punti, mancate) {
     puntiSpontanei: punti,
     da: stato.origineRichiamo,
     paroleOrigine: stato.parole.slice(),
+    risposteInserite: stato.scritte.slice(),
     mancate: paroleMancate,
     prioritarie: [],
     rinforzi: rinforziSerie,
@@ -4162,7 +4184,7 @@ function registraVita(punti) {
   });
   sessione.migliore = Math.max(sessione.migliore || 0, punti);
   sessione.completata = sessione.completata || punti === stato.parole.length;
-  sessione.conclusa = sessione.completata || stato.tentativo >= stato.vitaMaxTentativi;
+  sessione.conclusa = sessione.completata;
   sessione.durataTotale = typeof stato.vitaInizioSessioneTimestamp === "number" ?
     Math.max(0, Math.round((adesso - stato.vitaInizioSessioneTimestamp) / 1000)) : 0;
   if (sessione.conclusa) sessione.conclusaAl = adesso;
@@ -5200,7 +5222,7 @@ function disegnaElencoGiorni() {
 function aggiornaConsiglioTempo() {
   document.getElementById("consiglio-tempo").textContent =
     "Tempo iniziale automatico di oggi: " + formattaTempo(stato.secondiScelti) +
-    ". Dopo ogni tentativo il gioco assegna da solo più o meno tempo. Dopo 25 minuti effettivi tra studio e recupero propone una pausa e ferma la serie entro 35 minuti effettivi o 10 tentativi.";
+    ". Dopo ogni tentativo il gioco assegna da solo più o meno tempo. Le pause sono facoltative: puoi sempre continuare con le stesse parole.";
 }
 
 function aggiornaConsiglioAvanzamento() {
@@ -5934,7 +5956,7 @@ function consiglioPersonalizzatoRiepilogo(giorni) {
 
   if (prove.length >= MAX_TENTATIVI_CONSECUTIVI ||
       (durata !== null && durata >= SECONDI_LIMITE_SESSIONE)) {
-    return "La prossima volta fermati alla pausa proposta dal gioco: sessioni più brevi proteggono attenzione ed energia.";
+    return "Hai dedicato tempo all'allenamento. Se ti senti stanco, puoi fare una pausa; decidi tu quando fermarti.";
   }
   if (richiamo !== null && richiamo <= 2) {
     return "Domani dai priorità al ricordo spontaneo: ripercorri la storiella prima di chiedere gli indizi, anche se tornano poche parole.";
@@ -6250,7 +6272,10 @@ document.getElementById("scelte-tempo").addEventListener("click", function (even
 });
 
 document.getElementById("bottone-inizia").addEventListener("click", iniziaSessione);
-document.getElementById("bottone-coprire").addEventListener("click", fermaStudio);
+document.getElementById("bottone-coprire").addEventListener("click", function () {
+  if (stato.fase === "blocco") scopriEMemorizza();
+  else fermaStudio();
+});
 document.getElementById("bottone-richiamo").addEventListener("click", iniziaRichiamo);
 document.getElementById("bottone-salta-richiamo").addEventListener("click", avviaGiocoDiOggi);
 
@@ -6336,6 +6361,12 @@ document.getElementById("bottone-mostra-parole").addEventListener("click", funct
   else scopriCarteEsito();
 });
 document.getElementById("bottone-parola-ritrovata").addEventListener("click", completaParolaRecupero);
+document.getElementById("risposta-recupero").addEventListener("keydown", function (evento) {
+  if (evento.key === "Enter") {
+    evento.preventDefault();
+    completaParolaRecupero();
+  }
+});
 document.getElementById("bottone-altro-aiuto-recupero").addEventListener("click", altroAiutoRecupero);
 document.getElementById("bottone-salta-recupero").addEventListener("click", saltaRecuperoGuidato);
 
@@ -6346,18 +6377,12 @@ document.getElementById("bottone-avanti").addEventListener("click", function () 
   }
 
   if (stato.modalita === "vita") {
-    if (stato.mancanti.length === 0 || stato.tentativo >= stato.vitaMaxTentativi) {
+    if (stato.mancanti.length === 0) {
       concludiVitaSenzaAltraProva();
       mostraSchermata("inizio");
     } else {
       nuovoTentativo();
     }
-    return;
-  }
-
-  if (stato.sessioneDaConcludere) {
-    stato.sessioneDaConcludere = false;
-    mostraSchermata("inizio");
     return;
   }
 
