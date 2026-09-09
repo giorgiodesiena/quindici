@@ -544,6 +544,16 @@ body {
   <!-- ============ INIZIO ============ -->
   <section class="schermata attiva" id="schermata-inizio">
 
+    <div class="pannello acceso" id="pannello-riprendi" style="display:none">
+      <b>La tua partita è in pausa</b>
+      <p id="dettaglio-riprendi"></p>
+      <button class="bottone" id="riprendi-partita">Riprendi la stessa partita</button>
+    </div>
+    <div class="pannello acceso" id="pannello-ripasso-breve" style="display:none">
+      <b>Un piccolo ricordo, più tardi</b>
+      <p id="dettaglio-ripasso-breve"></p>
+      <button class="bottone secondario" id="apri-ripasso-breve">Prova il richiamo breve</button>
+    </div>
     <div class="pannello acceso" id="pannello-richiamo" style="display:none">
       <div class="etichetta">Memoria di ieri</div>
       <p class="spiega" id="testo-richiamo">
@@ -606,6 +616,14 @@ body {
         il risultato delle 15 parole.
       </p>
       <div class="riquadro vita-stato" id="vita-stato" aria-live="polite"></div>
+      <label for="vita-situazione">Una situazione familiare</label>
+      <select id="vita-situazione" style="width:100%;min-height:52px;font-size:1rem;margin:10px 0">
+        <option value="varieta">Situazioni varie, scelte dal gioco</option>
+        <option value="quotidiano">Una giornata in casa</option>
+        <option value="commissioni">Un giro di commissioni</option>
+        <option value="passeggiata">Una passeggiata al parco</option>
+      </select>
+      <p class="avviso">Sono situazioni immaginate per esercitarti, non appuntamenti reali.</p>
       <div class="scelte" id="scelte-vita">
         <button class="scelta scelta-vita" data-vita="spesa">
           <span class="vita-icona" aria-hidden="true">🛒</span>
@@ -681,6 +699,7 @@ body {
       <div class="riquadro vita-contesto" id="contesto-vita-studio" style="display:none"></div>
       <div class="griglia" id="griglia-studio"></div>
       <button class="bottone" id="bottone-coprire">Carte ancora coperte</button>
+      <button class="bottone secondario pausa-partita">Pausa e salva</button>
     </div>
   </section>
 
@@ -700,6 +719,7 @@ body {
       <button class="bottone secondario" id="bottone-salta-numeri" style="display:none">
         Passa subito alle parole
       </button>
+      <button class="bottone secondario pausa-partita">Pausa e salva</button>
     </div>
   </section>
 
@@ -723,6 +743,14 @@ body {
       <p class="avviso">Tocca una parola per cancellarla.</p>
       <p class="avviso" id="stato-tempo-recupero" style="display:none"></p>
       <button class="bottone" id="bottone-controlla">Vediamo quante ne ho prese</button>
+      <div id="revisione-risposte" class="riquadro" style="display:none">
+        <b>Controlla cosa è stato scritto</b>
+        <p class="avviso">Correggi eventuali errori di scrittura o del microfono. Nessuna parola viene corretta automaticamente.</p>
+        <div id="campi-revisione"></div>
+        <button class="bottone" id="conferma-revisione">Conferma queste risposte</button>
+        <button class="bottone secondario" id="torna-risposte">Continua a cercare</button>
+      </div>
+      <button class="bottone secondario pausa-partita">Pausa e salva</button>
     </div>
   </section>
 
@@ -790,6 +818,17 @@ body {
 
 </div>
 
+  <section class="schermata" id="schermata-ripasso-breve">
+    <div class="pannello">
+      <h2>Un piccolo ricordo</h2>
+      <p id="consegna-ripasso-breve"></p>
+      <label for="risposta-ripasso-breve">Scrivi le parole, separate da una virgola</label>
+      <textarea id="risposta-ripasso-breve" rows="3" style="width:100%;box-sizing:border-box;font-size:1.1rem" autocomplete="off" spellcheck="false"></textarea>
+      <button class="bottone" id="controlla-ripasso-breve">Controlla</button>
+      <div id="esito-ripasso-breve" aria-live="polite"></div>
+      <button class="bottone secondario" id="chiudi-ripasso-breve">Torna al gioco</button>
+    </div>
+  </section>
 <script>
 const SECONDI_BLOCCO = 5;
 const SECONDI_DISTURBO = 20;
@@ -1383,6 +1422,10 @@ const stato = {
   listaId: null,
   paroleNuoveLista: 15,
   rispostaRecuperoConfermata: false,
+  partitaInCorso: false,
+  dataSessione: null,
+  dettaturaUsata: false,
+  revisioneConfermata: false,
   sessioniLivello: { media: 0, mix: 0, difficile: 0 }
 };
 let codaSalvataggioGiorni = Promise.resolve();
@@ -1713,6 +1756,7 @@ function creaRecuperoGuidato(mancate) {
   const parole = uniche.slice(0, MAX_PAROLE_RECUPERO_GUIDATO);
   return {
     parole: parole,
+    versioneIndizi: 2,
     indice: 0,
     fasi: parole.map(function () { return 0; }),
     esiti: parole.map(function () { return null; }),
@@ -2013,6 +2057,8 @@ function valoreVitaNonRecente(gruppo, recenti) {
 }
 
 function pescaVita(tipo, quanti) {
+  const familiare = pescaSituazioneFamiliare(tipo, quanti);
+  if (familiare !== null) return familiare;
   const esercizio = VITA_QUOTIDIANA[tipo];
   const gruppi = esercizio.gruppi.slice();
   const recenti = elementiRecentiVita(tipo);
@@ -2144,6 +2190,9 @@ function corrispondeElementoVita(testoUtente, elemento) {
 }
 
 function mostraSchermata(nome) {
+  document.querySelectorAll('.pausa-partita').forEach(function (b) {
+    b.style.display = stato.modalita === 'sessione' ? 'block' : 'none';
+  });
   const tutte = document.querySelectorAll(".schermata");
   for (let i = 0; i < tutte.length; i++) {
     tutte[i].classList.remove("attiva");
@@ -2328,7 +2377,7 @@ function calcolaPrescrizioneGiornaliera() {
     };
   }
 
-  const recenti = ultimeGiornateAllenate(GIORNI_ADATTAMENTO);
+  const recenti = ultimeGiornateAllenate(14);
   if (recenti.length === 0) {
     return {
       data: oggi, livello: "media", secondi: 180, fasciaParole: 0,
@@ -2340,23 +2389,14 @@ function calcolaPrescrizioneGiornaliera() {
   const tentativiUltimaSerie = tentativiSeriePrincipale(ultima);
   const primaProva = tentativiUltimaSerie[0];
   let livello = primaProva.livello || "media";
-  const tempiIniziali = [];
-  for (let i = 0; i < recenti.length; i++) {
-    const prove = tentativiSeriePrincipale(recenti[i]);
-    if (prove.length === 0 || (prove[0].livello || "media") !== livello) continue;
-    const valore = Number(prove[0].secondi);
-    if (Number.isFinite(valore)) tempiIniziali.push(valore);
-  }
-  let secondi = tempiIniziali.length > 0 ? medianaNumeri(tempiIniziali) :
-    (primaProva.secondi || 180);
+  let secondi = primaProva.secondi || 180;
   let fasciaParole = fasciaSicura(primaProva.fasciaParole);
   let facili = 0;
   let difficili = 0;
   let giornateFaticose = 0;
   let giornateValutate = 0;
   for (let i = 0; i < recenti.length; i++) {
-    const livelloGiorno = recenti[i].tentativi[0].livello || "media";
-    if (livelloGiorno !== livello) continue;
+    if (!giornateComparabili(recenti[i], primaProva)) continue;
     giornateValutate++;
     const esito = valutaDifficoltaGiorno(recenti[i]);
     if (esito === "facile") facili++;
@@ -2367,14 +2407,16 @@ function calcolaPrescrizioneGiornaliera() {
         (durata !== null && durata >= SECONDI_LIMITE_SESSIONE)) giornateFaticose++;
   }
 
-  let motivo = "I risultati recenti sono equilibrati: mantengo livello e tempo iniziale.";
+  let motivo = giornateValutate < 4 ?
+    "Raccolgo altre giornate con parole e tempi simili prima di cambiare la difficoltà." :
+    "I risultati delle giornate comparabili sono equilibrati: mantengo livello e tempo iniziale.";
   let sfida = false;
   const prossimo = livelloSuccessivo(livello);
 
   if (giornateValutate >= 4 && facili >= 3 && difficili === 0) {
     if (fasciaParole < 2) {
       fasciaParole++;
-      motivo = "Nelle ultime cinque giornate sono migliorati insieme primo tentativo, apprendimento e ricordo dopo 24 ore: oggi scelgo parole un po' meno comuni.";
+      motivo = "In almeno tre giornate comparabili sono stati solidi primo tentativo, apprendimento e ricordo dopo 24 ore: oggi cambio soltanto la complessità delle parole.";
     } else if (secondi > 30) {
       secondi = Math.max(30, secondi - 15);
       motivo = "I risultati sono stabili anche a distanza: oggi riduco il tempo iniziale di soli 15 secondi.";
@@ -2382,7 +2424,6 @@ function calcolaPrescrizioneGiornaliera() {
       const precedente = livello;
       livello = prossimo;
       fasciaParole = 0;
-      secondi = 60;
       sfida = true;
       motivo = "Il tempo minimo è ormai gestibile: oggi il livello sale automaticamente da " +
         nomeLivello(precedente) + " a " + nomeLivello(livello) + ".";
@@ -2397,23 +2438,6 @@ function calcolaPrescrizioneGiornaliera() {
     } else if (fasciaParole > 0) {
       fasciaParole--;
       motivo = "Le ultime giornate sono state impegnative: oggi uso parole più familiari senza cambiare modalità.";
-    }
-  } else if (giornateValutate >= 5 && numeroGiornateLivello(livello) >= 10 &&
-      difficili === 0 && facili >= 2) {
-    if (fasciaParole < 2) {
-      fasciaParole++;
-      motivo = "Dopo almeno dieci giornate stabili allo stesso livello introduco parole appena meno comuni.";
-    } else if (secondi > 30) {
-      secondi = Math.max(30, secondi - 15);
-      motivo = "Dopo almeno dieci giornate stabili introduco una piccola sfida: 15 secondi in meno.";
-    } else if (prossimo !== null) {
-      const precedente = livello;
-      livello = prossimo;
-      fasciaParole = 0;
-      secondi = 60;
-      sfida = true;
-      motivo = "Dopo diversi giorni allo stesso livello, oggi passo automaticamente da " +
-        nomeLivello(precedente) + " a " + nomeLivello(livello) + ".";
     }
   }
 
@@ -2433,8 +2457,11 @@ function preparaImpostazioniAutomatiche() {
 }
 
 function iniziaSessione(saltaRichiamo) {
+  cancellaPartitaSospesa();
   preparaImpostazioniAutomatiche();
   stato.modalita = "sessione";
+  stato.dataSessione = chiaveData(new Date());
+  stato.partitaInCorso = true;
   stato.inizioSessioneTimestamp = Date.now();
   stato.sessioneId = chiaveData(new Date()) + "-" + stato.inizioSessioneTimestamp + "-" +
     Math.floor(Math.random() * 100000);
@@ -2468,6 +2495,7 @@ function iniziaSessione(saltaRichiamo) {
 }
 
 function iniziaVita(tipo) {
+  if (stato.partitaInCorso) mettiInPausa();
   const esercizio = VITA_QUOTIDIANA[tipo];
   if (!esercizio) {
     return;
@@ -2498,6 +2526,7 @@ function nuovoTentativo() {
   stato.secondiUsatiTentativo = 0;
   stato.inizioTentativoTimestamp = Date.now();
   partiTimer();
+  salvaPartitaInCorso();
 }
 
 function partiTimer() {
@@ -2555,7 +2584,7 @@ function aggiornaContestoVitaStudio() {
   const testo = document.createElement("p");
   testo.className = "avviso";
   if (stato.tentativo === 1) {
-    titolo.textContent = esercizio.contesto;
+    titolo.textContent = (stato.vitaTipo !== 'appuntamento' && contestoFamiliareVita()) || esercizio.contesto;
     if (stato.vitaTipo === "appuntamento") {
       const campi = stato.vitaElementi.map(function (elemento) {
         return elemento.campo ? elemento.campo.toLowerCase() : elemento.categoria;
@@ -2652,6 +2681,8 @@ function fermaStudio() {
   }
 
   setTimeout(function () {
+    if (document.body.dataset.schermata !== "studio") return;
+    if (stato.modalita === "sessione" && !stato.partitaInCorso) return;
     partiDisturbo();
   }, 650);
 }
@@ -2780,6 +2811,10 @@ function toccaNumero(bottone) {
 /* ---------- scrittura ---------- */
 
 function preparaRipeti() {
+  document.getElementById("bottone-controlla").style.display = "block";
+  stato.dettaturaUsata = false;
+  stato.revisioneConfermata = false;
+  document.getElementById("revisione-risposte").style.display = "none";
   const etichetta = document.getElementById("etichetta-tentativo");
   const istruzione = document.getElementById("istruzione-ripeti");
   const bottoneControlla = document.getElementById("bottone-controlla");
@@ -3002,6 +3037,7 @@ function aggiornaGettoni() {
   }
   document.getElementById("contatore").textContent = testo;
   aggiornaBloccoRecupero();
+  salvaPartitaInCorso();
 }
 
 /* ---------- dettatura ---------- */
@@ -3025,6 +3061,7 @@ function preparaVoce() {
   ascolto.interimResults = false;
 
   ascolto.onresult = function (evento) {
+    stato.dettaturaUsata = true;
     for (let i = evento.resultIndex; i < evento.results.length; i++) {
       const frase = evento.results[i][0].transcript;
       if (stato.modalita === "vita") {
@@ -3096,9 +3133,14 @@ function spegniVoce() {
 function controlla() {
   const bottoneControlla = document.getElementById("bottone-controlla");
   if (bottoneControlla.disabled) return;
-  bottoneControlla.disabled = true;
   aggiungiScritta();
+  spegniVoce();
+  if (!stato.revisioneConfermata && serveRevisioneRisposte()) {
+    mostraRevisioneRisposte();
+    return;
+  }
   fermaTimerRecupero(true);
+  bottoneControlla.disabled = true;
   spegniVoce();
 
   const scritteNormali = [];
@@ -3149,6 +3191,13 @@ function controlla() {
   }
 
   mostraEsito(punti, esiti);
+  if (stato.modalita === "sessione") {
+    if (punti === 15) {
+      preparaRipassoBreve();
+      stato.partitaInCorso = false;
+      cancellaPartitaSospesa();
+    } else salvaPartitaInCorso();
+  }
 }
 
 function durataAttivaSessioneDaTentativi(tentativi) {
@@ -3170,7 +3219,7 @@ function durataAttivaSessioneDaTentativi(tentativi) {
 }
 
 function tempoAttivoSessioneCorrente() {
-  const giorno = trovaGiorno(chiaveData(new Date()));
+  const giorno = trovaGiorno(stato.dataSessione || chiaveData(new Date()));
   if (giorno === null) return 0;
   const tentativi = giorno.tentativi.slice(stato.inizioTentativiSessione);
   const durata = durataAttivaSessioneDaTentativi(tentativi);
@@ -3301,7 +3350,7 @@ function disegnaRiepilogoVita() {
 }
 
 function datiSessioneCorrente() {
-  const giorno = trovaGiorno(chiaveData(new Date()));
+  const giorno = trovaGiorno(stato.dataSessione || chiaveData(new Date()));
   const tentativi = giorno === null ? [] :
     giorno.tentativi.slice(stato.inizioTentativiSessione);
   let tempoTotale = null;
@@ -3411,7 +3460,7 @@ function mostraEsito(punti, esiti) {
   bottoneAvanti.style.display = "block";
   bottoneBasta.textContent = "Lascia stare per oggi";
 
-  if (stato.modalita === "sessione" && punti < totale) {
+  if (stato.modalita === "sessione" && punti < totale && !stato.ripristinoPartita) {
     const tempoPrecedente = stato.secondiTentativo;
     const adattamento = calcolaTempoSuccessivo(puntiAdattiviUltimoTentativo(punti), totale);
     stato.secondiTentativo = adattamento.secondi;
@@ -3580,6 +3629,12 @@ function recuperoGuidatoDaCompletare() {
 }
 
 function sistemaRecuperoGuidato(recupero) {
+  if (recupero.versioneIndizi !== 2) {
+    recupero.fasi = (Array.isArray(recupero.fasi) ? recupero.fasi : []).map(function (fase) {
+      return fase === 1 ? 2 : fase >= 2 ? 3 : 0;
+    });
+    recupero.versioneIndizi = 2;
+  }
   recupero.parole = Array.isArray(recupero.parole) ? recupero.parole.filter(function (parola) {
     return typeof parola === "string" && normalizza(parola) !== "";
   }).slice(0, MAX_PAROLE_RECUPERO_GUIDATO) : [];
@@ -3611,32 +3666,23 @@ function categoriaDaRaccolta(parola, raccolta, nomi) {
 }
 
 function categoriaIndizioRecupero(parola) {
-  let categoria = categoriaDaRaccolta(parola, PAROLE_MEDIE_AGGIUNTIVE,
-    ["utensili e strumenti", "casa e tessuti", "scrivania, navigazione o automobile", "natura e campagna"]);
-  if (categoria !== null) return categoria;
-  categoria = categoriaDaRaccolta(parola, PAROLE_MEDIE_ESPANSIONE,
-    ["animali", "abbigliamento", "negozi e luoghi", "alimenti", "giochi e passatempi",
-      "mestieri", "apparecchi", "mezzi di trasporto", "orto ed erbe", "contenitori"]);
-  if (categoria !== null) return categoria;
-  categoria = categoriaDaRaccolta(parola, PAROLE_DIFFICILI_AGGIUNTIVE,
-    ["pensiero e logica", "linguaggio e relazioni", "tempo e organizzazione", "qualità e rappresentazione"]);
-  if (categoria !== null) return categoria;
-  categoria = categoriaDaRaccolta(parola, PAROLE_DIFFICILI_ESPANSIONE,
-    ["anatomia e medicina", "territorio e meteo", "astronomia e orientamento",
-      "architettura e arte", "animali", "piante e spezie", "carattere e comportamento",
-      "società ed economia"]);
-  if (categoria !== null) return categoria;
-  if (PAROLE_DIFFICILI.indexOf(parola) !== -1) return "idee, qualità o situazioni";
-  return "oggetti, natura o vita quotidiana";
+  const scheda = INDIZI_PAROLE[normalizza(parola)];
+  if (scheda) return scheda[0];
+  return "Forma della parola: " + normalizza(parola).length + " lettere";
 }
+
 
 function formaIndizioRecupero(parola, fase) {
   const pulita = parola.trim();
   const lettere = pulita.length;
   if (fase <= 0) {
-    return "Categoria: " + categoriaIndizioRecupero(parola);
+    return "Indizio: " + categoriaIndizioRecupero(parola);
   }
   if (fase === 1) {
+    const scheda = INDIZI_PAROLE[normalizza(parola)];
+    return scheda ? scheda[1] : "Finisce con " + pulita.slice(-2).toUpperCase();
+  }
+  if (fase === 2) {
     return "Inizia con " + pulita.charAt(0).toUpperCase() + " · " + lettere +
       (lettere === 1 ? " lettera" : " lettere");
   }
@@ -3656,13 +3702,13 @@ function disegnaRecuperoGuidato(portaFocus) {
 
   const indice = recupero.indice;
   const parola = recupero.parole[indice];
-  const fase = Math.max(0, Math.min(2, parseInt(recupero.fasi[indice], 10) || 0));
+  const fase = Math.max(0, Math.min(3, parseInt(recupero.fasi[indice], 10) || 0));
   const riquadro = document.getElementById("riquadro-recupero-guidato");
   stato.rispostaRecuperoConfermata = false;
   const risposta = document.getElementById("risposta-recupero");
   risposta.value = "";
   risposta.readOnly = false;
-  document.getElementById("inserimento-recupero").style.display = fase < 2 ? "block" : "none";
+  document.getElementById("inserimento-recupero").style.display = fase < 3 ? "block" : "none";
   document.getElementById("esito-risposta-recupero").textContent = "";
   const titolo = document.getElementById("titolo-recupero-guidato");
   const testo = document.getElementById("testo-recupero-guidato");
@@ -3674,11 +3720,11 @@ function disegnaRecuperoGuidato(portaFocus) {
   titolo.textContent = "Piccolo recupero " + (indice + 1) + " di " + recupero.parole.length;
   indizio.textContent = formaIndizioRecupero(parola, fase);
   if (fase === 0) {
-    testo.textContent = "Partiamo soltanto dalla categoria. Ripercorri la storia di ieri senza fretta.";
+    testo.textContent = "Partiamo con un piccolo indizio. Ripercorri la storia di ieri senza fretta.";
     bottoneRitrovata.textContent = "Controlla la parola";
     bottoneAiuto.style.display = "block";
-  } else if (fase === 1) {
-    testo.textContent = "Ora hai anche l'iniziale e la lunghezza. Immagina dove si trovava nella scena di ieri.";
+  } else if (fase === 1 || fase === 2) {
+    testo.textContent = "Un dettaglio in più. Puoi provare una parola oppure chiedere il prossimo indizio.";
     bottoneRitrovata.textContent = "Controlla la parola";
     bottoneAiuto.style.display = "block";
   } else {
@@ -3759,8 +3805,8 @@ async function completaParolaRecupero() {
   if (dati === null) return;
   const recupero = sistemaRecuperoGuidato(dati.recupero);
   const indice = recupero.indice;
-  const fase = Math.max(0, Math.min(2, parseInt(recupero.fasi[indice], 10) || 0));
-  if (fase < 2 && !stato.rispostaRecuperoConfermata) {
+  const fase = Math.max(0, Math.min(3, parseInt(recupero.fasi[indice], 10) || 0));
+  if (fase < 3 && !stato.rispostaRecuperoConfermata) {
     const campo = document.getElementById("risposta-recupero");
     const risposta = normalizza(campo.value);
     const esito = document.getElementById("esito-risposta-recupero");
@@ -3770,10 +3816,21 @@ async function completaParolaRecupero() {
       return;
     }
     if (risposta !== normalizza(recupero.parole[indice])) {
-      esito.textContent = (dati.richiamo.paroleOrigine || []).some(function (parola) {
+      const eraPresente = (dati.richiamo.paroleOrigine || []).some(function (parola) {
         return normalizza(parola) === risposta;
-      }) ? "Questa parola era nella lista di ieri, ma l'indizio riguarda un'altra parola." :
-        "Questa parola non era nella lista di ieri. Puoi riprovare o chiedere un altro indizio.";
+      });
+      if (eraPresente) {
+        if (!Array.isArray(recupero.altreRitrovate)) recupero.altreRitrovate = [];
+        const spontanee = (dati.richiamo.risposteInserite || []).map(normalizza);
+        if (!spontanee.includes(risposta) && !recupero.altreRitrovate.includes(risposta) &&
+            !recupero.parole.some(function (p,i) { return normalizza(p) === risposta && recupero.esiti[i] === 'ritrovata'; })) {
+          recupero.altreRitrovate.push(risposta);
+          salvaGiorni();
+        }
+        esito.textContent = "✓ Era nella lista di ieri: è una parola corretta. L'indizio attuale riguarda un'altra parola.";
+      } else {
+        esito.textContent = "Questa parola non era nella lista di ieri. Puoi riprovare o chiedere un altro indizio.";
+      }
       campo.focus();
       return;
     }
@@ -3790,13 +3847,17 @@ async function completaParolaRecupero() {
   bottoneRitrovata.disabled = true;
   bottoneAiuto.disabled = true;
 
-  recupero.esiti[indice] = fase < 2 ? "ritrovata" : "rivista";
+  recupero.esiti[indice] = fase < 3 ? "ritrovata" : "rivista";
+  if (fase < 3 && Array.isArray(recupero.altreRitrovate)) {
+    recupero.altreRitrovate = recupero.altreRitrovate.filter(function (p) { return p !== normalizza(recupero.parole[indice]); });
+  }
   if (!Array.isArray(recupero.verificate)) recupero.verificate = [];
-  recupero.verificate[indice] = fase < 2;
-  if (fase < 2) {
+  recupero.verificate[indice] = fase < 3;
+  if (fase < 3) {
     recupero.ritrovateConIndizio++;
     if (fase === 0) recupero.ritrovateCategoria++;
-    if (fase === 1) recupero.ritrovateLettera++;
+    if (fase === 1) recupero.ritrovateCaratteristica = (recupero.ritrovateCaratteristica || 0) + 1;
+    if (fase === 2) recupero.ritrovateLettera++;
   } else {
     recupero.riviste++;
   }
@@ -3827,7 +3888,7 @@ async function altroAiutoRecupero() {
   stato.recuperoInSalvataggio = true;
   const recupero = sistemaRecuperoGuidato(dati.recupero);
   const indice = recupero.indice;
-  recupero.fasi[indice] = Math.min(2, (parseInt(recupero.fasi[indice], 10) || 0) + 1);
+  recupero.fasi[indice] = Math.min(3, (parseInt(recupero.fasi[indice], 10) || 0) + 1);
   document.getElementById("bottone-parola-ritrovata").disabled = true;
   document.getElementById("bottone-altro-aiuto-recupero").disabled = true;
   await salvaGiorni();
@@ -4054,7 +4115,7 @@ function giornoDiOggi() {
 }
 
 function registraTentativo(punti, indiciMancanti) {
-  const giorno = giornoDiOggi();
+  const giorno = giornoSessioneCorrente();
   const chiaviMancanti = indiciMancanti.map(function (indice) {
     return normalizza(stato.parole[indice] || "");
   });
@@ -4223,6 +4284,7 @@ function salvaGiorni() {
 
 async function salvaSerie() {
   const oggi = chiaveData(new Date());
+  if (stato.modalita === "sessione" && stato.dataSessione && stato.dataSessione !== oggi) return;
   // La prima lista standard del giorno è quella canonica per il richiamo di domani.
   // Eventuali seconde partite nello stesso giorno non la sovrascrivono.
   if (stato.serie !== null && stato.serie.data === oggi) return;
@@ -4362,6 +4424,7 @@ async function caricaTutto() {
   preparaImpostazioniAutomatiche();
   disegnaProgressi();
   aggiornaPannelloRichiamo();
+  aggiornaPannelliNuovi();
 }
 
 /* ---------- richiamo del giorno dopo ---------- */
@@ -5046,10 +5109,14 @@ function testoRecuperoGuidatoReport(recupero) {
   if (!recupero || recupero.completato !== true) return null;
   const categoria = Math.max(0, Number(recupero.ritrovateCategoria) || 0);
   const lettera = Math.max(0, Number(recupero.ritrovateLettera) || 0);
+  const caratteristica = Math.max(0, Number(recupero.ritrovateCaratteristica) || 0);
+  const altre = Array.isArray(recupero.altreRitrovate) ? recupero.altreRitrovate.length : 0;
   const riviste = Math.max(0, Number(recupero.riviste) || 0);
-  if (categoria + lettera + riviste > 0) {
+  if (categoria + caratteristica + lettera + riviste + altre > 0) {
     const parti = [];
-    if (categoria > 0) parti.push(categoria + (categoria === 1 ? " recuperata con la categoria" : " recuperate con la categoria"));
+    if (categoria > 0) parti.push(categoria + (recupero.versioneIndizi === 2 ? " con il primo indizio" : " recuperate con la categoria"));
+    if (caratteristica > 0) parti.push(caratteristica + " con un dettaglio in più");
+    if (altre > 0) parti.push(altre + " altre parole corrette durante il recupero");
     if (lettera > 0) parti.push(lettera + (lettera === 1 ? " recuperata con l'iniziale" : " recuperate con l'iniziale"));
     if (riviste > 0) parti.push(riviste + (riviste === 1 ? " rivista con calma" : " riviste con calma"));
     return "🌿 Recupero guidato: " + parti.join(" · ");
@@ -5973,10 +6040,18 @@ function testoRiepilogo() {
   const oggi = new Date();
   const oggiChiave = chiaveData(oggi);
   const configurazione = configurazioneRiepilogo(oggi);
-  const gruppiDiGiorni = [configurazione.giorni];
+  const gruppiDiGiorni = [configurazione];
+  if (configurazione.settimanale && !configurazione.giorni.some(function (g) { return g.chiave === oggiChiave; })) {
+    const giornoOggi = riassuntoGiorno(trovaGiorno(oggiChiave));
+    giornoOggi.chiave = oggiChiave;
+    giornoOggi.data = oggi;
+    gruppiDiGiorni.unshift({settimanale:false, giorni:[giornoOggi]});
+  }
 
   for (let s = 0; s < gruppiDiGiorni.length; s++) {
-    const giorni = gruppiDiGiorni[s];
+    const configurazione = gruppiDiGiorni[s];
+    const giorni = configurazione.giorni;
+    if (s > 0) righe.push("", "────────────", "");
     if (configurazione.settimanale) {
       let giorniAllenati = 0;
       for (let i = 0; i < giorni.length; i++) {
@@ -6144,6 +6219,11 @@ function testoRiepilogo() {
         }
       }
 
+      if (giornoOriginale && giornoOriginale.ripassiBrevi && giornoOriginale.ripassiBrevi.prove.length) {
+        righe.push("🍃 Richiamo breve separato: " + giornoOriginale.ripassiBrevi.prove.map(function (p) {
+          return p.punti + " su " + p.totale + " dopo " + formattaDurataReport(p.intervallo);
+        }).join(" · "));
+      }
       for (let j = 0; j < parolePartiteReport.length; j++) {
         if (parolePartiteReport[j].length === 0) continue;
         righe.push("");
@@ -6154,7 +6234,7 @@ function testoRiepilogo() {
     }
   }
 
-  const consiglio = consiglioPersonalizzatoRiepilogo(configurazione.giorni);
+  const consiglio = consiglioPersonalizzatoRiepilogo(gruppiDiGiorni[0].giorni);
   if (consiglio !== null) {
     righe.push("");
     righe.push("💡 Consiglio: " + consiglio);
@@ -6386,7 +6466,7 @@ document.getElementById("bottone-avanti").addEventListener("click", function () 
     return;
   }
 
-  const giorno = trovaGiorno(chiaveData(new Date()));
+  const giorno = trovaGiorno(stato.dataSessione || chiaveData(new Date()));
   let ultimoPunteggio = 0;
 
   if (giorno !== null && giorno.tentativi.length > 0) {
@@ -6412,9 +6492,413 @@ window.addEventListener("resize", function () {
 });
 
 document.getElementById("bottone-basta").addEventListener("click", function () {
+  if (stato.modalita === "sessione" && stato.partitaInCorso) {
+    mettiInPausa();
+    return;
+  }
   if (stato.modalita === "vita") concludiVitaSenzaAltraProva();
   mostraSchermata("inizio");
 });
+
+/* ---------- continuità, recupero breve e situazioni familiari ---------- */
+
+const INDIZI_PAROLE = {
+  pinguino: ["Uccello marino", "Nuota bene ma non vola; ha un piumaggio spesso bianco e nero."],
+  ferramenta: ["Negozio", "Vende viti, chiodi e attrezzi per le riparazioni."],
+  gonna: ["Abbigliamento", "Si indossa dalla vita in giù e non ha due gambe separate."],
+  ovile: ["Edificio di campagna", "È il ricovero delle pecore."],
+  pastore: ["Mestiere", "Accompagna e sorveglia il gregge."],
+  materia: ["Concetto", "Può essere ciò di cui sono fatti gli oggetti oppure una disciplina scolastica."],
+  piattino: ["Oggetto da tavola", "Si mette sotto la tazzina del caffè."],
+  sardina: ["Pesce", "È un piccolo pesce azzurro, venduto anche sott'olio."],
+  quintale: ["Unità di misura", "Corrisponde a cento chilogrammi."],
+  sciame: ["Insieme di animali", "È un gruppo di api in volo."],
+  mela: ["Frutto", "Può essere rossa, verde o gialla; al centro ha il torsolo."],
+  pacco: ["Oggetto da spedire", "Si prepara con scatola, nastro adesivo e indirizzo."],
+  timo: ["Erba aromatica", "Ha foglioline piccole ed è usata per insaporire arrosti."],
+  camper: ["Mezzo di trasporto", "È una piccola casa su ruote per viaggiare."],
+  lenticchia: ["Legume", "È piccola, piatta e rotonda; si mangia spesso a Capodanno."],
+  aroma: ["Sensazione olfattiva", "È il profumo caratteristico del caffè o di una spezia."],
+  corallo: ["Organismo marino", "Forma colonie e barriere; quello rosso si usa nei gioielli."],
+  formica: ["Insetto", "Vive in colonie e trasporta briciole nel suo nido."],
+  grondaia: ["Parte della casa", "Raccoglie l'acqua lungo il bordo del tetto."],
+  mattarello: ["Utensile da cucina", "È un cilindro che serve a stendere la pasta."],
+  alveare: ["Dimora di insetti", "Vi abitano le api e si produce il miele."],
+  pergolato: ["Struttura da giardino", "Sostiene piante rampicanti e crea ombra."],
+  incrocio: ["Luogo stradale", "È il punto in cui si incontrano due strade."],
+  pedaggio: ["Pagamento", "Si paga per percorrere alcune autostrade."],
+  bozzolo: ["Involucro naturale", "Il baco da seta lo costruisce attorno a sé."],
+  orizzonte: ["Paesaggio", "È la linea apparente in cui cielo e terra si incontrano."],
+  spartito: ["Musica", "È il foglio con le note da suonare."],
+  vialetto: ["Percorso", "È una piccola strada che attraversa un giardino."],
+  spugna: ["Oggetto per pulire", "Assorbe acqua e si usa per lavare."],
+  pettine: ["Oggetto per capelli", "Ha tanti denti allineati e serve a districare."],
+  gallina: ["Animale da cortile", "Depone le uova e fa coccodè."],
+  coniglio: ["Mammifero", "Ha lunghe orecchie e una piccola coda."],
+  cavallo: ["Animale", "Ha criniera e zoccoli e può essere cavalcato."],
+  riccio: ["Mammifero", "Quando si difende si chiude in una palla di aculei."],
+  scoiattolo: ["Roditore", "Ha una coda folta e raccoglie noci sugli alberi."],
+  volpe: ["Mammifero", "Spesso ha pelo rossiccio e una lunga coda folta."],
+  gufo: ["Uccello notturno", "Ha grandi occhi rivolti in avanti e ciuffi sul capo."],
+  farfalla: ["Insetto", "Prima di avere ali colorate è un bruco."],
+  coccinella: ["Insetto", "Molte specie hanno il dorso rosso con punti neri."],
+  lumaca: ["Piccolo animale", "Si muove lentamente lasciando una scia."],
+  delfino: ["Mammifero marino", "Nuota in gruppo e può saltare fuori dall'acqua."],
+  balena: ["Mammifero marino", "È molto grande e respira da uno sfiatatoio."],
+  medusa: ["Animale marino", "Ha un corpo gelatinoso e tentacoli urticanti."],
+  granchio: ["Crostaceo", "Ha due chele e spesso cammina di lato."],
+  conchiglia: ["Involucro marino", "Protegge un mollusco e si può trovare sulla spiaggia."],
+  antenna: ["Dispositivo", "Riceve o trasmette segnali radio e televisivi."],
+  ombrello: ["Oggetto da portare fuori", "Si apre sopra la testa quando piove."],
+  chiave: ["Oggetto", "Si inserisce nella serratura per aprire una porta."],
+  zaino: ["Contenitore", "Si porta sulle spalle con due spallacci."],
+  calendario: ["Organizzazione del tempo", "Mostra i giorni, le settimane e i mesi."],
+  clessidra: ["Misuratore del tempo", "La sabbia passa da un'ampolla all'altra."],
+  bussola: ["Strumento di orientamento", "Il suo ago indica il nord magnetico."],
+  telescopio: ["Strumento ottico", "Permette di osservare stelle e pianeti lontani."],
+  microscopio: ["Strumento ottico", "Ingrandisce oggetti troppo piccoli per l'occhio."],
+  nostalgia: ["Sentimento", "È il desiderio malinconico di qualcosa del passato."],
+  pazienza: ["Qualità personale", "Permette di aspettare e affrontare difficoltà con calma."],
+  fiducia: ["Atteggiamento", "È il fare affidamento su qualcuno o qualcosa."],
+  ironia: ["Modo di esprimersi", "Si dice qualcosa lasciando intendere un significato diverso, spesso opposto."],
+  inerzia: ["Fisica e comportamento", "È la tendenza a mantenere lo stato di quiete o di moto."],
+  ingegno: ["Capacità", "Aiuta a inventare soluzioni originali a un problema."],
+  ipoteca: ["Garanzia economica", "Può gravare su una casa a garanzia di un prestito."],
+  referendum: ["Votazione", "I cittadini rispondono direttamente a un quesito."],
+  eclissi: ["Fenomeno astronomico", "Un corpo celeste viene oscurato da un altro."],
+  arcipelago: ["Geografia", "È un insieme di isole vicine."],
+  stalattite: ["Formazione di grotta", "Pende dal soffitto e cresce lentamente."],
+  mosaico: ["Arte", "L'immagine è composta da tante piccole tessere."],
+  portafoglio: ["Oggetto personale", "Contiene banconote, tessere e documenti."],
+  lenticchie: ["Legumi", "Piccoli, piatti e rotondi, spesso serviti a Capodanno."],
+  caffè: ["Bevanda", "Si prepara con chicchi tostati ed è servita anche in tazzina."]
+};
+// Le parole prive di una scheda semantica usano indizi ortografici precisi.
+INDIZI_PAROLE.caffe = INDIZI_PAROLE['caffè'];
+
+function giornateComparabili(giorno, riferimento) {
+  const prove = tentativiSeriePrincipale(giorno);
+  if (!prove.length) return false;
+  const prima = prove[0];
+  if (prima.livello !== riferimento.livello ||
+      fasciaSicura(prima.fasciaParole) !== fasciaSicura(riferimento.fasciaParole) ||
+      Number(prima.secondi) !== Number(riferimento.secondi)) return false;
+  const a = Number(prima.tempoStudio);
+  const b = Number(riferimento.tempoStudio);
+  if (!Number.isFinite(a) || !Number.isFinite(b) || a <= 0 || b <= 0) return false;
+  return Math.abs(a - b) <= Math.max(10, b * 0.2);
+}
+
+const CAMPI_PARTITA = [
+  'parole','scritte','mancanti','difficolta','fasciaParole','secondiScelti','secondiTentativo',
+  'secondiUsatiTentativo','secondiRimasti','secondiTotaliFase','fase','tentativo',
+  'secondiMinimiRecupero','secondiUsatiRecupero','punteggiSessione','sessioneId','dataSessione',
+  'inizioTentativiSessione','inizioSessioneTimestamp','inizioTentativoTimestamp',
+  'listaId','paroleNuoveLista','rinforziOggi','aiutoPerProssimoTentativo','sfidaAutomatica',
+  'livelloBaseSfida','tempoBaseSfida','suggerimentoUsato','strategiaBreveMostrata',
+  'supportoStrategiaMostratoSessione','esempioOfferto','inizialiOfferte',
+  'tentativoStrategiaMostrata','tentativoInizialiOfferte','dettaturaUsata'
+];
+const CHIAVE_PARTITA = 'quindici:partita-in-pausa-v1';
+const CHIAVE_RIPASSO = 'quindici:ripasso-breve-v1';
+let ripassoBreve = null;
+
+function leggiLocaleOggetto(chiave) {
+  try { return JSON.parse(localStorage.getItem(chiave)); } catch (_) { return null; }
+}
+function scriviLocaleOggetto(chiave, valore) {
+  try { localStorage.setItem(chiave, JSON.stringify(valore)); return true; }
+  catch (_) { return false; }
+}
+function giornoSessioneCorrente() {
+  if (!stato.dataSessione || stato.dataSessione === chiaveData(new Date())) return giornoDiOggi();
+  let giorno = trovaGiorno(stato.dataSessione);
+  if (!giorno) {
+    giorno = { data: stato.dataSessione, tentativi: [], completatoAl: null, richiamo: null };
+    stato.giorni.push(giorno);
+    stato.giorni.sort(function (a,b) { return a.data.localeCompare(b.data); });
+  }
+  return giorno;
+}
+function salvaPartitaInCorso() {
+  if (!stato.partitaInCorso || stato.modalita !== 'sessione') return false;
+  const schermata = document.body.dataset.schermata;
+  if (!['studio','disturbo','ripeti','esito'].includes(schermata)) return false;
+  const copia = {};
+  for (const campo of CAMPI_PARTITA) copia[campo] = stato[campo];
+  if (schermata === 'ripeti') copia.secondiUsatiRecupero = secondiRecuperoTrascorsi();
+  if (document.getElementById('revisione-risposte').style.display === 'block') {
+    copia.scritte = Array.from(document.querySelectorAll('.campo-revisione')).map(function (c) { return c.value; });
+  }
+  return scriviLocaleOggetto(CHIAVE_PARTITA, {
+    versione: 1, salvataAl: Date.now(), schermata: schermata, stato: copia,
+    testoInCorso: document.getElementById('casella').value
+  });
+}
+function partitaSospesaValida() {
+  const copia = leggiLocaleOggetto(CHIAVE_PARTITA);
+  if (!copia || copia.versione !== 1 || !copia.stato) return null;
+  const s = copia.stato;
+  if (!Array.isArray(s.parole) || s.parole.length !== 15 ||
+      !s.parole.every(function (p) { return typeof p === 'string' && p.length < 100; }) ||
+      !Array.isArray(s.scritte) || !s.scritte.every(function (p) { return typeof p === 'string'; }) || !Array.isArray(s.punteggiSessione) ||
+      !Array.isArray(s.mancanti) || !Array.isArray(s.rinforziOggi) ||
+      !['media','mix','difficile'].includes(s.difficolta) ||
+      typeof s.sessioneId !== 'string' || !dataDaChiave(s.dataSessione) ||
+      !Number.isFinite(s.tentativo) || s.tentativo < 1 ||
+      !Number.isFinite(s.secondiTentativo) || s.secondiTentativo < 1 ||
+      !Number.isFinite(s.secondiRimasti) || !Number.isFinite(s.secondiTotaliFase) ||
+      !Number.isFinite(s.secondiUsatiRecupero) || !Number.isFinite(s.inizioSessioneTimestamp) ||
+      !Number.isFinite(s.inizioTentativoTimestamp) || !Number.isInteger(s.inizioTentativiSessione) ||
+      !['studio','disturbo','ripeti','esito'].includes(copia.schermata)) return null;
+  return copia;
+}
+function cancellaPartitaSospesa() {
+  try { localStorage.removeItem(CHIAVE_PARTITA); } catch (_) {}
+  aggiornaPannelliNuovi();
+}
+function mettiInPausa() {
+  if (stato.modalita !== 'sessione' || !stato.partitaInCorso) return;
+  const salvata = salvaPartitaInCorso();
+  if (!salvata) {
+    window.alert('Non riesco a salvare la partita su questo dispositivo. Puoi continuare; evita di chiudere la pagina.');
+    return;
+  }
+  preparaRipassoBreve();
+  stato.partitaInCorso = false;
+  spegniVoce();
+  fermaTimerRecupero(false);
+  clearInterval(stato.idTimer);
+  clearInterval(stato.idTimerDisturbo);
+  clearTimeout(stato.idTimeoutSaltaDisturbo);
+  stato.idTimer = null;
+  stato.idTimerDisturbo = null;
+  mostraSchermata('inizio');
+  aggiornaPannelliNuovi();
+}
+function riprendiPartita() {
+  const copia = partitaSospesaValida();
+  if (!copia) return;
+  for (const campo of CAMPI_PARTITA) if (copia.stato[campo] !== undefined) stato[campo] = copia.stato[campo];
+  stato.modalita = 'sessione';
+  stato.partitaInCorso = true;
+  const giorno = trovaGiorno(stato.dataSessione);
+  const ultima = giorno && giorno.tentativi.find(function (t) {
+    return t.sessioneId === stato.sessioneId && t.numero === stato.tentativo;
+  });
+  // Una chiusura subito dopo il salvataggio del risultato non deve duplicare la prova.
+  if (ultima) copia.schermata = 'esito';
+  if (copia.schermata === 'esito') {
+    const punti = ultima ? ultima.punti : stato.punteggiSessione[stato.punteggiSessione.length - 1];
+    const mancate = ultima ? ultima.mancate : [];
+    stato.mancanti = stato.parole.filter(function (_,i) { return mancate.includes(i); });
+    stato.ripristinoPartita = true;
+    mostraEsito(punti, stato.parole.map(function (_,i) { return !mancate.includes(i); }));
+    stato.ripristinoPartita = false;
+    if (punti === 15) { stato.partitaInCorso = false; cancellaPartitaSospesa(); }
+  } else if (copia.schermata === 'studio' && stato.fase === 'fine') {
+    preparaRipeti();
+  } else if (copia.schermata === 'studio') {
+    const fase = stato.fase;
+    const rimasti = stato.secondiRimasti;
+    const totale = stato.secondiTotaliFase;
+    partiTimer();
+    if (fase === 'studio') scopriEMemorizza();
+    stato.secondiRimasti = Math.max(1,rimasti);
+    stato.secondiTotaliFase = totale;
+    aggiornaOrologio();
+  } else {
+    const trascorsi = copia.schermata === 'ripeti' ? stato.secondiUsatiRecupero : 0;
+    const dettatura = stato.dettaturaUsata;
+    preparaRipeti();
+    stato.dettaturaUsata = dettatura;
+    stato.inizioRecuperoTimestamp = Date.now() - trascorsi * 1000;
+    document.getElementById('casella').value = copia.testoInCorso || '';
+  }
+  salvaPartitaInCorso();
+  aggiornaPannelliNuovi();
+}
+
+function serveRevisioneRisposte() {
+  if (stato.dettaturaUsata && stato.scritte.length) return true;
+  if (stato.modalita === 'vita') return false;
+  return stato.scritte.some(function (scritta) {
+    const s = normalizza(scritta);
+    return s.length >= 4 && !stato.parole.some(function (p) { return normalizza(p) === s; }) &&
+      stato.parole.some(function (p) { return distanzaMassimoUno(s,normalizza(p)); });
+  });
+}
+function mostraRevisioneRisposte() {
+  const contenitore = document.getElementById('campi-revisione');
+  contenitore.innerHTML = '';
+  stato.scritte.forEach(function (parola, i) {
+    const label = document.createElement('label');
+    label.textContent = 'Risposta ' + (i+1);
+    const campo = document.createElement('input');
+    campo.value = parola;
+    campo.className = 'campo-revisione';
+    campo.style.cssText = 'display:block;width:100%;box-sizing:border-box;min-height:48px;font-size:1.05rem;margin:6px 0 12px';
+    campo.autocomplete = 'off';
+    label.appendChild(campo);
+    contenitore.appendChild(label);
+  });
+  document.getElementById('revisione-risposte').style.display = 'block';
+  document.getElementById('bottone-controlla').style.display = 'none';
+  document.getElementById('revisione-risposte').scrollIntoView({block:'start',behavior:'smooth'});
+}
+function applicaRevisioneRisposte() {
+  stato.scritte = [];
+  document.querySelectorAll('.campo-revisione').forEach(function (campo) { aggiungiTesto(campo.value); });
+  document.getElementById('casella').value = '';
+  document.getElementById('revisione-risposte').style.display = 'none';
+  document.getElementById('bottone-controlla').style.display = 'block';
+  aggiornaGettoni();
+}
+
+function preparaRipassoBreve() {
+  const oggi = chiaveData(new Date());
+  const esistente = leggiLocaleOggetto(CHIAVE_RIPASSO);
+  if (esistente && esistente.data === oggi) return;
+  if (!stato.serie || stato.serie.data !== oggi) return;
+  const giorno = trovaGiorno(oggi);
+  if (!giorno || !giorno.tentativi.length) return;
+  // Due o tre parole della prima lista di oggi: il lavoro resta separato dai tentativi.
+  const lista = stato.serie.parole.slice();
+  mescola(lista);
+  const parole = lista.slice(0,3);
+  const ieri = stato.giorni.filter(function (g) { return g.data < oggi && g.ripassiBrevi; }).slice(-1)[0];
+  const intervallo = ieri ? Math.max(30,Math.min(180,Number(ieri.ripassiBrevi.intervalloSuccessivo) || 60)) : 60;
+  scriviLocaleOggetto(CHIAVE_RIPASSO, {data:oggi,parole:parole,
+    intervallo:intervallo,prontoAl:Date.now(),prove:[],fase:'prepara'});
+}
+function aggiornaPannelliNuovi() {
+  const copia = partitaSospesaValida();
+  document.getElementById('pannello-riprendi').style.display = copia ? 'block' : 'none';
+  if (copia) document.getElementById('dettaglio-riprendi').textContent =
+    'Partita del ' + etichettaDataConGiorno(copia.stato.dataSessione) +
+    ' · tentativo ' + copia.stato.tentativo + '. Ritroverai parole e risposte già inserite.';
+  const inizia = document.getElementById('bottone-inizia');
+  if (!inizia.disabled) inizia.textContent = copia ?
+    'Nuova partita (sostituisce quella in pausa)' : "Inizia l'esercizio di oggi";
+  ripassoBreve = leggiLocaleOggetto(CHIAVE_RIPASSO);
+  const valido = ripassoBreve && ripassoBreve.data === chiaveData(new Date()) &&
+    Array.isArray(ripassoBreve.parole) && ripassoBreve.parole.length >= 2 &&
+    Array.isArray(ripassoBreve.prove) && ripassoBreve.prove.length < 3;
+  document.getElementById('pannello-ripasso-breve').style.display = valido ? 'block' : 'none';
+  if (valido) {
+    const rimasti = Math.max(0,Math.ceil((ripassoBreve.prontoAl-Date.now())/1000));
+    document.getElementById('dettaglio-ripasso-breve').textContent = ripassoBreve.fase === 'prepara' ?
+      'Facoltativo: scegliamo tre parole di oggi da rivedere e poi ricordare dopo una breve attività diversa.' : rimasti ?
+      'Facoltativo: dopo una breve attività diversa, torna fra circa ' + formattaTempo(rimasti) + '.' :
+      'Se ti va, riprendi tre parole di oggi. È un ripasso separato dal punteggio della partita.';
+    document.getElementById('apri-ripasso-breve').style.display = ripassoBreve.fase === 'prepara' || !rimasti ? 'block' : 'none';
+  }
+}
+function apriRipassoBreve() {
+  aggiornaPannelliNuovi();
+  if (!ripassoBreve || ripassoBreve.prove.length >= 3) return;
+  mostraSchermata('ripasso-breve');
+  document.getElementById('risposta-ripasso-breve').value = '';
+  document.getElementById('esito-ripasso-breve').textContent = '';
+  document.getElementById('controlla-ripasso-breve').style.display = 'block';
+  document.getElementById('controlla-ripasso-breve').textContent = ripassoBreve.fase === 'prepara' ? 'Le ho guardate: inizia la pausa' : 'Controlla';
+  document.getElementById('risposta-ripasso-breve').style.display = ripassoBreve.fase === 'prepara' ? 'none' : 'block';
+  document.getElementById('consegna-ripasso-breve').textContent =
+    ripassoBreve.fase === 'prepara' ? 'Collega queste tre parole in una piccola scena: ' + ripassoBreve.parole.join(' · ') :
+      'Quali erano le tre parole del piccolo ripasso? Puoi fermarti quando vuoi.';
+  if (ripassoBreve.fase === 'esito') {
+    document.getElementById('controlla-ripasso-breve').style.display = 'none';
+    document.getElementById('esito-ripasso-breve').textContent = 'Ripasso già registrato. Le parole erano: ' + ripassoBreve.parole.join(' · ');
+  }
+}
+function controllaRipassoBreve() {
+  if (!ripassoBreve || ripassoBreve.fase === 'esito') return;
+  if (ripassoBreve.fase === 'prepara') {
+    ripassoBreve.fase = 'attesa';
+    ripassoBreve.prontoAl = Date.now()+ripassoBreve.intervallo*1000;
+    scriviLocaleOggetto(CHIAVE_RIPASSO,ripassoBreve);
+    mostraSchermata('inizio');
+    aggiornaPannelliNuovi();
+    return;
+  }
+  const risposte = document.getElementById('risposta-ripasso-breve').value.split(/[,;\n]+/).map(normalizza);
+  const corrette = ripassoBreve.parole.filter(function (p) { return risposte.includes(normalizza(p)); });
+  const intervalloEffettivo = Math.max(0, Math.round((Date.now() - (ripassoBreve.prontoAl - ripassoBreve.intervallo*1000))/1000));
+  const prova = {punti:corrette.length,totale:ripassoBreve.parole.length,intervallo:intervalloEffettivo,ora:Date.now()};
+  ripassoBreve.prove.push(prova);
+  ripassoBreve.intervallo = corrette.length === ripassoBreve.parole.length ?
+    Math.min(600,ripassoBreve.intervallo*2) : Math.max(30,Math.round(ripassoBreve.intervallo/2));
+  ripassoBreve.prontoAl = Date.now()+ripassoBreve.intervallo*1000;
+  ripassoBreve.fase = 'esito';
+  scriviLocaleOggetto(CHIAVE_RIPASSO,ripassoBreve);
+  const giorno = giornoDiOggi();
+  giorno.ripassiBrevi = {parole:ripassoBreve.parole.slice(),prove:ripassoBreve.prove.slice(),intervalloSuccessivo:ripassoBreve.intervallo};
+  salvaGiorni();
+  const contenitore = document.getElementById('esito-ripasso-breve');
+  contenitore.innerHTML = '';
+  for (const parola of ripassoBreve.parole) {
+    const riga=document.createElement('p');
+    riga.textContent=(corrette.includes(parola) ? '✓ Ricordata: ' : 'Da riprendere: ')+parola;
+    contenitore.appendChild(riga);
+  }
+  document.getElementById('controlla-ripasso-breve').style.display = 'none';
+}
+
+const SITUAZIONI_FAMILIARI = {
+  quotidiano: {contesto:'Immagina di preparare una giornata tranquilla a casa.',
+    spesa:['pane','latte','mele','pasta','sapone'],
+    uscita:['chiavi','portafoglio','occhiali','borsa','acqua'],
+    cose:['annaffiare le piante','apparecchiare la tavola','caricare il telefono','leggere il giornale','controllare il calendario']},
+  commissioni: {contesto:'Immagina un giro a piedi: panetteria, posta e biblioteca.',
+    spesa:['pane','uova','pomodori','riso','tovaglioli'],
+    uscita:['chiavi','portafoglio','pacco','libro','borsa'],
+    cose:['comprare il pane','spedire una lettera','restituire un libro','ritirare un pacco','controllare la posta']},
+  passeggiata: {contesto:'Immagina di prepararti per una passeggiata al parco.',
+    spesa:['acqua','banane','biscotti','fazzoletti','succo'],
+    uscita:['chiavi','acqua','cappello','fazzoletti','occhiali da sole'],
+    cose:['preparare la borsa','prendere le chiavi','chiudere le finestre','fare una passeggiata','telefonare a un amico']}
+};
+function contestoFamiliareVita() {
+  const situazione = SITUAZIONI_FAMILIARI[document.getElementById('vita-situazione').value];
+  return situazione ? situazione.contesto : null;
+}
+function pescaSituazioneFamiliare(tipo, quanti) {
+  const situazione = SITUAZIONI_FAMILIARI[document.getElementById('vita-situazione').value];
+  if (!situazione || !situazione[tipo]) return null;
+  const valori = situazione[tipo].slice();
+  mescola(valori);
+  return valori.slice(0,quanti).map(function (valore) {
+    const gruppo = VITA_QUOTIDIANA[tipo].gruppi.find(function (g) {
+      return g.valori.some(function (v) { return normalizza(typeof v === 'string' ? v : v.testo) === normalizza(valore); });
+    });
+    return creaElementoVita(valore,gruppo || {categoria:tipo === 'cose' ? 'azione' : 'oggetto',valori:[]});
+  });
+}
+
+document.querySelectorAll('.pausa-partita').forEach(function (b) { b.addEventListener('click',mettiInPausa); });
+document.getElementById('riprendi-partita').addEventListener('click',riprendiPartita);
+document.getElementById('conferma-revisione').addEventListener('click',function () {
+  applicaRevisioneRisposte(); stato.revisioneConfermata=true; controlla();
+});
+document.getElementById('torna-risposte').addEventListener('click',function () {
+  applicaRevisioneRisposte(); stato.revisioneConfermata=false;
+});
+document.getElementById('apri-ripasso-breve').addEventListener('click',apriRipassoBreve);
+document.getElementById('controlla-ripasso-breve').addEventListener('click',controllaRipassoBreve);
+document.getElementById('chiudi-ripasso-breve').addEventListener('click',function () {
+  if (ripassoBreve && ripassoBreve.fase === 'esito') {
+    ripassoBreve.fase='attesa';
+    ripassoBreve.prontoAl=Date.now()+ripassoBreve.intervallo*1000;
+    scriviLocaleOggetto(CHIAVE_RIPASSO,ripassoBreve);
+  }
+  mostraSchermata('inizio'); aggiornaPannelliNuovi();
+});
+document.addEventListener('visibilitychange',function () {
+  if (document.hidden) mettiInPausa();
+});
+window.addEventListener('pagehide',mettiInPausa);
+document.getElementById('casella').addEventListener('input',salvaPartitaInCorso);
+setInterval(function () { salvaPartitaInCorso(); if(document.body.dataset.schermata==='inizio') aggiornaPannelliNuovi(); },5000);
 
 /* ---------- installazione sulla schermata Home ---------- */
 
@@ -6449,7 +6933,7 @@ async function avviaApplicazione() {
   await caricaTutto();
   const bottoneInizia = document.getElementById("bottone-inizia");
   bottoneInizia.disabled = false;
-  bottoneInizia.textContent = "Inizia l'esercizio di oggi";
+  aggiornaPannelliNuovi();
 }
 avviaApplicazione();
 </script>
