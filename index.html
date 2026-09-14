@@ -687,6 +687,7 @@ body {
       <p class="descrizione-grafico">Tocca un giorno per vedere modalità, tempi e singoli tentativi.</p>
       <div id="elenco-giorni"></div>
       <button class="bottone" id="bottone-condividi">Manda il riepilogo a tuo figlio</button>
+      <div id="parti-riepilogo" aria-live="polite"></div>
     </div>
   </section>
 
@@ -6274,26 +6275,71 @@ async function copiaRiepilogoNegliAppunti(testo) {
   return copiaRiepilogoConTextarea(testo);
 }
 
+function dividiRiepilogo(testo) {
+  const parti = [];
+  let resto = testo;
+  // Margine per il titolo numerato e per le applicazioni di destinazione.
+  const limite = 2400;
+  while (resto.length > limite) {
+    let taglio = resto.lastIndexOf("\n", limite);
+    if (taglio < 1) taglio = limite;
+    else taglio += 1;
+    // Non separare una coppia UTF-16, per esempio un'emoji.
+    const ultimo = resto.charCodeAt(taglio - 1);
+    if (ultimo >= 0xD800 && ultimo <= 0xDBFF) taglio -= 1;
+    parti.push(resto.slice(0, taglio));
+    resto = resto.slice(taglio);
+  }
+  if (resto) parti.push(resto);
+  return parti;
+}
+
 async function condividiRiepilogo() {
-  const testo = testoRiepilogo();
+  const parti = dividiRiepilogo(testoRiepilogo());
+  const pannello = document.getElementById("parti-riepilogo");
+  pannello.innerHTML = "";
+  if (parti.length <= 1) {
+    await condividiTestoRiepilogo(parti[0] || "");
+    return;
+  }
+  const istruzioni = document.createElement("p");
+  istruzioni.textContent = "Il riepilogo completo è diviso in " + parti.length +
+    " messaggi brevi. Invia ogni parte allo stesso destinatario, poi torna qui per la successiva.";
+  pannello.appendChild(istruzioni);
+  parti.forEach(function (parte, indice) {
+    const titolo = "Riepilogo · Parte " + (indice + 1) + " di " + parti.length;
+    const bottone = document.createElement("button");
+    bottone.className = "bottone secondario";
+    bottone.textContent = "Invia parte " + (indice + 1) + " di " + parti.length;
+    bottone.addEventListener("click", async function () {
+      const esito = await condividiTestoRiepilogo(titolo + "\n\n" + parte);
+      if (esito) bottone.textContent = "Riapri parte " + (indice + 1) + " di " + parti.length;
+    });
+    pannello.appendChild(bottone);
+  });
+  pannello.scrollIntoView({behavior:"smooth", block:"nearest"});
+}
+
+async function condividiTestoRiepilogo(testo) {
 
   if (navigator.share) {
     try {
       await navigator.share({ text: testo });
-      return;
+      return true;
     } catch (errore) {
-      if (errore && errore.name === "AbortError") return;
+      if (errore && errore.name === "AbortError") return false;
     }
   }
 
   const copiato = await copiaRiepilogoNegliAppunti(testo);
   if (copiato) {
     window.alert("Riepilogo copiato per intero. Ora apri WhatsApp e incollalo nel messaggio.");
-    return;
+    return true;
   }
 
   // Ultimo ripiego per browser molto vecchi. Il report compatto riduce il rischio di taglio.
   window.open("https://wa.me/?text=" + encodeURIComponent(testo), "_blank");
+  return true;
 }
 
 /* ---------- collegamenti ---------- */
