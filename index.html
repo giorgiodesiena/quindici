@@ -4457,6 +4457,16 @@ function aggiornaPannelloRichiamo() {
   const pannello = document.getElementById("pannello-richiamo");
   const testo = document.getElementById("testo-richiamo");
   const bottone = document.getElementById("bottone-richiamo");
+  const serie = serieDaRichiamare();
+  if (serie !== null) {
+    pannello.style.display = "block";
+    document.getElementById("data-richiamo").textContent = etichettaData(serie.data);
+    testo.textContent = "Prima di cominciare, prova a ritrovare le parole del " +
+      etichettaData(serie.data) + " senza riguardarle. Anche una sola parola conta: " +
+      "questo breve passaggio allena il ricordo a distanza.";
+    bottone.textContent = "Prova a ricordare ieri";
+    return;
+  }
   const recupero = recuperoGuidatoDaCompletare();
   if (recupero !== null) {
     pannello.style.display = "block";
@@ -4468,29 +4478,17 @@ function aggiornaPannelloRichiamo() {
     bottone.textContent = "Continua il piccolo recupero";
     return;
   }
-  const serie = serieDaRichiamare();
 
-  if (serie !== null) {
-    pannello.style.display = "block";
-    document.getElementById("data-richiamo").textContent = etichettaData(serie.data);
-    testo.textContent = "Prima di cominciare, prova a ritrovare le parole del " +
-      etichettaData(serie.data) + " senza riguardarle. Anche una sola parola conta: " +
-      "questo breve passaggio allena il ricordo a distanza.";
-    bottone.textContent = "Prova a ricordare ieri";
-  } else {
-    pannello.style.display = "none";
-  }
+  pannello.style.display = "none";
 }
 
 function iniziaRichiamo() {
-  if (recuperoGuidatoDaCompletare() !== null) {
+  const serie = serieDaRichiamare();
+  if (serie === null && recuperoGuidatoDaCompletare() !== null) {
     apriRecuperoGuidato();
     return;
   }
-  const serie = serieDaRichiamare();
-  if (serie === null) {
-    return;
-  }
+  if (serie === null) return;
 
   stato.modalita = "richiamo";
   stato.parole = serie.parole;
@@ -6303,20 +6301,24 @@ async function condividiRiepilogo() {
     return;
   }
   const istruzioni = document.createElement("p");
-  istruzioni.textContent = "Il riepilogo completo è diviso in " + parti.length +
-    " messaggi brevi. Invia ogni parte allo stesso destinatario, poi torna qui per la successiva.";
+  istruzioni.textContent = "Il riepilogo è diviso in " + parti.length +
+    " parti. Si apriranno una dopo l'altra: inviale allo stesso destinatario.";
   pannello.appendChild(istruzioni);
-  parti.forEach(function (parte, indice) {
+  for (let indice = 0; indice < parti.length; indice++) {
+    if (indice > 0) {
+      istruzioni.textContent = "Parte " + (indice + 1) + " di " + parti.length +
+        ": inviala allo stesso destinatario.";
+    }
     const titolo = "Riepilogo · Parte " + (indice + 1) + " di " + parti.length;
-    const bottone = document.createElement("button");
-    bottone.className = "bottone secondario";
-    bottone.textContent = "Invia parte " + (indice + 1) + " di " + parti.length;
-    bottone.addEventListener("click", async function () {
-      const esito = await condividiTestoRiepilogo(titolo + "\n\n" + parte);
-      if (esito) bottone.textContent = "Riapri parte " + (indice + 1) + " di " + parti.length;
-    });
-    pannello.appendChild(bottone);
-  });
+    const esito = await condividiTestoRiepilogo(titolo + "\n\n" + parti[indice]);
+    if (!esito) {
+      istruzioni.textContent = "Invio interrotto alla parte " + (indice + 1) +
+        " di " + parti.length + ". Premi di nuovo Condividi per ripartire.";
+      pannello.scrollIntoView({behavior:"smooth", block:"nearest"});
+      return;
+    }
+  }
+  istruzioni.textContent = "Riepilogo inviato in " + parti.length + " parti.";
   pannello.scrollIntoView({behavior:"smooth", block:"nearest"});
 }
 
