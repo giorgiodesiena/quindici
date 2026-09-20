@@ -6065,6 +6065,7 @@ function testoRiepilogo() {
 
     for (let i = 0; i < giorni.length; i++) {
       const g = giorni[i];
+      if (i > 0) righe.push("", "──────────────");
 
       if (g.chiave > oggiChiave) {
         righe.push("");
