@@ -6273,53 +6273,11 @@ async function copiaRiepilogoNegliAppunti(testo) {
   return copiaRiepilogoConTextarea(testo);
 }
 
-function dividiRiepilogo(testo) {
-  const parti = [];
-  let resto = testo;
-  // Margine per il titolo numerato e per le applicazioni di destinazione.
-  const limite = 2400;
-  while (resto.length > limite) {
-    let taglio = resto.lastIndexOf("\n", limite);
-    if (taglio < 1) taglio = limite;
-    else taglio += 1;
-    // Non separare una coppia UTF-16, per esempio un'emoji.
-    const ultimo = resto.charCodeAt(taglio - 1);
-    if (ultimo >= 0xD800 && ultimo <= 0xDBFF) taglio -= 1;
-    parti.push(resto.slice(0, taglio));
-    resto = resto.slice(taglio);
-  }
-  if (resto) parti.push(resto);
-  return parti;
-}
-
 async function condividiRiepilogo() {
-  const parti = dividiRiepilogo(testoRiepilogo());
+  const testo = testoRiepilogo();
   const pannello = document.getElementById("parti-riepilogo");
   pannello.innerHTML = "";
-  if (parti.length <= 1) {
-    await condividiTestoRiepilogo(parti[0] || "");
-    return;
-  }
-  const istruzioni = document.createElement("p");
-  istruzioni.textContent = "Il riepilogo è diviso in " + parti.length +
-    " parti. Si apriranno una dopo l'altra: inviale allo stesso destinatario.";
-  pannello.appendChild(istruzioni);
-  for (let indice = 0; indice < parti.length; indice++) {
-    if (indice > 0) {
-      istruzioni.textContent = "Parte " + (indice + 1) + " di " + parti.length +
-        ": inviala allo stesso destinatario.";
-    }
-    const titolo = "Riepilogo · Parte " + (indice + 1) + " di " + parti.length;
-    const esito = await condividiTestoRiepilogo(titolo + "\n\n" + parti[indice]);
-    if (!esito) {
-      istruzioni.textContent = "Invio interrotto alla parte " + (indice + 1) +
-        " di " + parti.length + ". Premi di nuovo Condividi per ripartire.";
-      pannello.scrollIntoView({behavior:"smooth", block:"nearest"});
-      return;
-    }
-  }
-  istruzioni.textContent = "Riepilogo inviato in " + parti.length + " parti.";
-  pannello.scrollIntoView({behavior:"smooth", block:"nearest"});
+  await condividiTestoRiepilogo(testo);
 }
 
 async function condividiTestoRiepilogo(testo) {
