@@ -5949,47 +5949,6 @@ function graficiDiFinePeriodo(oggi, oggiChiave) {
 
 function configurazioneRiepilogo(oggi) {
   const oggiChiave = chiaveData(oggi);
-  const lunediCorrente = inizioSettimana(oggi);
-  const giornoDellaSettimana = oggi.getDay();
-
-  if (giornoDellaSettimana === 0) {
-    return {
-      settimanale: true,
-      giorni: giorniDellaSettimana(lunediCorrente)
-    };
-  }
-
-  if (giornoDellaSettimana >= 1 && giornoDellaSettimana <= 6) {
-    const lunediPrecedente = new Date(
-      lunediCorrente.getFullYear(),
-      lunediCorrente.getMonth(),
-      lunediCorrente.getDate() - 7
-    );
-    const settimanaPrecedente = giorniDellaSettimana(lunediPrecedente);
-    const settimanaCorrente = giorniDellaSettimana(lunediCorrente);
-    let settimanaIniziata = false;
-    for (let i = 0; i < settimanaPrecedente.length; i++) {
-      if (settimanaPrecedente[i].fatto === true || settimanaPrecedente[i].richiamo !== null) {
-        settimanaIniziata = true;
-      }
-    }
-    let primoAllenamentoDellaSettimana = null;
-    for (let i = 0; i < settimanaCorrente.length; i++) {
-      if (settimanaCorrente[i].fatto === true) {
-        primoAllenamentoDellaSettimana = settimanaCorrente[i].chiave;
-        break;
-      }
-    }
-    const domenicaSaltata = settimanaPrecedente[6].fatto === false;
-    const oggiPrimoAllenamento = primoAllenamentoDellaSettimana === oggiChiave;
-    if (settimanaIniziata && domenicaSaltata && oggiPrimoAllenamento) {
-      return {
-        settimanale: true,
-        giorni: settimanaPrecedente
-      };
-    }
-  }
-
   const oggiRiassunto = riassuntoGiorno(trovaGiorno(oggiChiave));
   oggiRiassunto.chiave = oggiChiave;
   oggiRiassunto.data = oggi;
