@@ -405,6 +405,22 @@ body {
 .pallino.migliore { background: var(--verde-ok); }
 .pallino.richiamo { background: var(--tavolo); border-radius: 99px; }
 
+#pannello-backup { font-size: 1rem; line-height: 1.5; }
+#pannello-backup summary { min-height: 44px; cursor: pointer; font-weight: 600; }
+#pannello-backup p { margin: 12px 0; }
+#pannello-backup .bottone.secondario {
+  border: 2px solid var(--verde-ok); border-radius: 12px; color: var(--tavolo);
+  text-decoration: none; font-size: 1rem; min-height: 48px; padding: 12px;
+}
+#file-backup { width: 100%; font: inherit; }
+#file-backup::file-selector-button {
+  min-height: 48px; padding: 8px 12px; margin-right: 8px; font: inherit;
+  border: 2px solid var(--verde-ok); border-radius: 10px; background: #FFFDF6;
+}
+#pannello-backup summary:focus-visible, #file-backup:focus-visible {
+  outline: 3px solid var(--rosso); outline-offset: 3px;
+}
+
 .griglia-posizioni {
   display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 7px;
   margin-top: 10px;
@@ -689,7 +705,23 @@ body {
       <button class="bottone" id="bottone-condividi">Manda il riepilogo a tuo figlio</button>
       <div id="parti-riepilogo" aria-live="polite"></div>
     </div>
+    <details class="pannello" id="pannello-backup">
+      <summary>Copia di sicurezza dei progressi</summary>
+      <p>Salva un file per conservare lo storico o trasferirlo su un altro telefono. Contiene risultati, parole e risposte: custodiscilo con cura. Non viene caricato online.</p>
+      <button class="bottone secondario" id="esporta-backup" disabled>Salva una copia</button>
+      <label for="file-backup">Ripristina una copia salvata</label>
+      <input id="file-backup" type="file" accept=".json,application/json" style="display:block;max-width:100%;margin:12px 0" disabled>
+      <div id="anteprima-backup" hidden>
+        <p id="descrizione-backup"></p>
+        <p>Il ripristino sostituisce i dati su questo telefono, non li unisce. Prima salva una copia dei progressi attuali.</p>
+        <button class="bottone" id="conferma-backup">Sostituisci con questa copia</button>
+        <button class="bottone secondario" id="annulla-backup">Annulla</button>
+      </div>
+      <p id="stato-backup" role="status" aria-live="polite"></p>
+    </details>
   </section>
+
+  <p id="avviso-salvataggio" class="pannello" role="status" hidden></p>
 
   <!-- ============ STUDIO ============ -->
   <section class="schermata" id="schermata-studio">
@@ -1587,10 +1619,11 @@ async function leggiDeposito(chiave) {
 }
 
 async function scriviDeposito(chiave, valore) {
+  if (ripristinoBackupInCorso) return false;
   if (window.storage) {
     try {
       await window.storage.set(chiave, valore);
-      return;
+      return true;
     } catch (errore) {
       // provo comunque col telefono
     }
@@ -1598,8 +1631,10 @@ async function scriviDeposito(chiave, valore) {
 
   try {
     localStorage.setItem(chiave, valore);
+    return true;
   } catch (errore) {
-    // memoria piena o navigazione privata: pazienza
+    segnalaErroreSalvataggio();
+    return false;
   }
 }
 
@@ -3071,6 +3106,7 @@ function aggiornaGettoni() {
   document.getElementById("contatore").textContent = testo;
   aggiornaBloccoRecupero();
   salvaPartitaInCorso();
+  salvaBozzaRichiamo();
 }
 
 /* ---------- dettatura ---------- */
@@ -3456,6 +3492,8 @@ function disegnaRiepilogoFinale() {
 }
 
 function mostraEsito(punti, esiti) {
+  // Anche i risultati ripristinati da un file passano da un valore numerico.
+  punti = Number.isInteger(punti) && punti >= 0 && punti <= 15 ? punti : 0;
   const totale = stato.parole.length;
   const punteggio = document.getElementById("punteggio");
   const richiamoGentile = stato.modalita === "richiamo";
@@ -3728,7 +3766,7 @@ function disegnaRecuperoGuidato(portaFocus) {
   const recupero = sistemaRecuperoGuidato(dati.recupero);
   if (recupero.completato) {
     dati.richiamo.flussoCompletato = true;
-    salvaGiorni();
+    salvaGiorni().then(function (salvato) { if (salvato) eliminaBozzaRichiamo('guidato'); });
     mostraRecuperoGuidatoCompletato(recupero, portaFocus);
     return;
   }
@@ -3775,6 +3813,20 @@ function disegnaRecuperoGuidato(portaFocus) {
   if (portaFocus) {
     setTimeout(function () { riquadro.focus(); }, 0);
   }
+  const bozza = leggiLocaleOggetto(CHIAVE_BOZZA_RICHIAMO);
+  if (bozza && bozza.tipo === 'guidato' && bozza.data === chiaveData(new Date()) &&
+      bozza.origine === dati.richiamo.da && bozza.indice === indice && bozza.fase === fase &&
+      typeof bozza.testoInCorso === 'string') {
+    risposta.value = bozza.testoInCorso;
+    if (bozza.confermata && fase < 3 && normalizza(risposta.value) === normalizza(parola)) {
+      stato.rispostaRecuperoConfermata = true;
+      risposta.readOnly = true;
+      document.getElementById('esito-risposta-recupero').textContent = '✓ Corretto: ' + parola + ". L'hai recuperata con l'indizio.";
+      bottoneRitrovata.textContent = 'Continua';
+      bottoneAiuto.style.display = 'none';
+    }
+  }
+  salvaBozzaRichiamo();
 }
 
 function mostraRecuperoGuidatoCompletato(recupero, portaFocus) {
@@ -3872,6 +3924,7 @@ async function completaParolaRecupero() {
     esito.textContent = "✓ Corretto: " + recupero.parole[indice] + ". L'hai recuperata con l'indizio.";
     document.getElementById("bottone-parola-ritrovata").textContent = "Continua";
     document.getElementById("bottone-altro-aiuto-recupero").style.display = "none";
+    salvaBozzaRichiamo();
     return;
   }
   stato.recuperoInSalvataggio = true;
@@ -3900,11 +3953,12 @@ async function completaParolaRecupero() {
     recupero.completato = true;
     dati.richiamo.flussoCompletato = true;
   }
-  await salvaGiorni();
+  const recuperoSalvato = await salvaGiorni();
   stato.recuperoInSalvataggio = false;
   aggiornaPannelloRichiamo();
   disegnaProgressi();
   if (recupero.completato) {
+    if (recuperoSalvato) eliminaBozzaRichiamo('guidato');
     mostraRecuperoGuidatoCompletato(recupero, true);
   } else {
     disegnaRecuperoGuidato(true);
@@ -4281,7 +4335,9 @@ function registraRichiamo(punti, mancate) {
 
   stato.pendente = null;
   salvaPendente();
-  salvaGiorni();
+  salvaGiorni().then(function (salvato) {
+    if (salvato) eliminaBozzaRichiamo("libero");
+  });
   disegnaProgressi();
   aggiornaPannelloRichiamo();
 }
@@ -4555,7 +4611,9 @@ function aggiornaPannelloRichiamo() {
     testo.textContent = "Quando vuoi, prova a ritrovare le parole del " +
       etichettaData(serie.data) + " senza riguardarle. Anche una sola parola conta: " +
       "questo breve passaggio allena il ricordo a distanza.";
-    bottone.textContent = "Prova a ricordare ieri";
+    const bozza = bozzaRichiamoLibero(serie);
+    bottone.textContent = bozza ? "Riprendi il ricordo di ieri" : "Prova a ricordare ieri";
+    if (bozza) testo.textContent = "Puoi continuare da dove eri rimasto: le risposte e la parola in scrittura sono conservate.";
     return;
   }
   const recupero = recuperoGuidatoDaCompletare();
@@ -4589,9 +4647,18 @@ function iniziaRichiamo() {
   stato.parole = serie.parole;
   stato.origineRichiamo = serie.data;
   stato.rinforziSerieRichiamata = Array.isArray(serie.rinforzi) ? serie.rinforzi.slice() : [];
+  const bozza = bozzaRichiamoLibero(serie);
   stato.scritte = [];
   stato.tentativo = 0;
   preparaRipeti();
+  if (bozza) {
+    stato.scritte = bozza.scritte.slice();
+    stato.dettaturaUsata = bozza.dettaturaUsata === true;
+    aggiornaGettoni();
+    document.getElementById("casella").value = bozza.testoInCorso;
+    if (bozza.revisione) mostraRevisioneRisposte();
+  }
+  salvaBozzaRichiamo();
 }
 
 /* ---------- progressi ---------- */
@@ -6710,14 +6777,85 @@ const CAMPI_PARTITA = [
 ];
 const CHIAVE_PARTITA = 'quindici:partita-in-pausa-v1';
 const CHIAVE_RIPASSO = 'quindici:ripasso-breve-v1';
+const CHIAVE_BOZZA_RICHIAMO = 'quindici:bozza-richiamo-v1';
+const bozzeInMemoria = new Map();
 let ripassoBreve = null;
 
 function leggiLocaleOggetto(chiave) {
-  try { return JSON.parse(localStorage.getItem(chiave)); } catch (_) { return null; }
+  try { return JSON.parse(bozzeInMemoria.has(chiave) ? bozzeInMemoria.get(chiave) : localStorage.getItem(chiave)); } catch (_) { return null; }
 }
 function scriviLocaleOggetto(chiave, valore) {
-  try { localStorage.setItem(chiave, JSON.stringify(valore)); return true; }
-  catch (_) { return false; }
+  if (ripristinoBackupInCorso) return false;
+  try {
+    const fotografia = JSON.stringify(valore);
+    bozzeInMemoria.set(chiave, fotografia);
+    localStorage.setItem(chiave, fotografia);
+    return true;
+  }
+  catch (_) { segnalaErroreSalvataggio(); return false; }
+}
+
+function segnalaErroreSalvataggio() {
+  const avviso = document.getElementById('avviso-salvataggio');
+  avviso.hidden = false;
+  avviso.textContent = 'Il telefono non riesce a salvare. Puoi continuare, ma non chiudere la pagina: torna ai progressi e usa “Salva una copia”.';
+}
+
+function bozzaRichiamoLibero(serie) {
+  const bozza = leggiLocaleOggetto(CHIAVE_BOZZA_RICHIAMO);
+  if (!bozza || bozza.versione !== 1 || bozza.tipo !== 'libero' ||
+      bozza.data !== chiaveData(new Date()) || bozza.origine !== serie.data ||
+      !Array.isArray(bozza.parole) || bozza.parole.join('|') !== serie.parole.join('|') ||
+      !Array.isArray(bozza.scritte) || !bozza.scritte.every(function (p) { return typeof p === 'string'; }) ||
+      typeof bozza.testoInCorso !== 'string') return null;
+  return bozza;
+}
+
+function eliminaBozzaRichiamo(tipo) {
+  const bozza = leggiLocaleOggetto(CHIAVE_BOZZA_RICHIAMO);
+  if (bozza && bozza.tipo === tipo) {
+    bozzeInMemoria.delete(CHIAVE_BOZZA_RICHIAMO);
+    try { localStorage.removeItem(CHIAVE_BOZZA_RICHIAMO); } catch (_) {}
+  }
+}
+
+function salvaBozzaRichiamo() {
+  if (stato.modalita !== 'richiamo' || ripristinoBackupInCorso) return;
+  const schermata = document.body.dataset.schermata;
+  const data = chiaveData(new Date());
+  if (schermata === 'ripeti') {
+    const giorno = trovaGiorno(data);
+    if (giorno && giorno.richiamo && giorno.richiamo.da === stato.origineRichiamo) return;
+    const revisione = document.getElementById('revisione-risposte').style.display === 'block';
+    const scritte = revisione ? Array.from(document.querySelectorAll('.campo-revisione')).map(function (c) { return c.value; }) : stato.scritte.slice();
+    scriviLocaleOggetto(CHIAVE_BOZZA_RICHIAMO, {
+      versione: 1, tipo: 'libero', data: data, origine: stato.origineRichiamo,
+      parole: stato.parole.slice(), scritte: scritte,
+      testoInCorso: document.getElementById('casella').value,
+      revisione: revisione, dettaturaUsata: stato.dettaturaUsata === true
+    });
+  } else if (schermata === 'esito') {
+    const dati = recuperoGuidatoDaCompletare();
+    if (!dati || dati.recupero.completato) return;
+    scriviLocaleOggetto(CHIAVE_BOZZA_RICHIAMO, {
+      versione: 1, tipo: 'guidato', data: data, origine: dati.richiamo.da,
+      indice: dati.recupero.indice, fase: dati.recupero.fasi[dati.recupero.indice] || 0,
+      testoInCorso: document.getElementById('risposta-recupero').value,
+      confermata: stato.rispostaRecuperoConfermata === true
+    });
+  }
+}
+
+function salvaBozzaRipasso() {
+  if (ripristinoBackupInCorso || document.body.dataset.schermata !== 'ripasso-breve' ||
+      !ripassoBreve || ripassoBreve.fase !== 'attesa') return;
+  ripassoBreve.testoInCorso = document.getElementById('risposta-ripasso-breve').value;
+  scriviLocaleOggetto(CHIAVE_RIPASSO, ripassoBreve);
+}
+
+function salvaRichiamiInCorso() {
+  salvaBozzaRichiamo();
+  salvaBozzaRipasso();
 }
 function giornoSessioneCorrente() {
   if (!stato.dataSessione || stato.dataSessione === chiaveData(new Date())) return giornoDiOggi();
@@ -6730,7 +6868,7 @@ function giornoSessioneCorrente() {
   return giorno;
 }
 function salvaPartitaInCorso() {
-  if (!stato.partitaInCorso || stato.modalita !== 'sessione') return false;
+  if (ripristinoBackupInCorso || !stato.partitaInCorso || stato.modalita !== 'sessione') return false;
   const schermata = document.body.dataset.schermata;
   if (!['studio','disturbo','ripeti','esito'].includes(schermata)) return false;
   const copia = {};
@@ -6763,6 +6901,7 @@ function partitaSospesaValida() {
   return copia;
 }
 function cancellaPartitaSospesa() {
+  bozzeInMemoria.delete(CHIAVE_PARTITA);
   try { localStorage.removeItem(CHIAVE_PARTITA); } catch (_) {}
   aggiornaPannelliNuovi();
 }
@@ -6854,6 +6993,7 @@ function mostraRevisioneRisposte() {
   document.getElementById('revisione-risposte').style.display = 'block';
   document.getElementById('bottone-controlla').style.display = 'none';
   document.getElementById('revisione-risposte').scrollIntoView({block:'start',behavior:'smooth'});
+  salvaBozzaRichiamo();
 }
 function applicaRevisioneRisposte() {
   stato.scritte = [];
@@ -6907,7 +7047,7 @@ function apriRipassoBreve() {
   aggiornaPannelliNuovi();
   if (!ripassoBreve || ripassoBreve.prove.length >= 3) return;
   mostraSchermata('ripasso-breve');
-  document.getElementById('risposta-ripasso-breve').value = '';
+  document.getElementById('risposta-ripasso-breve').value = ripassoBreve.testoInCorso || '';
   document.getElementById('esito-ripasso-breve').textContent = '';
   document.getElementById('controlla-ripasso-breve').style.display = 'block';
   document.getElementById('controlla-ripasso-breve').textContent = ripassoBreve.fase === 'prepara' ? 'Le ho guardate: inizia la pausa' : 'Controlla';
@@ -6939,6 +7079,7 @@ function controllaRipassoBreve() {
     Math.min(600,ripassoBreve.intervallo*2) : Math.max(30,Math.round(ripassoBreve.intervallo/2));
   ripassoBreve.prontoAl = Date.now()+ripassoBreve.intervallo*1000;
   ripassoBreve.fase = 'esito';
+  ripassoBreve.testoInCorso = '';
   scriviLocaleOggetto(CHIAVE_RIPASSO,ripassoBreve);
   const giorno = giornoDiOggi();
   giorno.ripassiBrevi = {parole:ripassoBreve.parole.slice(),listaId:ripassoBreve.listaId,
@@ -6996,6 +7137,7 @@ document.getElementById('torna-risposte').addEventListener('click',function () {
 document.getElementById('apri-ripasso-breve').addEventListener('click',apriRipassoBreve);
 document.getElementById('controlla-ripasso-breve').addEventListener('click',controllaRipassoBreve);
 document.getElementById('chiudi-ripasso-breve').addEventListener('click',function () {
+  salvaBozzaRipasso();
   if (ripassoBreve && ripassoBreve.fase === 'esito') {
     ripassoBreve.fase='attesa';
     ripassoBreve.prontoAl=Date.now()+ripassoBreve.intervallo*1000;
@@ -7004,13 +7146,379 @@ document.getElementById('chiudi-ripasso-breve').addEventListener('click',functio
   mostraSchermata('inizio'); aggiornaPannelliNuovi();
 });
 document.addEventListener('visibilitychange',function () {
-  if (document.hidden) mettiInPausa();
+  if (document.hidden) {
+    salvaRichiamiInCorso();
+    spegniVoce();
+    mettiInPausa();
+  }
 });
-window.addEventListener('pagehide',mettiInPausa);
-document.getElementById('casella').addEventListener('input',salvaPartitaInCorso);
-setInterval(function () { salvaPartitaInCorso(); if(document.body.dataset.schermata==='inizio') aggiornaPannelliNuovi(); },5000);
+window.addEventListener('pagehide',function () { salvaRichiamiInCorso(); mettiInPausa(); });
+document.getElementById('casella').addEventListener('input',function () { salvaPartitaInCorso(); salvaBozzaRichiamo(); });
+document.getElementById('campi-revisione').addEventListener('input',salvaBozzaRichiamo);
+document.getElementById('risposta-recupero').addEventListener('input',salvaBozzaRichiamo);
+document.getElementById('risposta-ripasso-breve').addEventListener('input',salvaBozzaRipasso);
+setInterval(function () {
+  if (ripristinoBackupInCorso) return;
+  salvaPartitaInCorso(); salvaRichiamiInCorso();
+  if(document.body.dataset.schermata==='inizio') aggiornaPannelliNuovi();
+},5000);
 
 /* ---------- installazione sulla schermata Home ---------- */
+
+/* ---------- copie locali: nessun dato viene inviato a un server ---------- */
+const CHIAVI_BACKUP = [
+  'quindici:giorni', 'quindici:serie', 'quindici:pendente', 'quindici:vita',
+  'quindici:sessioni-livello', 'quindici:parole-recenti', 'quindici:storico-liste',
+  'quindici:prescrizione-giornaliera', CHIAVE_PARTITA, CHIAVE_RIPASSO, CHIAVE_BOZZA_RICHIAMO
+];
+const CHIAVE_RIPRISTINO = 'quindici:ripristino-in-corso-v1';
+const MAX_BYTE_BACKUP = 10 * 1024 * 1024;
+let ripristinoBackupInCorso = false;
+let backupDaRipristinare = null;
+let letturaBackupId = 0;
+
+function richiediBackup(condizione) {
+  if (!condizione) throw new Error('La copia contiene dati non validi o non compatibili. Nessun dato è stato sostituito.');
+}
+
+function oggettoBackup(valore) {
+  return valore !== null && typeof valore === 'object' && !Array.isArray(valore);
+}
+
+function dataBackup(valore) {
+  if (typeof valore !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(valore)) return false;
+  const data = new Date(valore + 'T12:00:00');
+  return !Number.isNaN(data.getTime()) && chiaveData(data) === valore;
+}
+
+function paroleBackup(valore, minimo, massimo) {
+  return Array.isArray(valore) && valore.length >= minimo && valore.length <= massimo &&
+    valore.every(function (p) { return typeof p === 'string' && p.length <= 2000; });
+}
+
+function interoBackup(valore, massimo) {
+  return Number.isInteger(valore) && valore >= 0 && valore <= massimo;
+}
+
+function verificaAlberoBackup(valore, profondita, contatore) {
+  contatore.n++;
+  richiediBackup(profondita <= 20 && contatore.n <= 500000);
+  if (valore === null || typeof valore === 'boolean') return;
+  if (typeof valore === 'number') { richiediBackup(Number.isFinite(valore)); return; }
+  if (typeof valore === 'string') { richiediBackup(valore.length <= 10000); return; }
+  richiediBackup(typeof valore === 'object');
+  for (const chiave of Object.keys(valore)) {
+    richiediBackup(!['__proto__', 'prototype', 'constructor'].includes(chiave));
+    verificaAlberoBackup(valore[chiave], profondita + 1, contatore);
+    const v = valore[chiave];
+    if (v === null) continue;
+    if (['punti','puntiSpontanei','migliore','rinforziRicordati'].includes(chiave)) {
+      richiediBackup(interoBackup(v, 15));
+    }
+    if (chiave === 'punteggiSessione') {
+      richiediBackup(Array.isArray(v) && v.every(function (p) { return interoBackup(p, 15); }));
+    }
+    if (['tempoStudio','tempoRecuperoEffettivo','durataAttivaSessione','durataSessione',
+      'tempoTotale','tempoTentativo','secondi','secondiScelti','secondiTentativo',
+      'secondiUsatiTentativo','secondiUsatiRecupero','secondiRimasti','secondiTotaliFase',
+      'secondiMinimiRecupero','intervallo','prontoAl','salvataAl','ora',
+      'inizioSessioneTimestamp','inizioTentativoTimestamp'].includes(chiave)) {
+      // I vecchi riepiloghi possono contenere l'elenco dei tempi assegnati.
+      if (chiave === 'secondi' && Array.isArray(v)) {
+        richiediBackup(v.every(function (n) { return Number.isFinite(n) && n >= 0; }));
+      } else richiediBackup(Number.isFinite(v) && v >= 0);
+    }
+  }
+}
+
+function verificaSerieBackup(serie) {
+  if (serie === null) return;
+  richiediBackup(oggettoBackup(serie) && dataBackup(serie.data) && paroleBackup(serie.parole, 15, 15));
+  if (serie.rinforzi !== undefined) richiediBackup(paroleBackup(serie.rinforzi, 0, 15));
+}
+
+function verificaProveBackup(prove) {
+  richiediBackup(Array.isArray(prove) && prove.length <= 10000);
+  for (const prova of prove) {
+    richiediBackup(oggettoBackup(prova) && interoBackup(prova.punti, 15));
+    if (prova.numero !== undefined) richiediBackup(interoBackup(prova.numero, 100000) && prova.numero > 0);
+    if (prova.livello !== undefined) richiediBackup(['media','mix','difficile'].includes(prova.livello) || interoBackup(prova.livello, 10));
+    for (const campo of ['parole','paroleLista','rinforzi','risposteInserite']) {
+      if (prova[campo] !== undefined) richiediBackup(paroleBackup(prova[campo], 0, 1000));
+    }
+    if (prova.mancate !== undefined) richiediBackup(Array.isArray(prova.mancate) &&
+      prova.mancate.every(function (indice) { return interoBackup(indice, 14); }));
+  }
+}
+
+function verificaRecuperoBackup(richiamo) {
+  if (richiamo === null) return;
+  richiediBackup(oggettoBackup(richiamo) && interoBackup(richiamo.punti, 15));
+  if (richiamo.da !== undefined) richiediBackup(dataBackup(richiamo.da));
+  for (const campo of ['paroleOrigine','risposteInserite','mancate','rinforzi']) {
+    if (richiamo[campo] !== undefined) richiediBackup(paroleBackup(richiamo[campo], 0, 1000));
+  }
+  const recupero = richiamo.recuperoGuidato;
+  if (recupero) {
+    richiediBackup(oggettoBackup(recupero) && paroleBackup(recupero.parole, 0, 15) &&
+      interoBackup(recupero.indice, recupero.parole.length));
+    for (const campo of ['fasi','esiti','verificate','altreRitrovate']) {
+      if (recupero[campo] !== undefined) richiediBackup(Array.isArray(recupero[campo]));
+    }
+  }
+}
+
+function verificaDatiBackup(dati) {
+  richiediBackup(oggettoBackup(dati) && Object.keys(dati).length === CHIAVI_BACKUP.length);
+  for (const chiave of CHIAVI_BACKUP) richiediBackup(Object.prototype.hasOwnProperty.call(dati, chiave));
+  verificaAlberoBackup(dati, 0, {n: 0});
+  const giorni = dati['quindici:giorni'];
+  richiediBackup(giorni === null || Array.isArray(giorni));
+  const date = new Set();
+  for (const giorno of giorni || []) {
+    richiediBackup(oggettoBackup(giorno) && dataBackup(giorno.data) && !date.has(giorno.data));
+    date.add(giorno.data);
+    verificaProveBackup(giorno.tentativi);
+    richiediBackup(Object.prototype.hasOwnProperty.call(giorno, 'richiamo'));
+    verificaRecuperoBackup(giorno.richiamo);
+    if (giorno.aiuti !== undefined) {
+      richiediBackup(Array.isArray(giorno.aiuti) && giorno.aiuti.every(function (aiuto) {
+        return oggettoBackup(aiuto) && typeof aiuto.tipo === 'string';
+      }));
+    }
+    if (giorno.ripassiBrevi) {
+      richiediBackup(paroleBackup(giorno.ripassiBrevi.parole, 2, 3));
+      verificaProveBackup(giorno.ripassiBrevi.prove);
+    }
+  }
+  verificaSerieBackup(dati['quindici:serie']);
+  verificaSerieBackup(dati['quindici:pendente']);
+  const vita = dati['quindici:vita'];
+  richiediBackup(vita === null || Array.isArray(vita));
+  for (const prova of vita || []) {
+    richiediBackup(oggettoBackup(prova) && dataBackup(prova.data) && ['spesa','appuntamento','cose','uscita'].includes(prova.tipo));
+    if (Array.isArray(prova.tentativi)) verificaProveBackup(prova.tentativi);
+    else {
+      // Prime versioni di Vita quotidiana: una riga per ogni tentativo.
+      richiediBackup(prova.tentativi === undefined && interoBackup(prova.tentativo,100000));
+      verificaProveBackup([prova]);
+    }
+    for (const campo of ['elementi','valori']) {
+      if (prova[campo] !== undefined) richiediBackup(paroleBackup(prova[campo], 0, 15));
+    }
+  }
+  const recenti = dati['quindici:parole-recenti'];
+  richiediBackup(recenti === null || paroleBackup(recenti, 0, 10000));
+  const liste = dati['quindici:storico-liste'];
+  richiediBackup(liste === null || Array.isArray(liste));
+  for (const lista of liste || []) {
+    richiediBackup(oggettoBackup(lista) && dataBackup(lista.data) && paroleBackup(lista.parole, 0, 10000));
+  }
+  const livelli = dati['quindici:sessioni-livello'];
+  if (livelli !== null) {
+    richiediBackup(oggettoBackup(livelli));
+    for (const livello of ['media','mix','difficile']) richiediBackup(interoBackup(livelli[livello], 1000000));
+  }
+  const prescrizione = dati['quindici:prescrizione-giornaliera'];
+  if (prescrizione !== null) richiediBackup(oggettoBackup(prescrizione) && dataBackup(prescrizione.data) &&
+    ['media','mix','difficile'].includes(prescrizione.livello) && Number.isFinite(prescrizione.secondi) &&
+    prescrizione.secondi >= 30 && prescrizione.secondi <= 300);
+  const partita = dati[CHIAVE_PARTITA];
+  if (partita !== null) {
+    richiediBackup(oggettoBackup(partita) && partita.versione === 1 && oggettoBackup(partita.stato));
+    const s = partita.stato;
+    richiediBackup(['studio','disturbo','ripeti','esito'].includes(partita.schermata) &&
+      ['blocco','studio','fine'].includes(s.fase) && dataBackup(s.dataSessione) &&
+      ['media','mix','difficile'].includes(s.difficolta) && typeof s.sessioneId === 'string' &&
+      paroleBackup(s.parole,15,15) && paroleBackup(s.scritte,0,1000) &&
+      paroleBackup(s.mancanti,0,15) && paroleBackup(s.rinforziOggi,0,15) &&
+      Array.isArray(s.punteggiSessione) && interoBackup(s.tentativo,100000) && s.tentativo > 0);
+    for (const campo of ['secondiTentativo','secondiRimasti','secondiTotaliFase','secondiUsatiRecupero',
+      'inizioSessioneTimestamp','inizioTentativoTimestamp','inizioTentativiSessione']) richiediBackup(Number.isFinite(s[campo]) && s[campo] >= 0);
+    richiediBackup(s.secondiTentativo > 0 && Number.isInteger(s.inizioTentativiSessione));
+    if (partita.testoInCorso !== undefined) richiediBackup(typeof partita.testoInCorso === 'string');
+  }
+  const ripasso = dati[CHIAVE_RIPASSO];
+  if (ripasso !== null) {
+    richiediBackup(oggettoBackup(ripasso) && dataBackup(ripasso.data) && paroleBackup(ripasso.parole,2,3) &&
+      ['prepara','attesa','esito'].includes(ripasso.fase) && Number.isFinite(ripasso.intervallo) &&
+      ripasso.intervallo > 0 && Number.isFinite(ripasso.prontoAl));
+    verificaProveBackup(ripasso.prove);
+    richiediBackup(ripasso.prove.length <= 3);
+    if (ripasso.testoInCorso !== undefined) richiediBackup(typeof ripasso.testoInCorso === 'string');
+  }
+  const bozza = dati[CHIAVE_BOZZA_RICHIAMO];
+  if (bozza !== null) {
+    richiediBackup(oggettoBackup(bozza) && bozza.versione === 1 && dataBackup(bozza.data) &&
+      dataBackup(bozza.origine) && typeof bozza.testoInCorso === 'string');
+    if (bozza.tipo === 'libero') richiediBackup(paroleBackup(bozza.parole,15,15) && paroleBackup(bozza.scritte,0,1000));
+    else richiediBackup(bozza.tipo === 'guidato' && interoBackup(bozza.indice,14) && interoBackup(bozza.fase,3));
+  }
+}
+
+function leggiFileBackup(testo) {
+  if (typeof testo !== 'string' || testo.length > MAX_BYTE_BACKUP) throw new Error('File troppo grande. Scegli una copia creata da questo gioco.');
+  let copia;
+  try { copia = JSON.parse(testo); } catch (_) { throw new Error('Il file non è una copia JSON leggibile. I dati attuali non sono cambiati.'); }
+  richiediBackup(oggettoBackup(copia) && copia.app === 'quindici-parole' && copia.versione === 1 &&
+    typeof copia.creataIl === 'string' && Number.isFinite(Date.parse(copia.creataIl)));
+  verificaDatiBackup(copia.dati);
+  return copia;
+}
+
+async function creaCopiaBackup() {
+  salvaPartitaInCorso(); salvaRichiamiInCorso();
+  await Promise.all([codaSalvataggioGiorni, codaSalvataggioVita]);
+  const dati = {};
+  // Lo stato caricato include anche risultati che non sono riusciti a salvarsi.
+  const principali = {
+    'quindici:giorni': stato.giorni, 'quindici:serie': stato.serie,
+    'quindici:pendente': stato.pendente, 'quindici:vita': stato.vitaStorico,
+    'quindici:sessioni-livello': stato.sessioniLivello, 'quindici:parole-recenti': stato.paroleRecenti,
+    'quindici:storico-liste': stato.storicoListe, 'quindici:prescrizione-giornaliera': stato.prescrizioneGiornaliera
+  };
+  for (const chiave of CHIAVI_BACKUP) {
+    if (Object.prototype.hasOwnProperty.call(principali, chiave)) dati[chiave] = principali[chiave];
+    else {
+      let testo = null;
+      try { testo = localStorage.getItem(chiave); } catch (_) { /* Si può esportare lo stato in memoria. */ }
+      if (bozzeInMemoria.has(chiave)) testo = bozzeInMemoria.get(chiave);
+      dati[chiave] = testo === null ? null : JSON.parse(testo);
+    }
+  }
+  const copia = {app: 'quindici-parole', versione: 1, creataIl: new Date().toISOString(), dati: dati};
+  // Fotografia indipendente dallo stato in memoria e verificabile al ripristino.
+  return leggiFileBackup(JSON.stringify(copia));
+}
+
+async function esportaBackup() {
+  const bottone = document.getElementById('esporta-backup');
+  if (bottone.disabled || ripristinoBackupInCorso) return;
+  bottone.disabled = true;
+  try {
+    const copia = await creaCopiaBackup();
+    const blob = new Blob([JSON.stringify(copia, null, 2)], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'quindici-parole-copia-' + chiaveData(new Date()) + '-' + Date.now() + '.json';
+    document.body.appendChild(link); link.click(); link.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+    document.getElementById('stato-backup').textContent = 'Copia pronta: controlla che il file sia stato salvato nei download o in File. Per proteggerlo dalla perdita del telefono, conservalo anche altrove.';
+  } catch (errore) {
+    document.getElementById('stato-backup').textContent = 'Non riesco a creare la copia. ' + errore.message;
+  } finally { bottone.disabled = false; }
+}
+
+function annullaAnteprimaBackup() {
+  letturaBackupId++;
+  backupDaRipristinare = null;
+  document.getElementById('anteprima-backup').hidden = true;
+  document.getElementById('file-backup').value = '';
+}
+
+async function preparaRipristinoBackup(evento) {
+  backupDaRipristinare = null;
+  document.getElementById('anteprima-backup').hidden = true;
+  const id = ++letturaBackupId;
+  const file = evento.target.files[0];
+  if (!file) return;
+  try {
+    if (window.storage) throw new Error('Per ripristinare usa il sito pubblico del gioco, non questa anteprima.');
+    if (file.size > MAX_BYTE_BACKUP) throw new Error('Il file è troppo grande.');
+    const copia = leggiFileBackup(await file.text());
+    if (id !== letturaBackupId) return;
+    backupDaRipristinare = copia;
+    const giorni = copia.dati['quindici:giorni'] || [];
+    document.getElementById('descrizione-backup').textContent = 'Copia del ' +
+      new Date(copia.creataIl).toLocaleString('it-IT') + ': ' + giorni.length + ' giornate registrate.';
+    document.getElementById('anteprima-backup').hidden = false;
+    document.getElementById('stato-backup').textContent = 'File controllato. Nessun dato è ancora stato sostituito.';
+  } catch (errore) {
+    if (id === letturaBackupId) document.getElementById('stato-backup').textContent = errore.message;
+  }
+}
+
+function fotografiaDepositoLocale() {
+  const valori = {};
+  for (const chiave of CHIAVI_BACKUP) valori[chiave] = localStorage.getItem(chiave);
+  return valori;
+}
+
+function scriviFotografiaLocale(valori) {
+  for (const chiave of CHIAVI_BACKUP) {
+    if (valori[chiave] === null) localStorage.removeItem(chiave);
+    else localStorage.setItem(chiave, valori[chiave]);
+    if (localStorage.getItem(chiave) !== valori[chiave]) throw new Error('Verifica del salvataggio non riuscita.');
+  }
+}
+
+function recuperaRipristinoInterrotto() {
+  const testo = localStorage.getItem(CHIAVE_RIPRISTINO);
+  if (testo === null) return false;
+  const registro = JSON.parse(testo);
+  richiediBackup(registro.versione === 1 && oggettoBackup(registro.prima));
+  for (const chiave of CHIAVI_BACKUP) richiediBackup(registro.prima[chiave] === null || typeof registro.prima[chiave] === 'string');
+  // Il registro resta disponibile fino al ripristino completo, anche se si chiude la pagina.
+  for (const chiave of CHIAVI_BACKUP) localStorage.removeItem(chiave);
+  scriviFotografiaLocale(registro.prima);
+  localStorage.removeItem(CHIAVE_RIPRISTINO);
+  return true;
+}
+
+async function applicaCopiaBackup(copia) {
+  if (ripristinoBackupInCorso) throw new Error('Ripristino già in corso.');
+  if (window.storage) throw new Error('Il ripristino è disponibile sul sito pubblico del gioco.');
+  verificaDatiBackup(copia.dati);
+  await Promise.all([codaSalvataggioGiorni, codaSalvataggioVita]);
+  if (ripristinoBackupInCorso) throw new Error('Ripristino già in corso.');
+  ripristinoBackupInCorso = true;
+  let registroScritto = false;
+  try {
+    if (localStorage.getItem(CHIAVE_RIPRISTINO) !== null) throw new Error('Ricarica la pagina per recuperare il precedente ripristino interrotto.');
+    const prima = fotografiaDepositoLocale();
+    const registro = JSON.stringify({versione: 1, prima: prima});
+    localStorage.setItem(CHIAVE_RIPRISTINO, registro);
+    if (localStorage.getItem(CHIAVE_RIPRISTINO) !== registro) throw new Error('Impossibile mettere al sicuro i dati attuali.');
+    registroScritto = true;
+    const nuovi = {};
+    for (const chiave of CHIAVI_BACKUP) nuovi[chiave] = copia.dati[chiave] === null ? null : JSON.stringify(copia.dati[chiave]);
+    scriviFotografiaLocale(nuovi);
+    localStorage.removeItem(CHIAVE_RIPRISTINO);
+  } catch (errore) {
+    if (registroScritto) {
+      try { recuperaRipristinoInterrotto(); }
+      catch (_) { throw new Error('Ripristino interrotto. La copia di recupero è conservata sul telefono: non cancellare i dati del sito e ricarica la pagina.'); }
+    }
+    ripristinoBackupInCorso = false;
+    throw new Error('Ripristino non riuscito; i dati precedenti sono conservati. Potrebbe mancare spazio sul telefono. ' + errore.message);
+  }
+  // Si resta in modalità protetta fino al ricaricamento: nessuna vecchia bozza può sovrascrivere l'importazione.
+}
+
+async function confermaRipristinoBackup() {
+  if (!backupDaRipristinare || ripristinoBackupInCorso) return;
+  const bottone = document.getElementById('conferma-backup');
+  if (bottone.disabled) return;
+  const copia = backupDaRipristinare;
+  if (!window.confirm('Vuoi sostituire tutti i progressi su questo telefono con la copia selezionata? I dati non verranno uniti.')) return;
+  bottone.disabled = true;
+  document.getElementById('file-backup').disabled = true;
+  try {
+    await applicaCopiaBackup(copia);
+    document.getElementById('stato-backup').textContent = 'Ripristino completato. Ricarico il gioco.';
+    window.location.reload();
+  } catch (errore) {
+    document.getElementById('stato-backup').textContent = errore.message;
+    bottone.disabled = false;
+    document.getElementById('file-backup').disabled = false;
+  }
+}
+
+document.getElementById('esporta-backup').addEventListener('click', esportaBackup);
+document.getElementById('file-backup').addEventListener('change', preparaRipristinoBackup);
+document.getElementById('conferma-backup').addEventListener('click', confermaRipristinoBackup);
+document.getElementById('annulla-backup').addEventListener('click', annullaAnteprimaBackup);
 
 function preparaManifest() {
   const icona192 = document.querySelector('link[rel="icon"]').href;
@@ -7040,9 +7548,22 @@ preparaVoce();
 
 preparaManifest();
 async function avviaApplicazione() {
+  let depositoDisponibile = true;
+  try { localStorage.getItem(CHIAVE_RIPRISTINO); }
+  catch (_) { depositoDisponibile = false; segnalaErroreSalvataggio(); }
+  try {
+    if (depositoDisponibile && recuperaRipristinoInterrotto()) document.getElementById('stato-backup').textContent = 'Il ripristino era stato interrotto: sono stati recuperati i progressi precedenti.';
+  } catch (_) {
+    ripristinoBackupInCorso = true;
+    segnalaErroreSalvataggio();
+    document.getElementById('avviso-salvataggio').textContent = 'Non riesco a leggere i dati salvati. Non cancellare i dati del sito; verifica lo spazio disponibile e ricarica la pagina.';
+    return;
+  }
   await caricaTutto();
   const bottoneInizia = document.getElementById("bottone-inizia");
   bottoneInizia.disabled = false;
+  document.getElementById('esporta-backup').disabled = false;
+  document.getElementById('file-backup').disabled = false;
   aggiornaPannelliNuovi();
 }
 avviaApplicazione();
