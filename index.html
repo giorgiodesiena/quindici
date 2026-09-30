@@ -848,392 +848,521 @@ const TENTATIVI_PRIMA_DELLA_STRATEGIA = 3;
 const TENTATIVI_PRIMA_DELLE_INIZIALI = 5;
 const TENTATIVI_PRIMA_DELLA_STORIA = 8;
 
-const PAROLE_MEDIE = [
-  "pergolato","incrocio","pedaggio","bozzolo","sciame","orizzonte","zoccolo","spartito","vialetto","spugna",
-  "pettine","gallina","gallo","pulcino","coniglio","cavallo","asino","mucca","pecora","capra",
-  "maiale","cane","gatto","topo","riccio","scoiattolo","volpe","cervo","cinghiale","lepre",
-  "talpa","passero","rondine","merlo","pettirosso","piccione","gabbiano","anatra","oca","cigno",
-  "gufo","aquila","falco","rondone","farfalla","coccinella","formica","grillo","cavalletta","lumaca",
-  "ragno","spina","penna","pedina","muratore","delfino","balena","medusa","granchio","aragosta",
-  "cozza","conchiglia","corallo","antenna","sottopasso","terra","padre","libro","capo","madre",
-  "resta","rosso","pelle","caccia","reso","regina","angelo","piede","tasso","pesce",
-  "razza","mosca","coda","leone","lupo","palla","maschio","virus","ospite","ghepardo",
-  "soldato","sciacallo","barba","femmina","gigante","pollo","arabo","adulto","bestia","uovo",
-  "lama","pelo","preda","colombo","strato","puledro","toro","uccello","becco","orso",
-  "dente","fossa","drago","bestiame","scimmia","serpente","cupola","danese","pastorale","cesena",
-  "grondaia","ringhiera","cardine","stipite","architrave","mansarda","veranda","staccionata","cortile","vicolo",
-  "rotonda","casello","ingorgo","deviazione","cantiere","ponteggio","carriola","badile","rastrello","innaffiatoio",
-  "serra","arnia","alveare","tana","corteo","timbro","sportello","magazzino","bilancia","imbuto",
-  "mestolo","colino","tagliere","setaccio","stampo","crosta","tessuto","telaio","ricamo","risvolto",
-  "bottega","vetrina","insegna","scaffale","bancarella","baracca","capanna","rifugio","baita","malga",
-  "sentiero","tornante","dispensa","cassaforte","tabellone","capitolo","cartella","tenaglia","guarnizione","ingranaggio",
-  "lucchetto","targhetta","distintivo","stendardo","tamburo","fisarmonica","sipario","palcoscenico","platea","armadio",
-  "cassetto","mensola","lavandino","rubinetto","specchio","asciugamano","tappeto","cuscino","coperta","lenzuolo",
-  "materasso","lampada","interruttore","presa","campanello","serratura","chiave","finestra","persiana","tenda",
-  "balcone","terrazza","scala","gradino","corridoio","soffitta","cantina","garage","cancello","recinto",
-  "aiuola","fontana","pozzo","panchina","gazebo","portico","piatto","tazza","bicchiere","forchetta",
-  "cucchiaio","coltello","pentola","padella","coperchio","vassoio","bottiglia","caraffa","barattolo","vasetto",
-  "tovaglia","tovagliolo","grembiule","detersivo","scopa","secchio","paletta","spazzola","sapone","dentifricio",
-  "rasoio","pigiama","camicia","maglione","giacca","cappotto","cintura","calzino","scarpa","pantofola",
-  "ombrello","borsa","portafoglio","fazzoletto","pane","ciambella","vigneto","rosa","margherita","seme",
-  "foglia","ceppo","scoglio","isola","bicicletta","motorino","automobile","autobus","treno","tram",
-  "barca","traghetto","aereo","trattore","ruota","pedale","manubrio","freno","motore","cofano",
-  "parabrezza","marciapiede","galleria","stazione","binario","valigia","zaino","mappa","busta","pacco",
-  "giornale","matita","gomma","righello","forbice","pennello","martello","chiodo","bullone","cacciavite",
-  "pinza","trapano","corda","catena","pallone","racchetta","boccia","birillo","altalena","aquilone",
-  "dado","puzzle","orologio","telefono","radio","televisore","fotografia","cornice","candela","fiammifero",
-  "torcia","farmacia","ambulatorio","scuola","biblioteca","municipio","mercato","panetteria","edicola","officina",
-  "falegname","armonica","violino","chitarra","pianoforte","flauto","tromba","clarinetto","mandolino","campana",
-  "sonaglio","pattino","slitta","canoa","monopattino","carrozza","camion","furgone","elicottero","dirigibile",
-  "motoscafo","polso","caviglia","tallone","fronte","lavagna","cartuccia","temperino","compasso","astuccio",
-  "copertina","segnalibro","atlante","mosaico","affresco","statua","ritratto","acquerello","ceramica","tavolozza",
-  "cavalletto","aratro","zappa","falce","forcone","semenzaio","fienile","pollaio","stalla","mulino",
-  "granaio","ciminiera","ascensore","citofono","capolinea","biglietteria","camino","braciere","termosifone","ventaglio",
-  "ventilatore","bollitore","frullatore","tostapane","aspirapolvere","lavatrice","casa","foto","video","base",
-  "film","comune","centro","mano","corso","piano","porta","letto","strada","seconda",
-  "forma","campo","testa","studio","gioco","forte","articolo","chiesa","polizia","luce",
-  "motivo","opera","linea","classe","squadra","arte","auto","produzione","passo","ricordo",
-  "sede","vera","rete","calcio","internet","macchina","movimento","prodotto","camera","corte",
-  "formazione","locale","totale","fuoco","carta","stampa","mostra","lato","guida","lista",
-  "armi","colore","difesa","scena","ufficio","cielo","modello","bianco","struttura","ministero",
-  "parlato","sacco","bocca","costruzione","accesso","materiale","uscita","obiettivo","palazzo","cambio",
-  "terza","canale","originale","peso","contatto","fonte","massa","pezzo","cinema","fede",
-  "roba","club","figura","sala","colpo","cucina","passaggio","attacco","banca","bagno",
-  "computer","tribunale","supporto","caffè","protezione","strumento","complesso","stia","interno","museo",
-  "cellulare","documento","stanza","album","carico","ponte","carica","nave","villa","guardia",
-  "fiori","negozio","medicina","prigione","superficie","trasporto","cliente","disegno","ingresso","muro",
-  "punta","soggetto","castello","tesoro","mercanzia","fermo","legno","bordo","croce","gioia",
-  "pianeta","stadio","apertura","classico","ferro","quadro","ristorante","tavolo","braccio","chiusura",
-  "ciclo","disco","entrata","giunta","hotel","marina","bianchi","fuga","giardino","blocco",
-  "completo","copertura","pietra","scambio","sicura","canto","pizza","specifico","taglio","carcere",
-  "collo","vuoto","elemento","espresso","appartamento","arma","divisione","filo","tavola","vetrinetta",
-  "mobile","pensione","copia","laboratorio","piattaforma","registrazione","televisione","batteria","chiusa","torre",
-  "esercizio","jack","tenuta","angolo","fascia","edificio","spedizione","vestito","albero","banda",
-  "bandiera","comma","condotta","condotto","maglia","fabbrica","pianta","abito","bomba","cassa",
-  "deriva","resti","ricetta","tempio","arresto","colonna","pista","schermo","negativo","plastica",
-  "appello","inventario","spezia","canneto","corteccia","medaglia","latte","cipolla","pisello","banana",
-  "uva","radice","tronco","fulmine","tessera","sarto","grembo","gomito","spalla","ginocchio",
-  "guancia","mento","pagina","pinacoteca","pensilina","faccia","corpo","cuore","regione","lingua",
-  "processo","costa","medio","materia","occhio","membro","carne","zero","cervello","fianco",
-  "acque","volto","campione","viso","naso","dito","indice","seno","corona","schiena",
-  "polpaccio","stomaco","petto","posteriore","gamba","permanente","gola","grasso","organo","arco",
-  "labbra","buco","nocca","tasca","cavo","pugno","simpatico","bacino","tubo","pancia",
-  "fegato","cemento","sedere","bolla","palma","riga","succo","vaso","asta","cieco",
-  "matrice","piega","apparato","cranio","dorso","orecchio","gene","busto","digiuno","dritta",
-  "estremità","sudore","osso","galla","muscolo","costato","muso","pollice","rene","inchiostro",
-  "pizzo","vago","ventre","zucca","chilo","midollo","cute","capello","labirinto","valvola",
-  "orbita","capsula","smalto","cavità","membrana","nervo","siero","appendice","ciglio","coscia",
-  "vivaio","stormo","verbale","mattarello","mollica","briciola","crostata","ripieno","brodo","aroma",
-  "fodera","crinale","trofeo","farina","pasta","riso","formaggio","burro","miele","marmellata",
-  "biscotto","torta","gelato","cioccolato","zucchero","sale","pepe","aceto","pomodoro","patata",
-  "aglio","zucchina","melanzana","insalata","cece","mela","pera","pesca","albicocca","ciliegia",
-  "lampone","arancia","melone","anguria","noce","mandorla","nocciola","sorgente","tuono","semaforo",
-  "rivista","medico","cuoco","risotto","lasagna","frittata","minestra","arrosto","spezzatino","polpetta",
-  "focaccia","budino","acqua","cibo","porto","mangiare","dolce","vino","cena","portata",
-  "pranzo","chiara","regime","composto","bere","colazione","birra","dieta","composta","erba",
-  "grano","portogallo","crema","alimentazione","pasto","misto","fiorentina","salsa","alcool","brindisi",
-  "porzione","coca","filtro","amichevole","panino","fornitura","fico","martini","patatine","panna",
-  "prosciutto","spaccio","spaghetti","cocco","macedonia","cocktail","menù","tonno","aperitivo","champagne",
-  "minerale","cioccolata","consumato","miscela","granata","getto","grana","hamburger","melissa","yogurt",
-  "nido","branco","protocollo","quintale","fragranza","valico","versante","ghiacciaio","torrente","cascata",
-  "palude","brughiera","radura","ricevuta","polenta","carota","bosco","collina","montagna","pianura",
-  "valle","spiaggia","lago","fiume","onda","nuvola","grandine","quaderno","infermiere","pescatore",
-  "dogana","mare","resto","bisogna","fondo","sole","necessario","necessità","coppia","creato",
-  "monte","bassa","luna","terreno","fila","stella","rotta","universo","deposito","rapida",
-  "banco","calcolo","riva","rottura","nucleo","continente","golfo","carbone","salita","penisola",
-  "colle","nastro","roccia","discesa","china","secca","baia","barriera","esigenza","foro",
-  "vena","circo","sasso","fetta","grotta","delta","globo","nova","satellite","dorsale",
-  "vulcano","segmento","massiccio","sponda","ansa","galassia","lido","mantello","buca","falla",
-  "laguna","pelliccia","stagno","frammento","arcobaleno","cresta","scintilla","poggio","dosso","filone",
-  "gregge","ettaro","teglia","lievito","sottobosco","muschio","lichene","ghianda","pigna","castagna",
-  "scontrino","fagiolo","lenticchia","fragola","limone","mandarino","quercia","faggio","olmo","pioppo",
-  "salice","pino","abete","cipresso","ulivo","tulipano","girasole","violetta","geranio","lavanda",
-  "gelsomino","edera","felce","ramo","petalo","nebbia","cartolina","metro","calendario","maestro",
-  "contadino","cacciucco","dizionario","squalo","verde","primavera","digitale","vite","frutto","raccolto",
-  "pero","fiore","anello","cavolo","frutta","medica","messe","panico","persa","miseria",
-  "cappella","cappello","canna","cola","mais","veronica","gemma","campeggio","lente","miglio",
-  "oliva","verdura","soia","peperoncino","iris","bottone","calice","giglio","guscio","menta",
-  "concime","mandria","modulo","impasto","sfoglia","ordito","resina","tramonto","bolletta","comodino",
-  "olio","peperone","prato","sabbia","ghiaia","rugiada","brezza","biglietto","francobollo","colla",
-  "postino","argilla","polpo","parcheggio","aria","lega","mica","attivo","argento","pioggia",
-  "agente","fumo","neve","polvere","suolo","vetro","ghiaccio","respiro","benzina","acido",
-  "acciaio","radicale","metallo","petrolio","spazzatura","bronzo","liquido","cartone","fiato","conduttore",
-  "marmo","alcol","malta","ossigeno","fango","fibra","asse","carburante","rame","arena",
-  "solido","nodo","seta","esca","cotone","cristallo","carbonio","alluminio","lava","cenere",
-  "diamante","legna","segatura","estere","cera","elio","lucido","vernice","fluido","corno",
-  "paglia","platino","avorio","ottone","tinta","macerie","sodio","agnello","combustibile","zuppa",
-  "gesso","cuoio","idrogeno","plasma","tartaruga","metano","soda","cartina","potassio","gelo"
+// Vocabolario curato: livello, area, categoria, indizio di significato,
+// tre fasce di familiarità. Le fasce sono criteri editoriali, non misure cliniche.
+// Ogni parola selezionabile ha una categoria e un indizio; Mix usa entrambi i livelli.
+const GRUPPI_PAROLE_CURATE = [
+  ["media","animali","Animale domestico","Immaginalo mentre si muove vicino alle persone o in una fattoria.",[
+    "cane gatto cavallo asino mucca pecora capra maiale coniglio gallina gallo pulcino",
+    "toro puledro agnello capretto vitello pony criceto canarino pappagallo anatra oca tacchino",
+    "somaro giumenta montone scrofa porcellino"
+  ]],
+  ["media","animali","Animale selvatico","Pensa a un animale con il pelo che potresti incontrare in un bosco o vedere allo zoo.",[
+    "volpe lupo orso cervo riccio scoiattolo lepre topo leone tigre elefante giraffa",
+    "cinghiale talpa zebra scimmia gorilla cammello dromedario castoro ippopotamo rinoceronte",
+    "istrice donnola faina lontra stambecco camoscio daino capriolo leopardo ghepardo"
+  ]],
+  ["media","animali","Uccello","Immagina un animale con piume e becco, appoggiato su un ramo o vicino all'acqua.",[
+    "passero rondine merlo piccione gabbiano cigno gufo aquila pinguino pavone",
+    "pettirosso falco airone fenicottero fagiano cicogna corvo gazza colomba upupa",
+    "rondone cardellino usignolo allodola tordo cormorano pellicano quaglia"
+  ]],
+  ["media","animali","Piccolo animale","Cercalo mentalmente fra l'erba, sui fiori o vicino a uno stagno.",[
+    "farfalla formica coccinella mosca zanzara ape vespa ragno lumaca rana",
+    "grillo cavalletta libellula scarabeo bruco lombrico chiocciola rospo lucertola",
+    "calabrone lucciola mantide millepiedi girino ramarro tritone"
+  ]],
+  ["media","animali","Animale acquatico","Immaginalo mentre nuota o si sposta sul fondo del mare.",[
+    "pesce delfino balena squalo polpo granchio medusa tartaruga trota",
+    "sardina tonno merluzzo sogliola sgombro calamaro seppia gambero aragosta",
+    "anguilla acciuga orata branzino salmone cernia dentice scampo cozza vongola"
+  ]],
+  ["media","natura","Gruppo o rifugio di animali","Pensa al luogo dove gli animali si riparano, oppure a tanti esemplari insieme.",[
+    "nido tana branco gregge mandria sciame",
+    "pollaio stalla ovile porcile alveare arnia",
+    "bozzolo formicaio voliera canile gattile stormo"
+  ]],
+  ["media","alimenti","Frutta","Immagina qualcosa di dolce e succoso in un cestino dopo la spesa.",[
+    "mela pera banana arancia limone pesca albicocca ciliegia fragola uva melone anguria",
+    "mandarino lampone mora mirtillo fico prugna cocco ananas kiwi pompelmo",
+    "melagrana caco ribes cedro nespola susina dattero corbezzolo"
+  ]],
+  ["media","alimenti","Ortaggio o legume","Pensa al banco del mercato e a ciò che metteresti in una zuppa o nell'insalata.",[
+    "patata carota pomodoro cipolla zucchina melanzana peperone zucca lattuga insalata",
+    "aglio porro finocchio sedano cavolo broccolo pisello fagiolo cece lenticchia",
+    "ravanello rapa barbabietola cavolfiore carciofo asparago spinacio bietola scarola indivia"
+  ]],
+  ["media","piante","Erba aromatica o spezia","Immagina un profumo che arriva dalla cucina quando insaporisci un piatto.",[
+    "basilico rosmarino salvia prezzemolo menta origano pepe cannella",
+    "timo alloro zafferano peperoncino vaniglia cardamomo",
+    "maggiorana dragoncello cumino coriandolo curcuma anice sesamo"
+  ]],
+  ["media","alimenti","Ingrediente della dispensa","Pensa a quello che pesi, versi o mescoli quando prepari da mangiare.",[
+    "farina zucchero sale olio riso pasta miele aceto latte uovo burro",
+    "lievito cacao semolino pangrattato amido marmellata panna yogurt",
+    "fecola gelatina strutto malto melassa crusca"
+  ]],
+  ["media","alimenti","Panetteria e dolci","Immagina il profumo di una preparazione appena uscita dal forno o dalla pasticceria.",[
+    "pane panino biscotto torta ciambella pizza focaccia crostata",
+    "grissino tarallo brioche croissant muffin plumcake sfogliatina cannolo",
+    "bignè meringa torrone croccante amaretto frollino panettone pandoro"
+  ]],
+  ["media","alimenti","Preparazione da mangiare","Visualizza un piatto già pronto da portare a tavola.",[
+    "minestra zuppa frittata arrosto polpetta risotto lasagna gelato budino",
+    "spezzatino sformato polenta raviolo tortellino cannellone gnocco macedonia",
+    "timballo involtino crocchetta parmigiana omelette brasato strudel soufflé"
+  ]],
+  ["media","alimenti","Prodotto del banco fresco","Immagina una fetta o un pezzetto che il negoziante mette sulla bilancia.",[
+    "formaggio mozzarella ricotta salame prosciutto mortadella salsiccia bistecca",
+    "pecorino provolone caciotta stracchino pancetta coppa bresaola costoletta",
+    "mascarpone gorgonzola taleggio scamorza crescenza culatello speck"
+  ]],
+  ["media","alimenti","Bevanda","Immagina qualcosa che versi in una tazza, un bicchiere o una caraffa.",[
+    "acqua succo tè caffè vino birra cioccolata",
+    "camomilla tisana aranciata limonata sciroppo cappuccino",
+    "spremuta centrifugato frullato chinotto gassosa infuso decotto"
+  ]],
+  ["media","cucina","Oggetto per apparecchiare","Visualizzalo sul tavolo, accanto al piatto e agli altri commensali.",[
+    "piatto tazza bicchiere forchetta cucchiaio coltello tovaglia tovagliolo",
+    "piattino scodella ciotola caraffa vassoio saliera zuccheriera teiera",
+    "zuppiera insalatiera oliera salsiera mestolo sottopiatto sottobicchiere"
+  ]],
+  ["media","cucina","Utensile per preparare il cibo","Immagina le mani che lo usano sul piano della cucina.",[
+    "pentola padella coperchio tagliere imbuto colino grattugia",
+    "scolapasta mattarello frusta cavatappi schiaccianoci pelapatate apriscatole",
+    "setaccio pestello mortaio casseruola teglia stampo schiumarola spremiagrumi"
+  ]],
+  ["media","casa","Apparecchio di casa","Pensa a qualcosa che accendi per svolgere un lavoro domestico.",[
+    "lavatrice frigorifero forno televisore radio telefono ventilatore aspirapolvere",
+    "lavastoviglie congelatore frullatore tostapane bollitore microonde asciugacapelli",
+    "centrifuga vaporiera impastatrice estrattore umidificatore deumidificatore termoventilatore"
+  ]],
+  ["media","casa","Mobile","Immaginalo in una stanza, con oggetti sopra o dentro.",[
+    "tavolo sedia letto armadio divano poltrona comodino mensola",
+    "scaffale cassettiera scrivania libreria credenza sgabello panca",
+    "cassapanca vetrinetta madia comò secretaire dondolo consolle"
+  ]],
+  ["media","casa","Oggetto per il riposo o l'arredo","Pensa a qualcosa che rende una stanza comoda o accogliente.",[
+    "cuscino coperta lenzuolo materasso tappeto tenda lampada specchio",
+    "asciugamano piumone copriletto federa abat-jour cornice candela",
+    "coprimaterasso trapunta candelabro paralume fermatenda arazzo"
+  ]],
+  ["media","casa","Parte della casa","Immagina di attraversare l'edificio e osservare aperture, passaggi e stanze.",[
+    "porta finestra muro tetto pavimento soffitto scala gradino balcone",
+    "corridoio cucina bagno cantina soffitta garage terrazza camino",
+    "mansarda veranda portico pianerottolo abbaino lucernario davanzale stipite"
+  ]],
+  ["media","casa","Dettaglio di un edificio","Pensa a qualcosa fissato a una parete, a un ingresso o lungo il tetto.",[
+    "campanello chiave serratura interruttore presa rubinetto lavandino",
+    "citofono persiana ringhiera grondaia cancello recinto antenna",
+    "cardine architrave balaustra parapetto inferriata battente chiavistello"
+  ]],
+  ["media","cura","Oggetto per pulire","Immagina di usarlo per togliere sporco, polvere o macchie.",[
+    "scopa secchio spugna sapone detersivo spazzola paletta",
+    "strofinaccio straccio spolverino pattumiera zerbino stendino molletta",
+    "accappatoio presina panno spazzolone battipanni candeggina sgrassatore"
+  ]],
+  ["media","cura","Oggetto per la cura personale","Visualizzalo in bagno, vicino al lavandino.",[
+    "pettine dentifricio spazzolino rasoio shampoo fazzoletto",
+    "balsamo deodorante profumo schiuma lima salvietta",
+    "pinzetta bigodino talco collutorio pomata dopobarba"
+  ]],
+  ["media","vestiti","Indumento","Immagina di sceglierlo nell'armadio e indossarlo.",[
+    "camicia maglietta pantaloni gonna giacca cappotto maglione pigiama",
+    "felpa canottiera vestaglia gilet tuta grembiule impermeabile",
+    "cardigan salopette poncho mantella sottoveste calzamaglia giubbotto"
+  ]],
+  ["media","vestiti","Accessorio da indossare","Pensa a qualcosa da mettere prima di uscire, nelle tasche o addosso.",[
+    "scarpa calzino cappello cintura guanto sciarpa borsa ombrello",
+    "stivale sandalo pantofola cravatta berretto foulard portafoglio",
+    "mocassino papillon bretella fibbia visiera passamontagna scialle"
+  ]],
+  ["media","vestiti","Cucito","Immagina ago, stoffa e mani al lavoro per confezionare o riparare un abito.",[
+    "ago filo bottone spillo gomitolo lana stoffa",
+    "ditale cerniera asola fodera ricamo uncinetto matassa",
+    "rocchetto spoletta risvolto polsino ordito telaio merletto"
+  ]],
+  ["media","oggetti","Contenitore","Immagina qualcosa che apri, riempi e richiudi per custodire o trasportare altro.",[
+    "scatola bottiglia barattolo cestino sacco busta valigia zaino",
+    "tanica lattina tubetto flacone thermos borraccia baule cofanetto",
+    "damigiana anfora orcio otre fiasco gerla bisaccia mastello"
+  ]],
+  ["media","oggetti","Piccolo oggetto personale","Pensa a qualcosa che custodisce o accompagna gli oggetti che porti con te.",[
+    "salvadanaio portamonete portagioie custodia anello collana",
+    "bracciale orecchino ciondolo portachiavi astuccio borsello",
+    "tabacchiera portacipria medaglione fermaglio spilla gemello"
+  ]],
+  ["media","lavoro","Oggetto da scrivania","Visualizzalo mentre scrivi, disegni o sistemi dei fogli.",[
+    "penna matita gomma righello quaderno libro foglio pennarello",
+    "temperino compasso cartella raccoglitore graffetta spillatrice evidenziatore",
+    "fermacarte portapenne perforatrice puntina segnalibro taglierino cartuccia"
+  ]],
+  ["media","lavoro","Carta stampata o documento","Immagina di leggerlo, piegarlo o consegnarlo a qualcuno.",[
+    "giornale rivista calendario biglietto cartolina fotografia",
+    "ricevuta scontrino bolletta tessera modulo francobollo",
+    "catalogo atlante dizionario enciclopedia volantino opuscolo locandina"
+  ]],
+  ["media","lavoro","Attrezzo da lavoro","Immagina le mani di un artigiano che riparano o costruiscono qualcosa.",[
+    "martello chiodo vite bullone cacciavite pinza trapano sega",
+    "tenaglia scalpello pialla morsetto cazzuola livella seghetto",
+    "incudine mazzuolo tornio saldatore cesoia lima smerigliatrice"
+  ]],
+  ["media","lavoro","Mestiere","Pensa a una persona e al lavoro che svolge per gli altri.",[
+    "medico maestro cuoco postino sarto contadino muratore falegname",
+    "infermiere pescatore idraulico elettricista meccanico giardiniere cameriere custode",
+    "vetraio mugnaio apicoltore ceramista orafo liutaio ebanista maniscalco"
+  ]],
+  ["media","luoghi","Negozio","Immagina una vetrina e ciò che andresti a comprare entrando.",[
+    "panetteria farmacia supermercato macelleria pasticceria gelateria edicola",
+    "ferramenta cartoleria pescheria profumeria tabaccheria fruttivendolo",
+    "merceria drogheria latteria enoteca torrefazione colorificio emporio"
+  ]],
+  ["media","luoghi","Luogo pubblico","Immagina di uscire di casa per raggiungere un luogo frequentato da altre persone.",[
+    "scuola ospedale chiesa banca museo cinema stadio biblioteca mercato",
+    "municipio ambulatorio officina caserma lavanderia autolavaggio teatro",
+    "pinacoteca conservatorio auditorium caseificio segheria legatoria"
+  ]],
+  ["media","trasporti","Mezzo di trasporto","Immagina un veicolo in movimento su strada, acqua, rotaie o nel cielo.",[
+    "bicicletta automobile autobus treno barca aereo camion motorino",
+    "tram traghetto trattore furgone elicottero carrozza monopattino",
+    "motoscafo dirigibile funivia seggiovia motoslitta camper carroattrezzi"
+  ]],
+  ["media","trasporti","Parte di un veicolo","Pensa a un pezzo che permette a un mezzo di muoversi o protegge chi lo usa.",[
+    "ruota pedale manubrio freno motore volante sella",
+    "cofano parabrezza cruscotto marmitta paraurti portabagagli",
+    "pistone biella carburatore radiatore tachimetro parafango"
+  ]],
+  ["media","trasporti","Strada e viaggio","Immagina il percorso tra casa e una destinazione, con incroci e passaggi.",[
+    "strada ponte stazione binario galleria marciapiede semaforo",
+    "incrocio casello rotonda capolinea biglietteria parcheggio pedaggio",
+    "cavalcavia sottopasso spartitraffico tornante banchina pensilina parcometro"
+  ]],
+  ["media","trasporti","Navigazione","Pensa a una barca ormeggiata e agli oggetti che servono per viaggiare sull'acqua.",[
+    "vela remo timone ancora porto molo canoa",
+    "boa pontile faro scialuppa zattera traghetto",
+    "darsena salvagente gomena bitta scafo oblò prua poppa"
+  ]],
+  ["media","giochi","Gioco o giocattolo","Immagina un passatempo da fare con le mani, da soli o in compagnia.",[
+    "palla dado bambola puzzle scacchi dama tombola altalena",
+    "trottola marionetta domino biglia figurina aquilone trenino",
+    "flipper bigliardino freccette meccano tangram carillon caleidoscopio"
+  ]],
+  ["media","sport","Oggetto per lo sport","Immaginalo durante una partita, una gara o un'attività all'aperto.",[
+    "pallone racchetta boccia birillo pattino slitta",
+    "casco rete fischietto medaglia trofeo sci",
+    "fioretto giavellotto trampolino bersaglio moschettone"
+  ]],
+  ["media","arte","Strumento musicale","Immagina un musicista che lo fa suonare con le mani o con il fiato.",[
+    "chitarra pianoforte violino flauto tromba tamburo campana",
+    "fisarmonica clarinetto mandolino armonica sonaglio arpa",
+    "violoncello contrabbasso oboe fagotto xilofono sassofono"
+  ]],
+  ["media","arte","Disegno e spettacolo","Pensa a chi dipinge un'immagine o prepara una rappresentazione.",[
+    "pennello colore quadro statua ritratto palco",
+    "tavolozza cavalletto acquerello mosaico affresco sipario",
+    "palcoscenico platea spartito scenografia marionettista bozzetto"
+  ]],
+  ["media","natura","Albero","Immagina una pianta alta, con un tronco e rami sopra la testa.",[
+    "pino abete quercia ulivo salice pioppo palma faggio",
+    "olmo cipresso betulla castagno ciliegio pero melo",
+    "ontano larice platano leccio acacia sequoia baobab"
+  ]],
+  ["media","natura","Fiore o pianta ornamentale","Immagina forme e colori in un vaso, in giardino o lungo un sentiero.",[
+    "rosa margherita tulipano girasole violetta geranio lavanda",
+    "gelsomino edera felce giglio ciclamino orchidea glicine",
+    "peonia azalea begonia gardenia magnolia rododendro giacinto"
+  ]],
+  ["media","natura","Dettaglio di una pianta","Immagina di osservare da vicino un albero, un fiore o un frutto.",[
+    "foglia ramo tronco radice seme petalo",
+    "corteccia pigna ghianda guscio germoglio spina",
+    "resina polline pistillo stelo rizoma bulbo"
+  ]],
+  ["media","natura","Giardino e campagna","Immagina un terreno coltivato e gli strumenti o le strutture che vi si trovano.",[
+    "prato orto giardino rastrello zappa carriola serra",
+    "vigneto frutteto fienile mulino aratro falce forcone",
+    "spaventapasseri abbeveratoio mangiatoia semenzaio pergola torchio rastrelliera"
+  ]],
+  ["media","paesaggi","Paesaggio","Immagina il panorama durante una passeggiata o un viaggio.",[
+    "mare montagna collina valle bosco spiaggia isola lago fiume",
+    "pianura cascata grotta scoglio golfo palude sorgente torrente",
+    "brughiera radura valico versante ghiacciaio crinale sottobosco laguna"
+  ]],
+  ["media","paesaggi","Tempo atmosferico","Immagina ciò che vedi o senti all'aperto quando cambia il tempo.",[
+    "sole pioggia neve nuvola vento nebbia",
+    "grandine tuono fulmine arcobaleno rugiada gelo",
+    "brezza foschia brina temporale bufera acquazzone"
+  ]],
+  ["media","materiali","Materiale","Immagina di toccare una superficie e sentirne consistenza, peso e temperatura.",[
+    "legno ferro vetro plastica carta pietra sabbia cotone lana seta",
+    "acciaio rame argento bronzo alluminio cuoio argilla marmo cemento",
+    "ottone gesso granito sughero velluto lino ceramica porcellana"
+  ]],
+  ["media","corpo","Parte del corpo","Immagina un gesto e quale parte del corpo usi per farlo.",[
+    "mano piede braccio gamba testa naso occhio bocca dito dente",
+    "gomito ginocchio spalla polso caviglia tallone guancia mento fronte",
+    "polpaccio pollice nocca ciglio coscia costato dorso scapola"
+  ]],
+  ["difficile","pensiero","Ragionamento","Pensa al modo in cui valuti un problema e arrivi a una conclusione.",[
+    "idea pensiero ragione logica dubbio ipotesi teoria metodo criterio",
+    "deduzione intuizione analogia sintesi inferenza premessa argomentazione",
+    "discernimento induzione astrazione postulato assioma corollario euristica"
+  ]],
+  ["difficile","pensiero","Apprendimento","Pensa a ciò che accade quando impari, capisci o recuperi un'informazione.",[
+    "memoria attenzione conoscenza esperienza osservazione comprensione",
+    "concentrazione apprendimento interpretazione riconoscimento consapevolezza memorizzazione",
+    "metacognizione rievocazione introspezione focalizzazione generalizzazione elaborazione"
+  ]],
+  ["difficile","pensiero","Immaginazione","Immagina di costruire mentalmente qualcosa che non hai davanti agli occhi.",[
+    "fantasia sogno desiderio speranza mistero illusione",
+    "ispirazione creatività invenzione prospettiva aspettativa previsione",
+    "immaginazione intuizione utopia contemplazione anticipazione idealizzazione"
+  ]],
+  ["difficile","qualita","Qualità personale","Pensa a un modo di comportarsi che può aiutare nei rapporti con gli altri.",[
+    "gentilezza rispetto pazienza coraggio fiducia onestà sincerità",
+    "prudenza generosità lealtà modestia cortesia saggezza fermezza",
+    "rettitudine benevolenza magnanimità equanimità avvedutezza scrupolosità"
+  ]],
+  ["difficile","qualita","Impegno personale","Pensa alla costanza necessaria per portare avanti un compito.",[
+    "impegno volontà costanza calma ordine cura dedizione",
+    "perseveranza determinazione disciplina autocontrollo tenacia precisione",
+    "laboriosità solerzia operosità risolutezza abnegazione meticolosità"
+  ]],
+  ["difficile","qualita","Modo di comportarsi","Pensa a un tratto che distingue il modo di agire di una persona.",[
+    "timidezza ambizione orgoglio vanità impazienza ostinazione",
+    "arroganza impulsività diffidenza discrezione riservatezza audacia",
+    "spavalderia puntiglio ritegno compostezza schiettezza caparbietà suscettibilità"
+  ]],
+  ["difficile","emozioni","Sentimento piacevole","Ripensa a come ci si sente quando qualcosa fa stare bene.",[
+    "gioia allegria affetto amore sollievo serenità",
+    "gratitudine entusiasmo ammirazione stupore meraviglia soddisfazione",
+    "appagamento euforia commozione compiacimento delizia beatitudine"
+  ]],
+  ["difficile","emozioni","Sentimento spiacevole","Pensa a uno stato d'animo che si può provare davanti a una difficoltà.",[
+    "tristezza paura rabbia noia vergogna dispiacere",
+    "nostalgia malinconia rimpianto delusione amarezza preoccupazione",
+    "rammarico risentimento inquietudine apprensione sgomento turbamento"
+  ]],
+  ["difficile","relazioni","Rapporto fra persone","Immagina ciò che unisce due persone o un gruppo.",[
+    "amicizia accordo aiuto compagnia vicinanza simpatia",
+    "collaborazione cooperazione solidarietà condivisione appartenenza complicità",
+    "affiatamento reciprocità sintonia empatia mutualità interdipendenza"
+  ]],
+  ["difficile","relazioni","Confronto fra persone","Pensa a modi di esprimere posizioni diverse e cercare un accordo.",[
+    "discussione dialogo conflitto confronto scusa perdono",
+    "compromesso mediazione trattativa negoziazione dissenso obiezione",
+    "riconciliazione conciliazione controversia contraddittorio diplomazia concertazione"
+  ]],
+  ["difficile","comunicazione","Comunicazione","Immagina un'informazione che viene detta, scritta o trasmessa.",[
+    "messaggio notizia domanda risposta consiglio invito promessa",
+    "annuncio dichiarazione comunicazione descrizione conversazione spiegazione",
+    "divulgazione precisazione chiarimento segnalazione raccomandazione attestazione"
+  ]],
+  ["difficile","comunicazione","Linguaggio","Pensa alle regole e alle sfumature con cui usiamo le parole.",[
+    "significato pronuncia traduzione frase parola discorso",
+    "grammatica vocabolario espressione definizione terminologia eloquenza",
+    "sinonimia polisemia metafora perifrasi allusione sottinteso eufemismo"
+  ]],
+  ["difficile","comunicazione","Testo o racconto","Immagina una storia, un libro o un testo con una funzione precisa.",[
+    "racconto poesia romanzo diario favola articolo",
+    "biografia recensione citazione prefazione narrazione sceneggiatura",
+    "antologia bibliografia prologo epilogo didascalia trascrizione cronaca"
+  ]],
+  ["difficile","organizzazione","Organizzazione","Pensa a come preparare, coordinare e portare a termine un'attività.",[
+    "progetto piano programma elenco compito incarico",
+    "preparazione organizzazione pianificazione coordinamento procedura gestione",
+    "programmazione progettazione monitoraggio supervisione razionalizzazione ottimizzazione"
+  ]],
+  ["difficile","organizzazione","Scelta e decisione","Pensa a come scegli fra possibilità diverse.",[
+    "scelta decisione possibilità alternativa opzione priorità",
+    "valutazione selezione preferenza approvazione autorizzazione consenso",
+    "deliberazione ponderazione discrezionalità ratifica determinazione"
+  ]],
+  ["difficile","tempo","Tempo e successione","Pensa a quando accade qualcosa e a quanto dura.",[
+    "inizio fine durata ritardo attesa momento intervallo",
+    "frequenza sequenza successione contemporaneità periodicità ricorrenza",
+    "simultaneità transitorietà persistenza ciclicità sincronia discontinuità"
+  ]],
+  ["difficile","cambiamenti","Cambiamento","Immagina qualcosa che diventa diverso rispetto a prima.",[
+    "crescita calo aumento diminuzione sviluppo variazione",
+    "evoluzione trasformazione adattamento rinnovamento progresso transizione",
+    "mutazione conversione adeguamento consolidamento reversibilità riconversione"
+  ]],
+  ["difficile","misure","Confronto e misura","Pensa a come descrivi quantità, distanze o dimensioni.",[
+    "quantità distanza altezza lunghezza larghezza volume",
+    "proporzione dimensione ampiezza profondità densità intensità",
+    "simmetria asimmetria equivalenza approssimazione gradualità commensurabilità"
+  ]],
+  ["difficile","qualita","Caratteristica di qualcosa","Immagina una qualità con cui descrivere un oggetto, una situazione o un risultato.",[
+    "chiarezza semplicità bellezza utilità novità qualità",
+    "trasparenza solidità elasticità stabilità fragilità complessità",
+    "autenticità concretezza verosimiglianza plausibilità coerenza pertinenza"
+  ]],
+  ["difficile","societa","Vita nella comunità","Pensa a regole, diritti e partecipazione alla vita collettiva.",[
+    "società comunità libertà diritto dovere giustizia",
+    "cittadinanza democrazia istituzione costituzione normativa legalità",
+    "sussidiarietà rappresentanza collegialità pluralismo sovranità autogoverno"
+  ]],
+  ["difficile","societa","Decisioni pubbliche","Immagina persone riunite per scegliere rappresentanti o prendere una decisione comune.",[
+    "elezione voto assemblea governo mandato partito",
+    "referendum coalizione delegazione statuto regolamento legislazione",
+    "emendamento ordinanza mozione municipalità decentramento federalismo"
+  ]],
+  ["difficile","economia","Denaro e scambi","Pensa a ciò che si guadagna, si spende o si mette da parte.",[
+    "risparmio guadagno debito credito prezzo costo pagamento",
+    "investimento finanziamento bilancio rendiconto patrimonio commercio",
+    "inflazione deflazione ammortamento capitalizzazione solvibilità liquidità"
+  ]],
+  ["difficile","economia","Accordo economico","Immagina un impegno scritto fra persone o organizzazioni.",[
+    "contratto prestito affitto garanzia acquisto vendita",
+    "assicurazione abbonamento noleggio ipoteca cauzione rimborso",
+    "franchigia sovvenzione risarcimento locazione concessione convenzione"
+  ]],
+  ["difficile","lavoro","Lavoro e servizi","Pensa alle attività svolte in un ufficio, in un'impresa o per i cittadini.",[
+    "servizio professione impiego attività esperienza competenza",
+    "amministrazione manutenzione assistenza formazione produzione distribuzione",
+    "specializzazione qualificazione automazione rendicontazione approvvigionamento collaudo"
+  ]],
+  ["difficile","scienza","Ricerca e conoscenza","Pensa a come si osserva un fenomeno e si verifica una spiegazione.",[
+    "ricerca scoperta prova esperimento risultato causa effetto",
+    "analisi verifica dimostrazione classificazione correlazione campionamento",
+    "sperimentazione riproducibilità causalità falsificabilità metodologia inferenza"
+  ]],
+  ["difficile","scienza","Materia di studio","Immagina una disciplina che si studia sui libri o in laboratorio.",[
+    "storia geografia matematica fisica chimica biologia",
+    "filosofia psicologia sociologia economia archeologia astronomia",
+    "linguistica antropologia geologia ecologia statistica acustica"
+  ]],
+  ["difficile","ambiente","Ambiente","Pensa a come gli esseri viventi e i luoghi naturali si influenzano.",[
+    "natura clima habitat vegetazione ambiente risorsa",
+    "ecosistema conservazione inquinamento riforestazione biodiversità sostenibilità",
+    "desertificazione erosione sedimentazione impollinazione compostaggio riciclaggio"
+  ]],
+  ["difficile","tecnologia","Tecnologia","Immagina strumenti e sistemi che elaborano o trasmettono informazioni.",[
+    "tecnologia sistema rete collegamento schermo dispositivo",
+    "interfaccia connessione trasmissione archiviazione configurazione applicazione",
+    "interoperabilità tracciabilità modularità digitalizzazione codifica crittografia"
+  ]],
+  ["difficile","arte","Espressione artistica","Pensa a un'opera creata per essere guardata o ascoltata.",[
+    "musica pittura scultura danza teatro canto",
+    "composizione interpretazione recitazione illustrazione decorazione",
+    "stilizzazione figurazione astrattismo minimalismo simbolismo classicismo"
+  ]],
+  ["difficile","arte","Musica e suono","Pensa al modo in cui i suoni si combinano in un brano.",[
+    "melodia ritmo armonia nota accordo silenzio",
+    "sinfonia concerto sonata cadenza tonalità accompagnamento",
+    "contrappunto dissonanza arpeggio modulazione crescendo vibrato"
+  ]],
+  ["difficile","geografia","Forma del territorio","Immagina la forma della terra vista durante un viaggio o su una carta.",[
+    "penisola promontorio altopiano arcipelago istmo estuario",
+    "fiordo canyon insenatura atollo burrone acquitrino",
+    "dolina caldera morena falesia solfatara meandro"
+  ]],
+  ["difficile","geologia","Rocce e sottosuolo","Pensa a ciò che si forma sotto terra, nelle grotte o nei vulcani.",[
+    "cratere sedimento fossile cristallo minerale lava",
+    "basalto stalattite stalagmite quarzo ossidiana zolfo",
+    "scisto feldspato geode calcite pomice tormalina"
+  ]],
+  ["difficile","meteo","Atmosfera","Pensa ai movimenti dell'aria e alle condizioni del cielo.",[
+    "ciclone tornado uragano monsone pressione umidità",
+    "anticiclone perturbazione precipitazione condensazione evaporazione",
+    "isobara troposfera stratosfera cumulonembo anemometro barometro"
+  ]],
+  ["difficile","astronomia","Cielo e spazio","Immagina gli oggetti e i fenomeni che osservi nel cielo notturno.",[
+    "pianeta satellite cometa costellazione meteorite eclissi",
+    "nebulosa asteroide galassia firmamento solstizio equinozio",
+    "perielio afelio zenit nadir supernova pulsar"
+  ]],
+  ["difficile","orientamento","Orientamento e misura","Pensa a come trovi una posizione o misuri una distanza.",[
+    "bussola telescopio mappa planisfero equatore meridiano",
+    "latitudine longitudine parallelo altitudine sestante teodolite",
+    "geodesia parallasse declinazione triangolazione spettrometro rifrattore"
+  ]],
+  ["difficile","architettura","Architettura","Immagina un edificio antico e osservane le parti dall'esterno e dall'interno.",[
+    "facciata navata arcata nicchia guglia colonnato",
+    "abside frontone cornicione rosone transetto campanile",
+    "battistero bifora pinnacolo mausoleo minareto obelisco"
+  ]],
+  ["difficile","artigianato","Opera decorativa","Pensa a un oggetto realizzato con lavorazioni accurate per ornare un ambiente.",[
+    "vetrata maiolica intarsio mosaico arazzo bassorilievo",
+    "trittico reliquiario tabernacolo acquasantiera affresco tempera",
+    "filigrana smalto cesello cammeo tarsia miniatura"
+  ]],
+  ["difficile","animali","Mammifero meno comune","Immaginalo in un documentario, riconoscendone pelo, corpo e movimento.",[
+    "martora puzzola nutria visone muflone marmotta",
+    "ornitorinco narvalo formichiere pangolino zibellino",
+    "okapi caracal vombato echidna vigogna lamantino capibara"
+  ]],
+  ["difficile","animali","Uccello o rettile meno comune","Immagina un animale osservato in un ambiente naturale lontano o in un documentario.",[
+    "salamandra camaleonte svasso marabù ibis",
+    "casuario gruccione tucano albatros pelobate",
+    "gaviale varano basilisco tuatara nibbio gipeto"
+  ]],
+  ["difficile","piante","Pianta meno comune","Immagina un arbusto, un fiore o un albero osservato in un giardino botanico.",[
+    "genziana oleandro tamerice eucalipto corbezzolo",
+    "achillea verbena forsizia lentisco mirto carrubo",
+    "salicornia artemisia elleboro mandragola belladonna tamarindo"
+  ]],
+  ["difficile","botanica","Botanica","Pensa alle parti di una pianta e al modo in cui cresce.",[
+    "radichetta germinazione fioritura semina innesto",
+    "talea stolone infiorescenza corolla sepalo",
+    "fotosintesi clorofilla xilema floema cotiledone"
+  ]],
+  ["difficile","anatomia","Struttura del corpo","Pensa a come scheletro, muscoli e tessuti sostengono i movimenti.",[
+    "vertebra tendine cartilagine femore clavicola rotula",
+    "menisco legamento diaframma perone ulna sterno",
+    "metacarpo metatarso falange acetabolo periostio"
+  ]],
+  ["difficile","anatomia","Organo o struttura interna","Immagina una figura anatomica e una parte che lavora all'interno del corpo.",[
+    "pancreas milza trachea iride laringe",
+    "cervelletto ipofisi alveolo capillare retina",
+    "sinapsi neurone ippocampo cornea aorta"
+  ]],
+  ["difficile","biologia","Processo o sostanza biologica","Pensa a ciò che permette a un organismo di funzionare.",[
+    "digestione respirazione circolazione nutrizione metabolismo",
+    "emoglobina anticorpo enzima piastrina ormone",
+    "omeostasi osmosi mitosi endorfina insulina"
+  ]],
+  ["difficile","movimento","Movimento e trasformazione fisica","Immagina un oggetto che si muove, cambia posizione o cambia stato.",[
+    "rotazione spostamento salita discesa urto rimbalzo",
+    "compressione flessione torsione oscillazione vibrazione fusione",
+    "dilatazione convergenza attrito accelerazione sublimazione diffusione"
+  ]],
+  ["difficile","tempo","Calendario","Pensa a un periodo della vita o a un appuntamento che ritorna.",[
+    "anniversario ricorrenza stagione settimana trimestre semestre",
+    "decennio secolo millennio generazione solennità festività",
+    "biennio triennio quinquennio lustro centenario bicentenario"
+  ]],
+  ["difficile","carattere","Atteggiamento verso gli altri","Pensa a come una persona ascolta, accoglie o giudica chi incontra.",[
+    "ascolto accoglienza disponibilità tolleranza ospitalità",
+    "comprensività imparzialità indulgenza deferenza premura tatto",
+    "accondiscendenza mansuetudine bonarietà pacatezza affabilità benevolenza"
+  ]],
+  ["difficile","astratto","Relazione fra concetti","Pensa a come due idee possono essere collegate o distinguersi.",[
+    "differenza somiglianza relazione connessione opposizione",
+    "contraddizione coincidenza corrispondenza compatibilità dipendenza",
+    "complementarità contiguità correlazione antinomia contingenza"
+  ]]
 ];
-const BLOCCHI_MEDI_PER_CATEGORIA = [12, 50, 12, 12, 10, 8, 10];
 
-const PAROLE_DIFFICILI = [
-  "compromesso","conflitto","dedizione","distacco","esitazione","giustizia","impegno","impulso","influenza","iniziativa",
-  "invidia","lealta","metodo","ordine","percezione","perdono","pericolo","riflesso","riscatto","rispetto",
-  "scelta","tensione","astuzia","cambiamento","adattamento","altruismo","analogia","attenzione","autocontrollo","cooperazione",
-  "determinazione","equita","perseveranza","sensibilita","accettazione","alleanza","apprezzamento","confronto","gentilezza","riconciliazione",
-  "abitudine","decisione","eccezione","evoluzione","frequenza","probabilita","procedimento","progresso","reazione","ripetizione",
-  "sequenza","trasformazione","variazione","accuratezza","coordinamento","interpretazione","osservazione","organizzazione","orientamento","preparazione",
-  "valutazione","disagio","resistenza","riposo","commercio","debito","economia","investimento","risparmio","autorita",
-  "diritto","dovere","estinzione","spettacolo","creazione","affermazione","risposta","comando","obbligo","permesso",
-  "causa","tentativo","compensazione","assenza","permanenza","presenza","estensione","direzione","posizione","apparenza",
-  "contrasto","visione","complessita","autenticita","coincidenza","innovazione","progetto","ricerca","scoperta","tecnologia",
-  "invenzione","adattabilita","moderazione","temperanza","affinita","causalita","deduzione","paragone","classificazione","dimostrazione",
-  "controversia","mediazione","replica","amministrazione","burocrazia","governo","rappresentanza","ordinamento","partecipazione","regolamento",
-  "conservazione","bilanciamento","rinnovamento","tutela","coltivazione","riforestazione","accessibilita","automazione","meccanismo","procedura",
-  "servizio","favore","musica","cura","viaggio","inizio","azione","rischio","commissione","matrimonio",
-  "pratica","misura","battaglia","costituzione","funzione","errore","aumento","critica","disposizione","mancanza",
-  "associazione","violenza","pressione","doppio","missione","collaborazione","operazione","pubblicazione","rivoluzione","sentenza",
-  "pagamento","comportamento","lettura","lezione","applicazione","considerazione","distribuzione","giudizio","partenza","appuntamento",
-  "manifestazione","trattamento","fondazione","educazione","istruzione","promozione","assistenza","presentazione","diffusione","realizzazione",
-  "addio","turismo","riduzione","fatica","industria","introduzione","aggiornamento","lancio","scrittura","fallimento",
-  "sbaglio","approccio","occupazione","corruzione","esecuzione","marcia","residenza","ricostruzione","integrazione","testimonianza",
-  "avventura","doccia","grazia","risoluzione","selezione","verifica","sessione","terapia","trasferimento","dottore",
-  "presidenza","professione","programmazione","cerimonia","finanza","revisione","violazione","approvazione","circolazione","concorrenza",
-  "distruzione","autorizzazione","bacio","immigrazione","magia","esposizione","iscrizione","liberazione","miglioramento","provvedimento",
-  "omaggio","sveglia","appoggio","confusione","rappresentazione","redazione","agricoltura","sospensione","danza","sostituzione",
-  "elezione","competizione","pittura","manutenzione","espansione","sorveglianza","allenamento","divertimento","funzionamento","insegnamento",
-  "prevenzione","pulizia","sondaggio","giornalismo","modifica","riproduzione","adozione","legislazione","beneficio","custodia",
-  "separazione","finanziamento","navigazione","fusione","sacrificio","salvezza","seminario","divorzio","scarica","esperimento",
-  "invasione","cassazione","magistratura","tradimento","sfruttamento","censura","diminuzione","donazione","eliminazione","esplosione",
-  "assunzione","attuazione","combattimento","prestazione","risarcimento","segreteria","abitazione","conversione","isolamento","cortesia",
-  "estrazione","mantenimento","monitoraggio","abbraccio","assedio","beneficenza","esclusione","lavorazione","progettazione","coinvolgimento",
-  "ambiguita","benevolenza","cautela","coerenza","disciplina","discrezione","dubbio","entusiasmo","equilibrio","evidenza",
-  "fiducia","franchezza","inerzia","ingegno","ironia","liberta","limite","merito","modestia","ostinazione",
-  "pazienza","prudenza","rigore","saggezza","sfumatura","silenzio","simmetria","solitudine","tolleranza","urgenza",
-  "coscienza","arroganza","ambizione","apatia","armonia","carisma","certezza","chiarezza","affidabilita","autorevolezza",
-  "coraggio","flessibilita","intraprendenza","solidarieta","tenacia","complicita","vicinanza","convenienza","precedenza","competenza",
-  "concentrazione","correttezza","espressione","precisione","calma","impazienza","incertezza","indifferenza","preoccupazione","tenerezza",
-  "energia","abbondanza","carestia","guadagno","atmosfera","melodia","ritmo","definizione","effetto","origine",
-  "scopo","significato","vantaggio","svantaggio","durata","ritardo","successione","ampiezza","confine","distanza",
-  "proporzione","dimensione","immagine","somiglianza","trasparenza","difficolta","concretezza","esattezza","imprecisione","verosimiglianza",
-  "interesse","audacia","costanza","fermezza","risolutezza","zelo","deferenza","diffidenza","indulgenza","simpatia",
-  "sintonia","contemporaneita","immediatezza","astrattezza","consistenza","leggerezza","morbidezza","volume","approssimazione","accordo",
-  "desiderio","giurisdizione","momento","sicurezza","voglia","valore","differenza","importanza","maggioranza","onore",
-  "bellezza","potenza","passione","patrimonio","tendenza","temperatura","altezza","atteggiamento","impressione","lunghezza",
-  "vigore","licenza","composizione","gloria","ricchezza","calore","taglia","caratteristica","marchio","eccellenza",
-  "minoranza","odore","ignoranza","efficacia","perfezione","grigio","corrispondenza","grandezza","striscia","sapienza",
-  "rilevanza","distinzione","dolcezza","macchia","debolezza","estetica","larghezza","adesione","misericordia","agio",
-  "qualifica","rosario","tenore","attrazione","animazione","fortezza","privilegio","eleganza","carenza","furia",
-  "compassione","ipocrisia","pregio","splendore","ingiustizia","giovinezza","cavalleria","prevalenza","sufficienza","bagaglio",
-  "astrazione","concetto","convinzione","credenza","dilemma","essenza","gerarchia","illusione","inquietudine","intenzione",
-  "intuizione","ipotesi","istinto","logica","memoria","mistero","morale","pensiero","prospettiva","sospetto",
-  "speranza","teoria","tradizione","buonsenso","anticipazione","apprendimento","argomentazione","aspettativa","consapevolezza","generosita",
-  "motivazione","spontaneita","condivisione","circostanza","esperienza","conoscenza","efficienza","ragionamento","riconoscimento","apprensione",
-  "comunita","democrazia","istituzione","cultura","letteratura","commento","informazione","linguaggio","opinione","avvertenza",
-  "condizione","fondamento","principio","ragione","soluzione","spiegazione","alternativa","criterio","proposta","strategia",
-  "dettaglio","ombra","facilita","ostacolo","ispirazione","sperimentazione","immaginazione","gradualita","densita","generalizzazione",
-  "inferenza","premessa","previsione","sintesi","persuasione","collettivita","storia","esempio","politica","amore",
-  "media","versione","settore","riferimento","dolore","categoria","fisica","tecnica","argomento","scienza",
-  "filosofia","sensazione","matematica","genio","conclusione","rumore","buio","chimica","fattore","sentimento",
-  "fantasia","riflessione","opzione","sapore","fastidio","intelligenza","elettronica","comprensione","informatica","convenzione",
-  "psicologia","statistica","ingegneria","etica","meccanica","giurisprudenza","concezione","reputazione","chirurgia","punteggio",
-  "linguistica","ideologia","dinamica","foggia","andamento","geografia","noia","pianificazione","ottica","proiezione",
-  "affidamento","rivelazione","socialismo","tattica","biologia","pregiudizio","grammatica","successore","ricambio","teologia",
-  "configurazione","giustificazione","genetica","comunismo","illuminazione","ossessione","suggerimento","vocabolario","cronologia","vocazione",
-  "immaginario","tentazione","meditazione","geometria","sistematica","apparizione","deliberazione","sociologia","archeologia","attribuzione",
-  "itinerario","presunzione","veglia","correlazione","nazionalismo","anatomia","attitudine","imposizione","nozione","profezia",
-  "imitazione","individuazione","ritrovamento","antropologia","accertamento","cospirazione","assaggio","distrazione","finzione","intolleranza",
-  "mania","bravura","consuetudine","delicatezza","ecologia","perizia","abbinamento","populismo","bivio","dialettica",
-  "scetticismo","acustica","astronomia","guaio","conteggio","mistica","predisposizione","liberalismo","connotazione","farmaceutica",
-  "psichiatria","retaggio","accezione","aeronautica","fisiologia","idiozia","sciocchezza","arbitrio","delizia","dogmatismo",
-  "restrizione","folklore","padronanza","precauzione","aviazione","constatazione","idraulica","eresia","sismica","coordinazione",
-  "consenso","contesto","curiosita","novita","paradosso","utopia","vanita","stabilita","dialogo","contraddizione",
-  "eventualita","relazione","fragilita","contratto","ecosistema","narrazione","poesia","teatro","comunicazione","descrizione",
-  "domanda","concessione","consiglio","divieto","invito","promessa","priorita","intervallo","profilo","incapacita",
-  "transizione","intensita","dissenso","negoziazione","obiezione","trattativa","dispositivo","interfaccia","strumentazione","trasmissione",
-  "spazio","messaggio","notizia","signore","premio","contrario","edizione","sezione","discussione","traduzione",
-  "episodio","dichiarazione","conferenza","minaccia","collezione","annuncio","denuncia","conversazione","garanzia","orario",
-  "audio","specifica","saggio","archivio","collegamento","accoglienza","assicurazione","diario","documentazione","commedia",
-  "documentario","foglio","polemica","citazione","procura","recensione","retorica","colloquio","dedica","petizione",
-  "rubrica","pronuncia","testamento","indicazione","consulenza","invio","rinuncia","ammissione","segnalazione","fattura",
-  "abbonamento","cessione","confessione","denominazione","bibliografia","ordinanza","fantascienza","giuramento","decorazione","menzione",
-  "benedizione","biografia","emendamento","esibizione","freccia","ringraziamento","sanzione","cancellazione","sistemazione","istanza",
-  "maledizione","scoppio","traduttore","indizio","trio","cauzione","conduzione","rinvio","mozione","deposizione",
-  "parodia","delirio","divulgazione","negazione","sceneggiatura","tematica","prefazione","confidenza","antologia","avvertimento",
-  "concordia","equazione","trascrizione","interrogatorio","noleggio","diffamazione","ampliamento","bugia","lamento","complimento",
-  "contestazione","locazione","aspirazione","illustrazione","lirica","telefonia","annullamento","cadenza","umorismo","accompagnamento",
-  "disinformazione","inversione","recitazione","notiziario","annunzio","interrogazione","raccomandazione","augurio","enciclopedia","allestimento",
-  "fischio","sommario","supplemento","oratorio","proverbio","predica","tipografia","fidanzamento","scansione","archiviazione",
-  "epica","terminologia","dicitura","complemento","contraddittorio","elogio","incoraggiamento","precisazione","promemoria","litigio",
-  "bestemmia","contenimento","immondizia","insistenza","chiarimento","contrattazione","amnistia","catechismo","questionario","conciliazione",
-  "eufemismo","oltraggio","apologia","proclamazione","sinfonia","grafia","ordinazione","ratifica","congiura","esagerazione",
-  "destino","verita","indipendenza","avvenimento","casualita","conseguenza","occasione","sorpresa","profondita","luminosita",
-  "inevitabilita","commozione","meraviglia","sostenibilita","funzionalita","vittoria","emergenza","tragedia","combinazione","avvio",
-  "celebrazione","rotazione","inaugurazione","interruzione","spostamento","scia","infortunio","demolizione","insediamento","epidemia",
-  "frattura","atletica","compressione","ricevimento","sepoltura","dispersione","raffreddamento","lesione","ricorrenza","avvicinamento",
-  "eruzione","cessazione","commemorazione","consolidamento","contagio","avanzamento","naufragio","progressione","immersione","adeguamento",
-  "mutazione","alterazione","convergenza","interferenza","mutamento","collisione","fecondazione","innalzamento","distorsione","flessione",
-  "empatia","gratitudine","identita","malinconia","nostalgia","orgoglio","rammarico","rimpianto","risentimento","stupore",
-  "timore","vergogna","capriccio","ammirazione","appartenenza","lucidita","vulnerabilita","affetto","dipendenza","delusione",
-  "euforia","sollievo","tristezza","appetito","stanchezza","preferenza","potenzialita","relativita","avversione","intimita",
-  "periodicita","appagamento","esaltazione","rimorso","sgomento","turbamento","paura","odio","rabbia","ansia",
-  "sofferenza","terrore","disperazione","emozione","umore","gelosia","devozione","angoscia","frustrazione","rancore",
-  "ottimismo","allegria","indignazione","abbattimento","agitazione","inclinazione","insicurezza","gradimento","amarezza","pessimismo",
-  "decadenza","mentalita","rassegnazione","virtu","creativita","ospitalita","continuita","guarigione","scultura","scorrimento",
-  "qualita","validita","rivalita","provvisorieta","rigidita","serenita","sovranita","incremento","emissione","inflazione",
-  "repressione","elaborazione","espulsione","scioglimento","approfondimento","ricarica","attivazione","scissione","assorbimento","nutrizione",
-  "evacuazione","maturazione","dissoluzione","smaltimento","derivazione","fioritura","peggioramento","accensione","rigenerazione","proliferazione",
-  "dignita","realta","volonta","obiettivita","reciprocita","opportunita","legalita","simultaneita","quantita","versatilita",
-  "regolarita","solidita","biodiversita","connessione","opposizione","operatore","rendimento","qualificazione","inclusione","incidenza",
-  "autonomia","eternita","uguaglianza","disponibilita","amicizia","adolescenza","possibilita","situazione","benessere","salute",
-  "cittadinanza","normativa","ambiente","clima","vegetazione","inquinamento","semplicita","uniformita","vitalita","sudditanza",
-  "temporaneita","spessore","rivendicazione","soddisfazione","urbanizzazione","compagnia","esistenza","dominio","disoccupazione","infanzia",
-  "sopravvivenza","gravidanza","udienza","infezione","ordinario","monopolio","prestigio","vizio","convivenza","detenzione",
-  "patologia","travaglio","rapimento","reclusione","innocenza","inserimento","smarrimento","mucchio","prigionia","insufficienza",
-  "dominazione","purezza","coesione","erezione","recessione","sussistenza","incisione","asimmetria","raffreddore","anomalia",
-  "massoneria","colpevolezza","inadeguatezza","allontanamento","eccitazione","esenzione","umiliazione","aura","oppressione","assuefazione",
-  "anestesia","infiammazione","curvatura","fermento","statura","anarchia","avvelenamento","cordoglio","frizione","insonnia",
-  "sincerita","tranquillita","elasticita","responsabilita","scadenza","societa","velocita","traiettoria","utilita","diversita",
-  "maggio","luglio","febbraio","gennaio","domenica","pomeriggio","generazione","vacanza","decennio","anniversario"
-];
-const BLOCCHI_DIFFICILI_PER_CATEGORIA = [30, 18, 22, 20, 6, 6, 4, 2, 8, 2];
-
-// Espansioni curate: quattro nuove aree semantiche per raccolta.
-// Dentro ogni area i tre blocchi procedono da familiare a meno comune.
-const PAROLE_MEDIE_AGGIUNTIVE = [
-  // Utensili e strumenti
-  "scolapasta","grattugia","cavatappi","schiaccianoci","saliera","zuccheriera","teiera","caffettiera","piattino","zuppiera",
-  "scalpello","pialla","morsetto","incudine","mazzuolo","cazzuola","seghetto","livella","cesoia","saldatore",
-  "tornio","crogiolo","mortaio","pestello","alambicco","matraccio","ampolla","storta","sestante","astrolabio",
-
-  // Casa, tessuti e architettura
-  "molletta","zerbino","pattumiera","strofinaccio","appendiabiti","stendino","cesta","spolverino","accappatoio","presina",
-  "rocchetto","ditale","spoletta","gomitolo","uncinetto","matassa","cerniera","asola","spillo","manichino",
-  "abbaino","loggiato","timpano","colonnato","balaustra","capitello","bugnato","contrafforte","lucernario","chiostro",
-
-  // Scrivania, navigazione e automobile
-  "spillatrice","graffetta","perforatrice","evidenziatore","calcolatrice","raccoglitore","fermacarte","portapenne","pennarello","puntina",
-  "timone","ancora","vela","remo","boa","faro","molo","pontile","darsena","scialuppa",
-  "pistone","biella","carburatore","marmitta","radiatore","parafango","paraurti","cruscotto","tachimetro","portabagagli",
-
-  // Spazi esterni, campagna e natura
-  "parcometro","tornello","segnavia","cartello","banchina","sottovia","cavalcavia","spartitraffico","chiosco","capannone",
-  "spaventapasseri","abbeveratoio","mangiatoia","frutteto","porcile","ovile","siepe","pergola","rastrelliera","torchio",
-  "torbiera","mangrovia","betulla","ontano","ginepro","sambuco","agrifoglio","biancospino","caprifoglio","giunco"
-];
-
-// Dieci aree ulteriori: ogni gruppo contiene tre fasce da dieci parole.
-// L'ordine interno permette al motore adattivo di alzare la complessità
-// senza cambiare bruscamente argomento o proporre liste monotone.
-const PAROLE_MEDIE_ESPANSIONE = [
-  // Animali
-  "elefante","zebra","giraffa","pinguino","pappagallo","pavone","tacchino","criceto","ippopotamo","rinoceronte",
-  "cammello","dromedario","gorilla","koala","castoro","istrice","donnola","fagiano","fenicottero","airone",
-  "alpaca","suricato","tapiro","armadillo","mangusta","stambecco","ermellino","pellicano","cormorano","upupa",
-
-  // Abbigliamento e accessori
-  "pantaloni","gonna","cravatta","berretto","stivali","sandali","guanto","vestaglia","felpa","canottiera",
-  "cardigan","gilet","salopette","tuta","impermeabile","collant","mocassino","fibbia","bretella","foulard",
-  "poncho","papillon","mantella","sottoveste","calzamaglia","polsino","alamaro","mostrina","passamontagna","visiera",
-
-  // Negozi e luoghi
-  "supermercato","ospedale","macelleria","pasticceria","lavanderia","ferramenta","tabaccheria","gelateria","parrucchiere","distributore",
-  "pescheria","fruttivendolo","cartoleria","profumeria","drogheria","latteria","torrefazione","autolavaggio","caserma","auditorium",
-  "merceria","colorificio","enoteca","tappezzeria","legatoria","segheria","caseificio","emporio","biscottificio","conservatorio",
-
-  // Alimenti
-  "mozzarella","ricotta","salame","mortadella","salsiccia","bistecca","merluzzo","sardina","gambero","grissino",
-  "baccalà","sgombro","sogliola","calamaro","seppia","raviolo","tortellino","cannellone","gnocco","croissant",
-  "caciotta","provolone","pecorino","stracchino","mascarpone","tarallo","frisella","mostarda","cappero","scalogno",
-
-  // Giochi e passatempi
-  "scacchi","domino","tombola","dama","trottola","bambola","marionetta","flipper","freccette","bigliardino",
-  "yoyo","gettone","biglia","figurina","modellino","trenino","burattino","coriandolo","festone","girandola",
-  "caleidoscopio","diorama","meccano","tangram","rompicapo","carillon","fionda","cerbottana","origami","boomerang",
-
-  // Mestieri
-  "idraulico","elettricista","cameriere","giardiniere","calzolaio","benzinaio","cassiere","imbianchino","meccanico","custode",
-  "bibliotecario","bidello","lattoniere","vetraio","floricoltore","ceramista","orafo","pastore","mugnaio","apicoltore",
-  "arrotino","liutaio","ebanista","scalpellino","ramaio","bottaio","cestaio","carradore","maniscalco","rilegatore",
-
-  // Elettrodomestici e apparecchi
-  "frigorifero","forno","congelatore","microonde","lavastoviglie","asciugatrice","phon","telecomando","stampante","cuffia",
-  "stereo","giradischi","altoparlante","decoder","videocamera","caricabatterie","spremiagrumi","vaporiera","affettatrice","tritacarne",
-  "mangianastri","proiettore","cinepresa","megafono","grammofono","tostiera","tritatutto","passaverdure","macinacaffè","deumidificatore",
-
-  // Mezzi e macchine
-  "taxi","camper","roulotte","locomotiva","vagone","funivia","seggiovia","gommone","betoniera","ruspa",
-  "rimorchio","autoscontro","cisterna","mietitrebbia","bulldozer","escavatore","spazzaneve","autogru","carroattrezzi","motoslitta",
-  "aliscafo","catamarano","gondola","chiatta","peschereccio","rimorchiatore","motovedetta","funicolare","monorotaia","vaporetto",
-
-  // Orto ed erbe aromatiche
-  "sedano","finocchio","ravanello","cetriolo","porro","bietola","spinacio","broccolo","barbabietola","rapa",
-  "basilico","rosmarino","salvia","prezzemolo","origano","timo","alloro","rucola","cicoria","indivia",
-  "dragoncello","maggiorana","santoreggia","borragine","tarassaco","crescione","cerfoglio","cardo","topinambur","pastinaca",
-
-  // Contenitori
-  "scatola","bidone","tanica","lattina","tubetto","flacone","thermos","salvadanaio","portagioie","portamonete",
-  "damigiana","fiasco","borraccia","baule","cofanetto","boccale","anfora","otre","orcio","tabacchiera",
-  "bisaccia","gerla","bigoncio","mastello","madia","cassapanca","portavivande","portacipria","faretra","sportina"
-];
-const PAROLE_MEDIE_COMPLETE = PAROLE_MEDIE.concat(PAROLE_MEDIE_AGGIUNTIVE, PAROLE_MEDIE_ESPANSIONE);
-const BLOCCHI_MEDI_COMPLETI = BLOCCHI_MEDI_PER_CATEGORIA.concat([3, 3, 3, 3], Array(10).fill(3));
-
-const PAROLE_DIFFICILI_AGGIUNTIVE = [
-  // Pensiero, logica e filosofia
-  "discernimento","ponderazione","razionalità","pertinenza","plausibilità","contemplazione","introspezione","focalizzazione","memorizzazione","comprensibilità",
-  "induzione","abduzione","falsificabilità","assioma","postulato","corollario","tautologia","antinomia","aporia","euristica",
-  "ontologia","fenomenologia","teleologia","immanenza","trascendenza","alterità","contingenza","universalità","particolarità","intersoggettività",
-
-  // Relazioni, linguaggio e retorica
-  "mutualità","cordialità","affiatamento","diplomazia","riservatezza","eloquenza","sobrietà","tatto","garbo","ascolto",
-  "polisemia","sinonimia","antonimia","metafora","metonimia","perifrasi","ellissi","allusione","sottinteso","digressione",
-  "isotopia","deissi","anafora","catafora","iperbato","sineddoche","litote","chiasmo","anacoluto","paratassi",
-
-  // Tempo, organizzazione e sistemi
-  "alternanza","ciclicità","transitorietà","persistenza","mutabilità","reversibilità","durevolezza","sincronia","ricorsività","caducità",
-  "sussidiarietà","collegialità","rappresentatività","decentramento","concertazione","municipalità","territorialità","interdipendenza","pluralismo","civismo",
-  "fungibilità","esternalità","complementarità","sostituibilità","scalarità","modularità","interoperabilità","tracciabilità","convertibilità","commensurabilità",
-
-  // Qualità, rappresentazione e relazioni astratte
-  "integrità","equanimità","imparzialità","rettitudine","laboriosità","parsimonia","avvedutezza","solerzia","scrupolosità","pacatezza",
-  "cromatismo","tonalità","plasticità","stilizzazione","figurazione","astrattismo","classicismo","minimalismo","simbolismo","virtuosismo",
-  "diacronia","atemporalità","ubiquità","reticolarità","granularità","capillarità","permeabilità","contiguità","discontinuità","nonlinearità"
-];
-// Otto aree ulteriori, anch'esse ordinate su tre fasce progressive.
-const PAROLE_DIFFICILI_ESPANSIONE = [
-  // Anatomia e medicina
-  "vertebra","tendine","cartilagine","capillare","diaframma","iride","pancreas","milza","trachea","femore",
-  "menisco","legamento","laringe","cervelletto","clavicola","rotula","scapola","perone","ulna","ipofisi",
-  "alveolo","sinapsi","neurone","emoglobina","piastrina","enzima","anticorpo","cortisolo","dopamina","metabolismo",
-
-  // Geologia, territorio e meteorologia
-  "erosione","sedimento","cratere","fiordo","canyon","altopiano","promontorio","arcipelago","istmo","estuario",
-  "acquitrino","burrone","insenatura","basalto","stalattite","atollo","morena","scisto","geyser","monsone",
-  "caldera","solfatara","dolina","isobara","anticiclone","sismografo","epicentro","tettonica","orografia","permafrost",
-
-  // Astronomia, orientamento e misurazione
-  "meridiano","equatore","firmamento","planetario","cometa","zodiaco","costellazione","telescopio","bussola","meteorite",
-  "solstizio","equinozio","zenit","nadir","nebulosa","asteroide","cosmologia","planisfero","latitudine","longitudine",
-  "perielio","afelio","parallasse","magnetosfera","esosfera","spettrometro","interferometro","rifrattore","declinazione","geodesia",
-
-  // Architettura e opere artistiche
-  "facciata","navata","abside","arcata","sagrestia","guglia","frontone","nicchia","maiolica","vetrata",
-  "lunetta","cornicione","rosone","transetto","campanile","battistero","porticato","tempera","acquasantiera","intarsio",
-  "trittico","reliquiario","arazzo","minareto","obelisco","catacomba","bifora","pinnacolo","mausoleo","tabernacolo",
-
-  // Animali meno comuni
-  "martora","puzzola","nutria","visone","faina","lontra","salamandra","tritone","quaglia","svasso",
-  "zibellino","ornitorinco","pangolino","narvalo","camoscio","muflone","camaleonte","marabù","ibis","formichiere",
-  "okapi","caracal","casuario","gaviale","vombato","echidna","vigogna","lamantino","capibara","gruccione",
-
-  // Piante, alberi e spezie
-  "genziana","oleandro","corbezzolo","tamerice","larice","sequoia","baobab","acacia","eucalipto","magnolia",
-  "achillea","verbena","forsizia","gardenia","ciclamino","rododendro","glicine","begonia","azalea","peonia",
-  "carrubo","lentisco","mirto","salicornia","artemisia","belladonna","elleboro","mandragola","cardamomo","tamarindo",
-
-  // Carattere e comportamento
-  "premura","ritegno","compostezza","spavalderia","puntiglio","assennatezza","bonarietà","schiettezza","docilità","operosità",
-  "accondiscendenza","remissività","irrequietezza","irascibilità","meticolosità","prodigalità","taciturnità","caparbietà","suscettibilità","mansuetudine",
-  "magnanimità","indolenza","alterigia","sagacia","abnegazione","veemenza","imperturbabilità","meschinità","permalosità","impassibilità",
-
-  // Società, economia e istituzioni
-  "referendum","mandato","coalizione","assemblea","delegazione","statuto","rendiconto","credito","ipoteca","fiscalità",
-  "federalismo","autogoverno","protezionismo","liberismo","oligopolio","perequazione","sovvenzione","contributo","franchigia","partenariato",
-  "deflazione","indicizzazione","capitalizzazione","ammortamento","solvibilità","liquidità","esigibilità","cartolarizzazione","redistribuzione","extraterritorialità"
-];
-const PAROLE_DIFFICILI_COMPLETE = PAROLE_DIFFICILI.concat(PAROLE_DIFFICILI_AGGIUNTIVE, PAROLE_DIFFICILI_ESPANSIONE);
-const BLOCCHI_DIFFICILI_COMPLETI = BLOCCHI_DIFFICILI_PER_CATEGORIA.concat([3, 3, 3, 3], Array(8).fill(3));
+const SCHEDE_PAROLE = Object.create(null);
+for (const gruppo of GRUPPI_PAROLE_CURATE) {
+  for (let fascia = 0; fascia < gruppo[4].length; fascia++) {
+    for (const parola of gruppo[4][fascia].split(" ")) {
+      const chiave = normalizza(parola);
+      if (!chiave || SCHEDE_PAROLE[chiave]) continue;
+      SCHEDE_PAROLE[chiave] = {
+        parola: parola, livello: gruppo[0], area: gruppo[1],
+        categoria: gruppo[2], indizio: gruppo[3], fascia: fascia
+      };
+    }
+  }
+}
+const PAROLE_MEDIE_COMPLETE = Object.values(SCHEDE_PAROLE).filter(function (p) {
+  return p.livello === "media";
+}).map(function (p) { return p.parola; });
+const PAROLE_DIFFICILI_COMPLETE = Object.values(SCHEDE_PAROLE).filter(function (p) {
+  return p.livello === "difficile";
+}).map(function (p) { return p.parola; });
 
 const VITA_QUOTIDIANA = {
   spesa: {
@@ -1543,91 +1672,6 @@ function fasciaSicura(valore) {
   return 0;
 }
 
-function intervalloFascia(numeroBlocchi, fascia) {
-  const inizio = Math.floor(numeroBlocchi * fascia / 3);
-  const fine = fascia === 2 ? numeroBlocchi :
-    Math.floor(numeroBlocchi * (fascia + 1) / 3);
-  if (fine > inizio) return { inizio: inizio, fine: fine };
-
-  const posizione = Math.min(inizio, Math.max(0, numeroBlocchi - 1));
-  return { inizio: posizione, fine: Math.min(numeroBlocchi, posizione + 1) };
-}
-
-function pescaDaRaccolta(elenco, conteggi, fascia, quantita, escluse, escluseSempre) {
-  const fasciaCorrente = fasciaSicura(fascia);
-  const paroleEscluse = Array.isArray(escluse) ? escluse : [];
-  const chiaviVietate = (Array.isArray(escluseSempre) ? escluseSempre : []).map(normalizza);
-  const categorie = [];
-  let posizione = 0;
-
-  function vietata(parola) {
-    return chiaviVietate.indexOf(normalizza(parola)) !== -1;
-  }
-
-  // Ogni blocco contiene dieci parole della stessa area semantica.
-  // In ogni area i blocchi sono ordinati dal più familiare al meno comune.
-  // Le tre fasce restano interne: il giocatore vede soltanto Media, Mix o Difficile.
-  for (let i = 0; i < conteggi.length; i++) {
-    const blocchiArea = [];
-
-    for (let j = 0; j < conteggi[i]; j++) {
-      const blocco = elenco.slice(posizione, posizione + 10);
-      posizione = posizione + 10;
-      if (blocco.length > 0) blocchiArea.push(blocco);
-    }
-
-    const intervallo = intervalloFascia(blocchiArea.length, fasciaCorrente);
-    const area = blocchiArea.slice(intervallo.inizio, intervallo.fine);
-    const confinanti = [];
-    if (fasciaCorrente > 0) {
-      const precedente = intervalloFascia(blocchiArea.length, fasciaCorrente - 1);
-      confinanti.push.apply(confinanti,
-        blocchiArea.slice(precedente.inizio, precedente.fine));
-    }
-    if (fasciaCorrente < 2) {
-      const successiva = intervalloFascia(blocchiArea.length, fasciaCorrente + 1);
-      confinanti.push.apply(confinanti,
-        blocchiArea.slice(successiva.inizio, successiva.fine));
-    }
-
-    mescola(area);
-    mescola(confinanti);
-    if (area.length > 0 || confinanti.length > 0) {
-      categorie.push({ correnti: area, confinanti: confinanti });
-    }
-  }
-  mescola(categorie);
-
-  const scelte = [];
-  while (scelte.length < quantita && categorie.some(function (area) {
-    return area.correnti.length > 0 || area.confinanti.length > 0;
-  })) {
-    for (let i = 0; i < categorie.length && scelte.length < quantita; i++) {
-      const categoria = categorie[i];
-      const haCorrenti = categoria.correnti.length > 0;
-      const haConfinanti = categoria.confinanti.length > 0;
-      if (haCorrenti || haConfinanti) {
-        // Circa una scelta su cinque arriva dalla fascia vicina. La probabilità
-        // viene applicata al momento dell'estrazione: anche un'area con un solo
-        // blocco per fascia mantiene davvero il rapporto 80/20.
-        let sorgente = categoria.correnti;
-        if (!haCorrenti || (haConfinanti && Math.random() < 0.20)) {
-          sorgente = categoria.confinanti;
-        }
-        const blocco = sorgente.pop();
-        let disponibili = blocco.filter(function (parola) {
-          return !vietata(parola) && paroleEscluse.indexOf(parola) === -1 &&
-            scelte.indexOf(parola) === -1;
-        });
-        if (disponibili.length === 0) continue;
-        const parola = disponibili[Math.floor(Math.random() * disponibili.length)];
-        if (scelte.indexOf(parola) === -1) scelte.push(parola);
-      }
-    }
-  }
-  mescola(scelte);
-  return scelte;
-}
 
 function paroleDaEvitareOggi() {
   const oggi = chiaveData(new Date());
@@ -1686,28 +1730,6 @@ function paroleProtetteDaRipetizioni() {
   return uniche;
 }
 
-function completaScelteSenzaRipetizioni(scelte, raccolte, quantita, escluse) {
-  const vietate = {};
-  const tutteEscluse = Array.isArray(escluse) ? escluse : [];
-  for (let i = 0; i < tutteEscluse.length; i++) vietate[normalizza(tutteEscluse[i])] = true;
-  for (let i = 0; i < scelte.length; i++) vietate[normalizza(scelte[i])] = true;
-
-  const candidate = [];
-  for (let i = 0; i < raccolte.length; i++) {
-    const raccolta = raccolte[i];
-    for (let j = 0; j < raccolta.length; j++) {
-      const parola = raccolta[j];
-      const chiave = normalizza(parola);
-      if (chiave !== "" && !vietate[chiave]) {
-        vietate[chiave] = true;
-        candidate.push(parola);
-      }
-    }
-  }
-  mescola(candidate);
-  while (scelte.length < quantita && candidate.length > 0) scelte.push(candidate.pop());
-  return scelte;
-}
 
 function creaIdLista(parole) {
   let valore = 2166136261;
@@ -1771,63 +1793,69 @@ function creaRecuperoGuidato(mancate) {
 }
 
 function pescaParole() {
-  const fascia = fasciaSicura(stato.fasciaParole);
   const recenti = paroleProtetteDaRipetizioni();
-  const vietateOggi = paroleDaEvitareOggi();
-  const escluse = recenti.concat(vietateOggi);
-  let scelte;
+  const ieri = serieDaRichiamare();
+  const vietateOggi = paroleDaEvitareOggi().concat(ieri ? ieri.parole : []);
+  const escluse = new Set(recenti.concat(vietateOggi).map(normalizza));
+  const vietate = new Set(vietateOggi.map(normalizza));
+  const scelte = [];
+  const areeUsate = {};
+  const fascia = fasciaSicura(stato.fasciaParole);
 
-  if (stato.difficolta === "mix") {
-    // Mix ha una progressione propria: cresce gradualmente il peso delle parole
-    // difficili, senza mostrare questa regolazione tecnica al giocatore.
-    const rapporti = [
-      { medie: 10, difficili: 5 },
-      { medie: 8, difficili: 7 },
-      { medie: 6, difficili: 9 }
-    ];
-    const rapporto = rapporti[fascia];
-    const medie = pescaDaRaccolta(
-      PAROLE_MEDIE_COMPLETE, BLOCCHI_MEDI_COMPLETI, fascia, rapporto.medie, recenti, vietateOggi
-    );
-    const difficili = pescaDaRaccolta(
-      PAROLE_DIFFICILI_COMPLETE, BLOCCHI_DIFFICILI_COMPLETI,
-      fascia, rapporto.difficili, recenti.concat(medie), vietateOggi
-    );
-    scelte = mescola(medie.concat(difficili));
-  } else if (stato.difficolta === "difficile") {
-    scelte = pescaDaRaccolta(
-      PAROLE_DIFFICILI_COMPLETE, BLOCCHI_DIFFICILI_COMPLETI, fascia, 15, recenti, vietateOggi
-    );
-  } else {
-    scelte = pescaDaRaccolta(
-      PAROLE_MEDIE_COMPLETE, BLOCCHI_MEDI_COMPLETI, fascia, 15, recenti, vietateOggi
-    );
+  function estrai(livello, quante) {
+    let candidate = Object.values(SCHEDE_PAROLE).filter(function (scheda) {
+      return scheda.livello === livello && !escluse.has(normalizza(scheda.parola));
+    });
+    // Solo se l'archivio recente esaurisce il livello, riusa le meno recenti.
+    // Le parole del richiamo di ieri restano sempre escluse.
+    if (candidate.length < quante) {
+      const ultimaUscita = {};
+      for (const lista of stato.storicoListe) {
+        for (const parola of lista.parole || []) {
+          const chiave = normalizza(parola);
+          if (!ultimaUscita[chiave] || lista.data > ultimaUscita[chiave]) ultimaUscita[chiave] = lista.data;
+        }
+      }
+      const ripetibili = Object.values(SCHEDE_PAROLE).filter(function (scheda) {
+        const chiave = normalizza(scheda.parola);
+        return scheda.livello === livello && escluse.has(chiave) &&
+          !vietate.has(chiave) && !scelte.includes(scheda.parola);
+      }).sort(function (a, b) {
+        return (ultimaUscita[normalizza(a.parola)] || "").localeCompare(
+          ultimaUscita[normalizza(b.parola)] || "");
+      });
+      candidate = candidate.concat(ripetibili.slice(0, quante - candidate.length));
+    }
+    for (let i = 0; i < quante && candidate.length > 0; i++) {
+      const minimoArea = Math.min.apply(null, candidate.map(function (p) {
+        return areeUsate[p.area] || 0;
+      }));
+      const diverse = candidate.filter(function (p) {
+        return (areeUsate[p.area] || 0) === minimoArea;
+      });
+      const correnti = diverse.filter(function (p) { return p.fascia === fascia; });
+      const vicine = diverse.filter(function (p) { return Math.abs(p.fascia - fascia) === 1; });
+      let gruppo = correnti;
+      if (vicine.length && (!correnti.length || Math.random() < 0.2)) gruppo = vicine;
+      if (!gruppo.length) gruppo = diverse;
+      const scelta = gruppo[Math.floor(Math.random() * gruppo.length)];
+      scelte.push(scelta.parola);
+      areeUsate[scelta.area] = (areeUsate[scelta.area] || 0) + 1;
+      candidate = candidate.filter(function (p) { return p !== scelta; });
+    }
   }
 
   if (stato.difficolta === "mix") {
-    scelte = completaScelteSenzaRipetizioni(
-      scelte, [PAROLE_MEDIE_COMPLETE, PAROLE_DIFFICILI_COMPLETE], 15, escluse
-    );
-  } else if (stato.difficolta === "difficile") {
-    scelte = completaScelteSenzaRipetizioni(
-      scelte, [PAROLE_DIFFICILI_COMPLETE], 15, escluse
-    );
+    const difficili = [5, 7, 9][fascia];
+    estrai("media", 15 - difficili);
+    estrai("difficile", difficili);
   } else {
-    scelte = completaScelteSenzaRipetizioni(
-      scelte, [PAROLE_MEDIE_COMPLETE], 15, escluse
-    );
+    estrai(stato.difficolta === "difficile" ? "difficile" : "media", 15);
   }
-
-  stato.paroleNuoveLista = scelte.filter(function (parola) {
-    const chiave = normalizza(parola);
-    return !escluse.some(function (esclusa) { return normalizza(esclusa) === chiave; });
-  }).length;
-
-  // Il recupero di ieri resta separato: la nuova lista non contiene parole
-  // reinserite perché erano state dimenticate.
+  mescola(scelte);
+  stato.paroleNuoveLista = scelte.filter(function (p) { return !escluse.has(normalizza(p)); }).length;
   stato.rinforziOggi = [];
   stato.rinforzoFonteData = null;
-
   stato.paroleRecenti = stato.paroleRecenti.concat(scelte).slice(-MAX_PAROLE_RECENTI_LEGACY);
   registraListaGenerata(scelte);
   salvaParoleRecenti();
@@ -2396,13 +2424,15 @@ function calcolaPrescrizioneGiornaliera() {
   let difficili = 0;
   let giornateFaticose = 0;
   let giornateValutate = 0;
-  for (let i = 0; i < recenti.length; i++) {
-    if (!giornateComparabili(recenti[i], primaProva)) continue;
+  const comparabili = recenti.filter(function (giorno) {
+    return giornateComparabili(giorno, primaProva);
+  }).slice(-5);
+  for (let i = 0; i < comparabili.length; i++) {
     giornateValutate++;
-    const esito = valutaDifficoltaGiorno(recenti[i]);
+    const esito = valutaDifficoltaGiorno(comparabili[i]);
     if (esito === "facile") facili++;
     if (esito === "difficile") difficili++;
-    const prove = tentativiSeriePrincipale(recenti[i]);
+    const prove = tentativiSeriePrincipale(comparabili[i]);
     const durata = durataAttivaSessioneDaTentativi(prove);
     if (prove.length >= MAX_TENTATIVI_CONSECUTIVI ||
         (durata !== null && durata >= SECONDI_LIMITE_SESSIONE)) giornateFaticose++;
@@ -2414,22 +2444,24 @@ function calcolaPrescrizioneGiornaliera() {
   let sfida = false;
   const prossimo = livelloSuccessivo(livello);
 
-  if (giornateValutate >= 4 && facili >= 3 && difficili === 0) {
+  if (giornateValutate >= 4 && facili >= 3 && difficili === 0 &&
+      valutaDifficoltaGiorno(ultima) === "facile") {
     if (fasciaParole < 2) {
       fasciaParole++;
       motivo = "In almeno tre giornate comparabili sono stati solidi primo tentativo, apprendimento e ricordo dopo 24 ore: oggi cambio soltanto la complessità delle parole.";
-    } else if (secondi > 30) {
-      secondi = Math.max(30, secondi - 15);
-      motivo = "I risultati sono stabili anche a distanza: oggi riduco il tempo iniziale di soli 15 secondi.";
     } else if (prossimo !== null) {
       const precedente = livello;
       livello = prossimo;
       fasciaParole = 0;
       sfida = true;
-      motivo = "Il tempo minimo è ormai gestibile: oggi il livello sale automaticamente da " +
-        nomeLivello(precedente) + " a " + nomeLivello(livello) + ".";
+      motivo = "I risultati sono stabili anche nel ricordo a distanza: oggi passo da " +
+        nomeLivello(precedente) + " a " + nomeLivello(livello) +
+        ", mantenendo lo stesso tempo per osservare le parole.";
+    } else if (secondi > 60) {
+      secondi = Math.max(60, secondi - 15);
+      motivo = "I risultati sono stabili anche a distanza: oggi riduco il tempo iniziale di soli 15 secondi.";
     } else {
-      motivo = "Sei già al livello e al tempo più impegnativi: oggi userò parole progressivamente meno comuni.";
+      motivo = "Mantengo questa sfida: nuove parole, con tempo per costruire collegamenti.";
     }
   } else if (giornateValutate >= 3 &&
       (difficili >= 2 || giornateFaticose >= 2)) {
@@ -3477,7 +3509,7 @@ function mostraEsito(punti, esiti) {
     commento.textContent = commentoRichiamo(punti);
     recuperoDaMostrare = recuperoGuidatoDaCompletare() !== null;
     bottoneAvanti.textContent = recuperoDaMostrare ?
-      "Recuperiamo poche parole insieme" : "Ora l'esercizio di oggi";
+      "Recuperiamo poche parole insieme" : etichettaDopoRichiamo();
     bottoneAvanti.style.display = recuperoDaMostrare ? "none" : "block";
     bottoneBasta.style.display = "none";
   } else if (stato.modalita === "vita" && punti === totale) {
@@ -3659,16 +3691,12 @@ function sistemaRecuperoGuidato(recupero) {
   return recupero;
 }
 
-function categoriaDaRaccolta(parola, raccolta, nomi) {
-  const indice = raccolta.indexOf(parola);
-  if (indice < 0) return null;
-  const gruppo = Math.floor(indice / 30);
-  return nomi[Math.min(gruppo, nomi.length - 1)] || null;
-}
 
 function categoriaIndizioRecupero(parola) {
   const scheda = INDIZI_PAROLE[normalizza(parola)];
   if (scheda) return scheda[0];
+  const curata = SCHEDE_PAROLE[normalizza(parola)];
+  if (curata) return curata.categoria;
   return "Forma della parola: " + normalizza(parola).length + " lettere";
 }
 
@@ -3681,7 +3709,11 @@ function formaIndizioRecupero(parola, fase) {
   }
   if (fase === 1) {
     const scheda = INDIZI_PAROLE[normalizza(parola)];
-    return scheda ? scheda[1] : "Finisce con " + pulita.slice(-2).toUpperCase();
+    if (scheda) return scheda[1];
+    const curata = SCHEDE_PAROLE[normalizza(parola)];
+    if (curata) return curata.indizio;
+    // Compatibilità con vecchie liste, mai usato per le nuove parole curate.
+    return "Finisce con " + pulita.slice(-2).toUpperCase();
   }
   if (fase === 2) {
     return "Inizia con " + pulita.charAt(0).toUpperCase() + " · " + lettere +
@@ -3755,13 +3787,13 @@ function mostraRecuperoGuidatoCompletato(recupero, portaFocus) {
     (recupero.parole.length === 1 ? " parola, senza doverla superare come una prova." :
       " parole, una alla volta e senza doverle superare come una prova.");
   document.getElementById("indizio-recupero-guidato").textContent =
-    "Le 15 parole di oggi saranno nuove";
+    "Il richiamo è salvato. Puoi tornare al gioco quando vuoi.";
   document.getElementById("bottone-parola-ritrovata").style.display = "none";
   document.getElementById("bottone-altro-aiuto-recupero").style.display = "none";
   document.getElementById("bottone-salta-recupero").style.display = "none";
   riquadro.style.display = "block";
   const avanti = document.getElementById("bottone-avanti");
-  avanti.textContent = "Ora l'esercizio di oggi";
+  avanti.textContent = etichettaDopoRichiamo();
   avanti.style.display = "block";
   if (portaFocus) setTimeout(function () { riquadro.focus(); }, 0);
 }
@@ -3897,8 +3929,26 @@ async function altroAiutoRecupero() {
   disegnaRecuperoGuidato(true);
 }
 
+function etichettaDopoRichiamo() {
+  if (partitaSospesaValida()) return "Riprendi la partita";
+  const oggi = trovaGiorno(chiaveData(new Date()));
+  if (oggi && oggi.tentativi.length > 0) return "Torna ai progressi";
+  return "Ora l'esercizio di oggi";
+}
+
 function avviaGiocoDiOggi() {
   stato.modalita = "sessione";
+  if (partitaSospesaValida()) {
+    riprendiPartita();
+    return;
+  }
+  const oggi = trovaGiorno(chiaveData(new Date()));
+  if (oggi && oggi.tentativi.length > 0) {
+    mostraSchermata("inizio");
+    disegnaProgressi();
+    aggiornaPannelliNuovi();
+    return;
+  }
   iniziaSessione(true);
 }
 
@@ -4140,6 +4190,7 @@ function registraTentativo(punti, indiciMancanti) {
       Math.max(1, Math.round((Date.now() - stato.inizioTentativoTimestamp) / 1000)) : null,
     livello: stato.difficolta,
     fasciaParole: stato.fasciaParole,
+    versioneLessico: 2,
     sfidaAutomatica: stato.sfidaAutomatica,
     livelloBaseSfida: stato.livelloBaseSfida,
     tempoBaseSfida: stato.tempoBaseSfida,
@@ -4172,6 +4223,30 @@ function registraTentativo(punti, indiciMancanti) {
   disegnaProgressi();
 }
 
+function confrontoRipassoDelGiornoPrima(dataOrigine, paroleOrigine, risposte) {
+  const origine = trovaGiorno(dataOrigine);
+  const ripasso = origine && origine.ripassiBrevi;
+  // Un ripasso soltanto proposto non conta come svolto.
+  if (!ripasso || !Array.isArray(ripasso.prove) || ripasso.prove.length === 0 ||
+      !Array.isArray(ripasso.parole)) return null;
+  const lista = Array.from(new Set(paroleOrigine.map(normalizza)));
+  const ripassate = Array.from(new Set(ripasso.parole.map(normalizza))).filter(function (p) {
+    return lista.includes(p);
+  });
+  if (ripassate.length === 0) return null;
+  const corrette = new Set(risposte.map(normalizza));
+  const altre = lista.filter(function (p) { return !ripassate.includes(p); });
+  return {
+    versione: 1, origine: dataOrigine,
+    paroleRipassate: ripassate,
+    totaleRipassate: ripassate.length,
+    ricordateRipassate: ripassate.filter(function (p) { return corrette.has(p); }).length,
+    totaleAltre: altre.length,
+    ricordateAltre: altre.filter(function (p) { return corrette.has(p); }).length,
+    proveRipasso: ripasso.prove.length
+  };
+}
+
 function registraRichiamo(punti, mancate) {
   const giorno = giornoDiOggi();
   const paroleMancate = Array.isArray(mancate) ? mancate.slice() : [];
@@ -4186,6 +4261,8 @@ function registraRichiamo(punti, mancate) {
     da: stato.origineRichiamo,
     paroleOrigine: stato.parole.slice(),
     risposteInserite: stato.scritte.slice(),
+    confrontoRipasso: confrontoRipassoDelGiornoPrima(
+      stato.origineRichiamo, stato.parole, stato.scritte),
     mancate: paroleMancate,
     prioritarie: [],
     rinforzi: rinforziSerie,
@@ -4289,6 +4366,12 @@ async function salvaSerie() {
   // La prima lista standard del giorno è quella canonica per il richiamo di domani.
   // Eventuali seconde partite nello stesso giorno non la sovrascrivono.
   if (stato.serie !== null && stato.serie.data === oggi) return;
+  const ieri = chiaveSpostata(oggi, -1);
+  let pendenteDaSalvare = false;
+  if (stato.serie && stato.serie.data === ieri) {
+    stato.pendente = stato.serie;
+    pendenteDaSalvare = true;
+  }
   stato.serie = {
     data: oggi,
     parole: stato.parole.slice(),
@@ -4298,7 +4381,9 @@ async function salvaSerie() {
     rinforzoFonteData: null,
     sessioneId: stato.sessioneId
   };
-  await scriviDeposito("quindici:serie", JSON.stringify(stato.serie));
+  const fotografia = JSON.stringify(stato.serie);
+  if (pendenteDaSalvare) await salvaPendente();
+  await scriviDeposito("quindici:serie", fotografia);
 }
 
 async function salvaPendente() {
@@ -4450,6 +4535,12 @@ function serieDaRichiamare() {
     return stato.pendente;
   }
 
+  // Ripristina anche le liste salvate dalle versioni precedenti del gioco.
+  const sessioni = sessioniDelGiorno(trovaGiorno(ieri));
+  if (sessioni.length > 0) {
+    const parole = paroleDellaSessionePerReport(sessioni[0], ieri);
+    if (parole.length === 15) return { data: ieri, parole: parole, rinforzi: [] };
+  }
   return null;
 }
 
@@ -4461,7 +4552,7 @@ function aggiornaPannelloRichiamo() {
   if (serie !== null) {
     pannello.style.display = "block";
     document.getElementById("data-richiamo").textContent = etichettaData(serie.data);
-    testo.textContent = "Prima di cominciare, prova a ritrovare le parole del " +
+    testo.textContent = "Quando vuoi, prova a ritrovare le parole del " +
       etichettaData(serie.data) + " senza riguardarle. Anche una sola parola conta: " +
       "questo breve passaggio allena il ricordo a distanza.";
     bottone.textContent = "Prova a ricordare ieri";
@@ -4490,6 +4581,10 @@ function iniziaRichiamo() {
   }
   if (serie === null) return;
 
+  if (stato.partitaInCorso) {
+    mettiInPausa();
+    if (stato.partitaInCorso) return;
+  }
   stato.modalita = "richiamo";
   stato.parole = serie.parole;
   stato.origineRichiamo = serie.data;
@@ -5135,6 +5230,14 @@ function aggiungiRichiamoSvoltoNelGiorno(contenitore, richiamo, eOggi) {
   if (punti !== null) testo += ": " + punti + "/15";
   testo += ". Il risultato resta associato al giorno delle parole.";
   aggiungiContestoProgressi(contenitore, testo);
+
+  const confronto = richiamo.confrontoRipasso;
+  if (confronto && confronto.totaleRipassate > 0) {
+    aggiungiContestoProgressi(contenitore,
+      "Ricordate senza aiuti: " + confronto.ricordateRipassate + " su " +
+      confronto.totaleRipassate + " tra le parole del piccolo ripasso; " +
+      confronto.ricordateAltre + " su " + confronto.totaleAltre + " tra le altre.");
+  }
 
   const allenate = numeroParoleRecuperoGuidato(richiamo.recuperoGuidato);
   if (allenate > 0) {
@@ -6541,11 +6644,51 @@ const INDIZI_PAROLE = {
 };
 // Le parole prive di una scheda semantica usano indizi ortografici precisi.
 INDIZI_PAROLE.caffe = INDIZI_PAROLE['caffè'];
+// Schede specifiche quando una categoria generica svelerebbe la risposta,
+// o quando un oggetto poco comune beneficia di una descrizione precisa.
+Object.assign(INDIZI_PAROLE, {
+  insalata: ["Preparazione fresca", "Si condisce spesso con olio e aceto e può contenere foglie verdi."],
+  piatto: ["Stoviglia", "Ci appoggi il cibo prima di mangiarlo."],
+  ago: ["Piccolo utensile da cucito", "Ha una punta sottile e una cruna in cui passa il filo."],
+  stoffa: ["Materiale per abiti", "Il sarto la taglia e la cuce per confezionare un vestito."],
+  strada: ["Percorso", "Vi passano automobili e pedoni per raggiungere una destinazione."],
+  giardino: ["Spazio all'aperto", "Vicino a casa può ospitare aiuole, piante e un prato."],
+  apprendimento: ["Acquisire capacità", "È il processo con cui impari qualcosa che prima non sapevi."],
+  immaginazione: ["Facoltà mentale", "Permette di creare immagini e scene anche a occhi chiusi."],
+  impegno: ["Dedizione a un compito", "Lo metti in ciò che fai quando vuoi portarlo a termine con cura."],
+  costanza: ["Continuità nello sforzo", "Ti permette di proseguire regolarmente senza abbandonare subito."],
+  confronto: ["Esaminare insieme", "Accosti idee o risultati per coglierne differenze e somiglianze."],
+  comunicazione: ["Scambio di informazioni", "Avviene quando un messaggio passa da chi lo esprime a chi lo riceve."],
+  racconto: ["Testo narrativo", "Presenta una vicenda con personaggi e avvenimenti, spesso in poche pagine."],
+  organizzazione: ["Preparare un'attività", "Serve a distribuire compiti, risorse e tempi perché tutto funzioni."],
+  scelta: ["Fra più alternative", "La fai quando preferisci una possibilità alle altre."],
+  decisione: ["Conclusione di una valutazione", "La prendi quando stabilisci come agire."],
+  possibilita: ["Ciò che può accadere", "Indica un'opzione realizzabile, ma non ancora certa."],
+  successione: ["Ordine nel tempo", "Un evento arriva dopo un altro, formando una sequenza."],
+  quantita: ["Misura", "Risponde alla domanda: quanto ce n'è?"],
+  qualita: ["Caratteristica", "Descrive com'è qualcosa e può indicarne il pregio."],
+  comunita: ["Gruppo di persone", "Condivide un luogo, interessi o un modo di vivere."],
+  attivita: ["Qualcosa da svolgere", "Può essere lavorativa, sportiva o del tempo libero."],
+  ricerca: ["Indagine", "Si svolge per trovare informazioni o fare nuove scoperte."],
+  verifica: ["Controllo", "Serve ad accertare se qualcosa è corretto o funziona come previsto."],
+  ambiente: ["Ciò che ci circonda", "Comprende luoghi, condizioni naturali ed esseri viventi."],
+  tecnologia: ["Applicazioni della conoscenza", "Permette di realizzare strumenti e sistemi utili a svolgere compiti."],
+  relazione: ["Legame", "Collega persone, fatti o concetti fra loro."],
+  rastrello: ["Attrezzo da giardino", "Ha un manico lungo e denti disposti in fila per raccogliere foglie."],
+  rastrelliera: ["Struttura di sostegno", "Ha posti affiancati per appoggiare biciclette, attrezzi o altri oggetti."],
+  cofanetto: ["Piccolo contenitore", "Si apre con un coperchio e può custodire gioielli o ricordi."],
+  cazzuola: ["Attrezzo del muratore", "Con la sua lama piatta si prende e si stende la malta."],
+  ordito: ["Tessitura", "È l'insieme dei fili tesi nel telaio che si intrecciano con la trama."],
+  anfora: ["Recipiente antico", "Di solito ha due manici, un collo stretto e un corpo panciuto."],
+  cardine: ["Ferramenta", "Permette a una porta di ruotare per aprirsi e chiudersi."],
+  malga: ["Montagna", "È una costruzione d'alpeggio legata al bestiame e alla lavorazione del latte."]
+});
 
 function giornateComparabili(giorno, riferimento) {
   const prove = tentativiSeriePrincipale(giorno);
   if (!prove.length) return false;
   const prima = prove[0];
+  if ((prima.versioneLessico || 1) !== (riferimento.versioneLessico || 1)) return false;
   if (prima.livello !== riferimento.livello ||
       fasciaSicura(prima.fasciaParole) !== fasciaSicura(riferimento.fasciaParole) ||
       Number(prima.secondi) !== Number(riferimento.secondi)) return false;
@@ -6734,7 +6877,7 @@ function preparaRipassoBreve() {
   const parole = lista.slice(0,3);
   const ieri = stato.giorni.filter(function (g) { return g.data < oggi && g.ripassiBrevi; }).slice(-1)[0];
   const intervallo = ieri ? Math.max(30,Math.min(180,Number(ieri.ripassiBrevi.intervalloSuccessivo) || 60)) : 60;
-  scriviLocaleOggetto(CHIAVE_RIPASSO, {data:oggi,parole:parole,
+  scriviLocaleOggetto(CHIAVE_RIPASSO, {data:oggi,parole:parole,listaId:stato.serie.listaId,
     intervallo:intervallo,prontoAl:Date.now(),prove:[],fase:'prepara'});
 }
 function aggiornaPannelliNuovi() {
@@ -6798,7 +6941,8 @@ function controllaRipassoBreve() {
   ripassoBreve.fase = 'esito';
   scriviLocaleOggetto(CHIAVE_RIPASSO,ripassoBreve);
   const giorno = giornoDiOggi();
-  giorno.ripassiBrevi = {parole:ripassoBreve.parole.slice(),prove:ripassoBreve.prove.slice(),intervalloSuccessivo:ripassoBreve.intervallo};
+  giorno.ripassiBrevi = {parole:ripassoBreve.parole.slice(),listaId:ripassoBreve.listaId,
+    prove:ripassoBreve.prove.slice(),intervalloSuccessivo:ripassoBreve.intervallo};
   salvaGiorni();
   const contenitore = document.getElementById('esito-ripasso-breve');
   contenitore.innerHTML = '';
